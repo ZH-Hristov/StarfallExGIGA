@@ -958,10 +958,12 @@ if CLIENT then
 			mesh.Begin(mesh_obj, prim_type, prim_count)
 		end
 
+		instance.canyield = false
 		local ok, err = pcall(func)
+		instance.canyield = true
 		mesh.End()
 		meshgenerating = false
-		if not ok then SF.Throw(err, 2) end
+		if not ok then error(err) end
 	end
 
 	--- Sets the vertex color by RGBA values

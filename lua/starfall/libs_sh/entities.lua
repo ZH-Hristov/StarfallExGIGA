@@ -2,6 +2,7 @@
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
 
+registerprivilege("entities.setParent", "Parent", "Allows the user to parent an entity to another entity", { entities = {} })
 registerprivilege("entities.setRenderProperty", "RenderProperty", "Allows the user to change the rendering of an entity", { client = (CLIENT and {} or nil), entities = {} })
 registerprivilege("entities.setPlayerRenderProperty", "PlayerRenderProperty", "Allows the user to change the rendering of themselves", {})
 registerprivilege("entities.setPersistent", "SetPersistent", "Allows the user to change entity's persistent state", { entities = {} })
@@ -299,6 +300,50 @@ function ents_methods:getLinkedComponents()
 	return list
 end
 
+--- Parents or unparents an entity. Only holograms can be parented to players and, in clientside, only clientside holograms can be parented.
+-- @param Entity? parent Entity parent (nil to unparent)
+-- @param number|string? attachment Optional attachment name or ID
+-- @param number|string? bone Optional bone name or ID. Can't be used at the same time as attachment
+function ents_methods:setParent(parent, attachment, bone)
+	local child = getent(self)
+	if CLIENT and debug.getmetatable(child)~=SF.Cl_Hologram_Meta then SF.Throw("Can only setParent clientside holograms in the clientside!", 2) end
+	checkpermission(instance, child, "entities.setParent")
+	if attachment~=nil and bone~=nil then SF.Throw("Can't have both attachment and bone args set!", 2) end
+	if parent ~= nil then
+		parent = getent(parent)
+		if parent:IsPlayer() and not child.IsSFHologram then SF.Throw("Can only setParent holograms onto players!", 2) end
+		local param, type
+		if bone~=nil then
+			if isstring(bone) then
+				bone = parent:LookupBone(bone) or -1
+			elseif not isnumber(bone) then
+				SF.ThrowTypeError("string or number", SF.GetType(bone), 2)
+			end
+			if bone < 0 or bone > 255 then SF.Throw("Invalid bone provided", 2) end
+			type = "bone"
+			param = bone
+		elseif attachment~=nil then
+			if isstring(attachment) then
+				attachment = parent:LookupAttachment(attachment)
+			elseif not isnumber(attachment) then
+				SF.ThrowTypeError("string or number", SF.GetType(attachment), 2)
+			end
+			if attachment < 0 or attachment > 255 then SF.Throw("Invalid attachment provided", 2) end
+			type = "attachment"
+			param = attachment
+		else
+			type = "entity"
+		end
+
+		SF.Parent(parent, child, type, param)
+	else
+		local sf_parent = child.sf_parent
+		if sf_parent then
+			sf_parent:setParent()
+		end
+	end
+end
+
 --- Sets the color of the entity
 -- @shared
 -- @param Color clr New color
@@ -374,12 +419,26 @@ function ents_methods:setSubMaterial(index, material)
 	end
 end
 
+-- Invalid bodygroup IDs can cause crashes, so it's necessary to check that they are within range.
+local checkbodygroup
+do
+	local maxid = 2^31-1 -- Maximum signed 32-bit integer ("long") value
+	local minid = 0 -- One can go lower, but there's no point since the negative indexes are never used.
+	function checkbodygroup(id)
+		if id < minid or id > maxid then
+			SF.Throw("invalid bodygroup id", 3)
+		end
+	end
+	SF.CheckBodygroup = checkbodygroup
+end
+
 --- Sets the bodygroup of the entity
 -- @shared
 -- @param number bodygroup The ID of the bodygroup you're setting.
 -- @param number value The value you're setting the bodygroup to.
 function ents_methods:setBodygroup(bodygroup, value)
 	checkluatype(bodygroup, TYPE_NUMBER)
+	checkbodygroup(bodygroup)
 	checkluatype(value, TYPE_NUMBER)
 
 	local ent = getent(self)
@@ -398,6 +457,7 @@ end
 -- @return number The bodygroup value
 function ents_methods:getBodygroup(id)
 	checkluatype(id, TYPE_NUMBER)
+	checkbodygroup(id)
 	return getent(self):GetBodygroup(id)
 end
 
@@ -423,7 +483,18 @@ end
 -- @return string The bodygroup name
 function ents_methods:getBodygroupName(id)
 	checkluatype(id, TYPE_NUMBER)
+	checkbodygroup(id)
 	return getent(self):GetBodygroupName(id)
+end
+
+--- Returns the number of possible values for this bodygroup.
+-- Note that bodygroups are 0-indexed, so this will not return the maximum allowed value.
+-- @param number id The ID of the bodygroup to get the count for.
+-- @return number Number of values of specified bodygroup, or 0 if there are none.
+function ents_methods:getBodygroupCount(id)
+	checkluatype(id, TYPE_NUMBER)
+	checkbodygroup(id)
+	return getent(self):GetBodygroupCount(id)
 end
 
 --- Sets the skin of the entity
@@ -1611,6 +1682,31 @@ end
 -- @return table The table of networked objects
 function ents_methods:getNWVarTable()
 	return instance.Sanitize(getent(self):GetNWVarTable())
+end
+
+--- Returns the distance between the center of the entity's bounding box and whichever corner of the bounding box is farthest away.
+-- @shared
+-- @return number The radius of the bounding box, or 0 for some entities such as worldspawn
+function ents_methods:getBoundingRadius()
+	return getent(self):BoundingRadius()
+end
+
+--- Returns whether the entity is dormant or not, i.e. whether or not information about the entity is being sent to your client. Not to be confused with PhysObj:isAsleep
+-- Clientside, this will usually be true if the object is outside of your PVS (potentially visible set).
+-- Serverside, this will almost always be false.
+-- @shared
+-- @return boolean Whether entity is dormant or not.
+function ents_methods:isDormant()
+	return getent(self):IsDormant()
+end
+
+--- Performs a Ray-Orientated Bounding Box intersection from the given position to the origin of the OBBox with the entity and returns the hit position on the OBBox.
+-- This relies on the entity having a collision mesh (not a physics object) and will be affected by SOLID_NONE
+-- @shared
+-- @param Vector The vector to start the intersection from.
+-- @return Vector The nearest hit point of the entity's bounding box in world coordinates, or Vector(0, 0, 0) for some entities such as worldspawn.
+function ents_methods:getNearestPoint(pos)
+	return vwrap(getent(self):NearestPoint(vunwrap(pos)))
 end
 
 end
