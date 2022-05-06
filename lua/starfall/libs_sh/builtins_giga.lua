@@ -15,6 +15,23 @@ local function hudPrepareSafeArgs(instance, ...)
 	return false
 end
 
+local controlsLocked = false
+local function unlockControls(instance)
+	instance.data.input.controlsLocked = false
+	controlsLocked = false
+	hook.Remove("PlayerBindPress", "sf_keyboard_blockinputEX")
+	hook.Remove("PlayerButtonDown", "sf_keyboard_unblockinputEX")
+end
+
+local function lockControls(instance)
+	instance.data.input.controlsLocked = true
+	controlsLocked = true
+	
+	hook.Add("PlayerBindPress", "sf_keyboard_blockinputEX", function(ply, bind, pressed)
+		if bind ~= "+attack" and bind ~= "+attack2" then return true end
+	end)
+end
+
 if SERVER then
 	--- File functions. Allows modification of files.
 	-- @name fileServer
@@ -41,6 +58,7 @@ local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap
 local builtins_library = instance.env
 local fileServer_library = instance.Libraries.fileServer
 local render_library = instance.Libraries.render
+local input_library = instance.Libraries.input
 
 local getent
 local getply
@@ -273,6 +291,27 @@ else
 		if VolLightTestLOS( LocalPlayer(), eunwrap(ent) ) then return end
 		DrawVolLight(eunwrap(ent), mul, dark, size, distance, mindist)
 	end
+	
+	--- Locks game controls for typing purposes. SuperAdmin only.
+	-- @client
+	-- @param boolean enabled Whether to lock or unlock the controls
+	function input_library.lockControlsEX(enabled)
+		if !instance.player:IsSuperAdmin() then SF.Throw("You are not a superadmin!") return end
+		checkluatype(enabled, TYPE_BOOL)
+		checkpermission(instance, nil, "input")
+
+		if not SF.IsHUDActive(instance.entity) and (enabled or not instance.data.input.controlsLocked) then
+			SF.Throw("No HUD component connected", 2)
+		end
+
+		if enabled then
+			lockedControlCooldown = CurTime()
+			lockControls(instance)
+		else
+			unlockControls(instance)
+		end
+	end
+
 end
 
 end
