@@ -261,7 +261,7 @@ function pnl_methods:setTooltipPanel(setPnl)
 end
 
 --- Removes the tooltip panel set on this panel with Panel:setTooltipPanel
-function pnsl_methods:unsetTooltipPanel()
+function pnl_methods:unsetTooltipPanel()
 	local uwp = pnlunwrap(self)
 
 	uwp:SetTooltipPanel(nil)
