@@ -97,13 +97,28 @@ function builtins_library.setMapLighting(lightlevel)
 		
 		local MapEnvLights = ents.FindByClass("light_environment")
 			if table.Count(MapEnvLights) == 0 then
-			ents.Create("light_environment")
+				ents.Create("light_environment")
 			end
 		for k, v in pairs(MapEnvLights) do
 			v:Fire("SetPattern", lightlevel)
 		end
 		else
 			render.RedownloadAllLightmaps(true, true)
+	end
+end
+
+function builtins_library.setMapAmbientLight(clr, brightness)
+	local MapEnvLights = ents.FindByClass("light_environment")
+	if table.Count(MapEnvLights) == 0 then
+		ents.Create("light_environment")
+	end
+	
+	local c = cunwrap(clr)
+	
+	
+	for _, v in pairs(MapEnvLights) do
+		v:SetKeyValue("Ambient", c.r.." "..c.g.." "..c.b.." "..brightness)
+		v:SetKeyValue("AmbientHDR", c.r.." "..c.g.." "..c.b.." "..brightness)
 	end
 end
 
