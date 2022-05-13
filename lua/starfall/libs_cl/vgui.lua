@@ -16,6 +16,13 @@ SF.RegisterType("Panel", false, true, debug.getregistry().Panel)
 -- @libtbl dpnl_meta
 SF.RegisterType("DPanel", false, true, debug.getregistry().DPanel, "Panel")
 
+--- DNumSlider type
+-- @name DNumSlider
+-- @class type
+-- @libtbl dnms_methods
+-- @libtbl dnms_meta
+SF.RegisterType("DNumSlider", false, true, debug.getregistry().DNumSlider, "Panel")
+
 --- DFrame type
 -- @name DFrame
 -- @class type
@@ -43,6 +50,13 @@ SF.RegisterType("DLabel", false, true, debug.getregistry().DLabel, "Panel")
 -- @libtbl dbut_methods
 -- @libtbl dbut_meta
 SF.RegisterType("DButton", false, true, debug.getregistry().DButton, "DLabel")
+
+--- DCheckBox type
+-- @name DCheckBox
+-- @class type
+-- @libtbl dchk_methods
+-- @libtbl dchk_meta
+SF.RegisterType("DCheckBox", false, true, debug.getregistry().DCheckBox, "DButton")
 
 --- AvatarImage type
 -- @name AvatarImage
@@ -99,10 +113,12 @@ local dfrm_methods, dfrm_meta, dfrmwrap, dfrmunwrap = instance.Types.DFrame.Meth
 local dscrl_methods, dscrl_meta, dscrlwrap, dscrlunwrap = instance.Types.DScrollPanel.Methods, instance.Types.DScrollPanel, instance.Types.DScrollPanel.Wrap, instance.Types.DScrollPanel.Unwrap
 local dlab_methods, dlab_meta, dlabwrap, dlabunwrap = instance.Types.DLabel.Methods, instance.Types.DLabel, instance.Types.DLabel.Wrap, instance.Types.DLabel.Unwrap
 local dbut_methods, dbut_meta, dbutwrap, dbutunwrap = instance.Types.DButton.Methods, instance.Types.DButton, instance.Types.DButton.Wrap, instance.Types.DButton.Unwrap
+local dchk_methods, dchk_meta, dchkwrap, dchkunwrap = instance.Types.DCheckBox.Methods, instance.Types.DCheckBox, instance.Types.DCheckBox.Wrap, instance.Types.DCheckBox.Unwrap
 local aimg_methods, aimg_meta, aimgwrap, aimgunwrap = instance.Types.AvatarImage.Methods, instance.Types.AvatarImage, instance.Types.AvatarImage.Wrap, instance.Types.AvatarImage.Unwrap
 local dprg_methods, dprg_meta, dprgwrap, dprgunwrap = instance.Types.DProgress.Methods, instance.Types.DProgress, instance.Types.DProgress.Wrap, instance.Types.DProgress.Unwrap
 local dtxe_methods, dtxe_meta, dtxewrap, dtxeunwrap = instance.Types.DTextEntry.Methods, instance.Types.DTextEntry, instance.Types.DTextEntry.Wrap, instance.Types.DTextEntry.Unwrap
 local dimg_methods, dimg_meta, dimgwrap, dimgunwrap = instance.Types.DImage.Methods, instance.Types.DImage, instance.Types.DImage.Wrap, instance.Types.DImage.Unwrap
+local dnms_methods, dnms_meta, dnmswrap, dnmsunwrap = instance.Types.DNumSlider.Methods, instance.Types.DNumSlider, instance.Types.DNumSlider.Wrap, instance.Types.DNumSlider.Unwrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local plyunwrap = instance.Types.Player.Unwrap
 local vgui_library = instance.Libraries.vgui
@@ -127,6 +143,10 @@ function dbut_meta:__tostring()
 	return "DButton"
 end
 
+function dlab_meta:__tostring()
+	return "DLabel"
+end
+
 function aimg_meta:__tostring()
 	return "AvatarImage"
 end
@@ -143,13 +163,29 @@ function dimg_meta:__tostring()
 	return "DImage"
 end
 
+function dchk_meta:__tostring()
+	return "DCheckBox"
+end
+
+function dnms_meta:__tostring()
+	return "DNumSlider"
+end
+
+local function unwrap(pnl)
+	local pnc = tostring(pnl)
+	local unwrapFunc = instance.Types[pnc].Unwrap
+	
+	return unwrapFunc(pnl)
+end
+
+
 --- Sets the position of the panel's top left corner.
 --@param number x The x coordinate of the position.
 --@param number y The y coordinate of the position.
 function pnl_methods:setPos(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetPos(x, y)
 end
@@ -158,7 +194,7 @@ end
 --@return number X coordinate, relative to this panels parents top left corner.
 --@return number Y coordinate, relative to this panels parents top left corner.
 function pnl_methods:getPos()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetPos()
 end
@@ -167,7 +203,7 @@ end
 --- In engine is only implemented for CheckButton, Label and TextEntry as a string.
 --@param any The value the panel holds.
 function pnl_methods:getValue()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	return uwp:GetValue()
 end
@@ -178,7 +214,7 @@ end
 function pnl_methods:setSize(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetSize(x, y)
 end
@@ -187,7 +223,7 @@ end
 --@return number width
 --@return number height
 function pnl_methods:getSize()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetSize()
 end
@@ -196,7 +232,7 @@ end
 --@param number newHeight The height to be set.
 function pnl_methods:setHeight(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetHeight(val)
 end
@@ -204,7 +240,7 @@ end
 --- Gets the height of the panel.
 --@return number The height of the panel.
 function pnl_methods:getHeight()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	return uwp:GetTall()
 end
@@ -213,7 +249,7 @@ end
 --@param number newWidth The width to be set.
 function pnl_methods:setWidth(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetWidth(val)
 end
@@ -221,7 +257,7 @@ end
 --- Gets the width of the panel.
 --@return number The width of the panel.
 function pnl_methods:getWidth()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	return uwp:GetWide()
 end
@@ -230,7 +266,7 @@ end
 --@param string text The text value to set.
 function pnl_methods:setText(text)
 	checkluatype(text, TYPE_STRING)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetText(text)
 end
@@ -239,14 +275,14 @@ end
 --@param string text The text to be displayed in the tooltip.
 function pnl_methods:setTooltip(text)
 	checkluatype(text, TYPE_STRING)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetTooltip(text)
 end
 
 --- Removes the tooltip on the panel set with Panel:setTooltip
 function pnl_methods:unsetTooltip()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetTooltip(false)
 end
@@ -254,7 +290,7 @@ end
 --- Sets the panel to be displayed as contents of a DTooltip when a player hovers over the panel object with their cursor.
 --@param Panel The panel to use as the tooltip.
 function pnl_methods:setTooltipPanel(setPnl)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	local uwsp = pnlunwrap(setPnl)
 
 	uwp:SetTooltipPanel(uwsp)
@@ -262,7 +298,7 @@ end
 
 --- Removes the tooltip panel set on this panel with Panel:setTooltipPanel
 function pnl_methods:unsetTooltipPanel()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetTooltipPanel(nil)
 end
@@ -272,9 +308,16 @@ end
 --@param boolean wrap True to enable text wrapping, false otherwise.
 function pnl_methods:setWrap(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetWrap(enable)
+end
+
+--- Marks all of the panel's children for deletion.
+function pnl_methods:clear()
+	local uwp = unwrap(self)
+	
+	uwp:Clear()
 end
 
 --- Resizes the panel object's width so that its right edge is aligned with the left of the passed panel. 
@@ -282,7 +325,7 @@ end
 --@param Panel targetPanel The panel to align the bottom of this one with.
 --@param number offset The gap to leave between this and the passed panel. Negative values will cause the panel's height to increase, forming an overlap.
 function pnl_methods:stretchRightTo(target, off)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	local uwtp = pnlunwrap(target)
 
 	uwp:StretchRightTo(uwtp, off)
@@ -293,7 +336,7 @@ end
 --@param Panel targetPanel The panel to align the bottom of this one with.
 --@param number offset The gap to leave between this and the passed panel. Negative values will cause the panel's height to increase, forming an overlap.
 function pnl_methods:stretchBottomTo(target, off)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	local uwtp = pnlunwrap(target)
 
 	uwp:StretchBottomTo(uwtp, off)
@@ -301,21 +344,21 @@ end
 
 --- Focuses the panel and enables it to receive input.
 function pnl_methods:makePopup()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:MakePopup()
 end
 
 --- Centers the panel.
 function pnl_methods:center()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:Center()
 end
 
 --- Removes the panel and all its children.
 function pnl_methods:remove()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	panels[uwp] = nil
 	uwp:Remove()
@@ -325,7 +368,7 @@ end
 --@param number alpha The alpha value in the range of 0-255.
 function pnl_methods:setAlpha(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetAlpha(val)
 end
@@ -334,7 +377,7 @@ end
 --@param number Dock type using https://wiki.facepunch.com/gmod/Enums/DOCK.
 function pnl_methods:dock(enum)
 	checkluatype(enum, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:Dock(enum)
 end
@@ -350,7 +393,7 @@ function pnl_methods:dockMargin(left, top , right, bottom)
 	checkluatype(right, TYPE_NUMBER)
 	checkluatype(top, TYPE_NUMBER)
 	checkluatype(bottom, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:DockMargin(left, top, right, bottom)
 end
@@ -366,7 +409,7 @@ function pnl_methods:dockPadding(left, top , right, bottom)
 	checkluatype(right, TYPE_NUMBER)
 	checkluatype(top, TYPE_NUMBER)
 	checkluatype(bottom, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:DockPadding(left, top, right, bottom)
 end
@@ -375,7 +418,7 @@ end
 --@param number offset The align offset.
 function pnl_methods:alignTop(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:AlignTop(off)
 end
@@ -384,7 +427,7 @@ end
 --@param number offset The align offset.
 function pnl_methods:alignLeft(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:AlignLeft(off)
 end
@@ -393,7 +436,7 @@ end
 --@param number offset The align offset.
 function pnl_methods:alignRight(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:AlignRight(off)
 end
@@ -402,7 +445,7 @@ end
 --@param number offset The align offset.
 function pnl_methods:alignBottom(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:AlignBottom(off)
 end
@@ -415,7 +458,7 @@ end
 function pnl_methods:screenToLocal(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:ScreenToLocal(x, y)
 end
@@ -428,7 +471,7 @@ end
 function pnl_methods:localToScreen(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:LocalToScreen(x, y)
 end
@@ -436,7 +479,7 @@ end
 --- Returns the internal name of the panel. Can be set via Panel:setName.
 --@return string The internal name of the panel.
 function pnl_methods:getName()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	return uwp:GetName()
 end
@@ -445,7 +488,7 @@ end
 --@param string newname New internal name for the panel.
 function pnl_methods:setName(val)
 	checkluatype(val, TYPE_STRING)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetName(val)
 end
@@ -455,7 +498,7 @@ end
 --@param boolean enabled Whether to enable or disable the panel object.
 function pnl_methods:setEnabled(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetEnabled(enable)
 end
@@ -464,7 +507,7 @@ end
 --- See Panel:setEnabled for a function that makes the panel enabled or disabled.
 --@return boolean Whether the panel is enabled or disabled.
 function pnl_methods:isEnabled()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	return uwp:IsEnabled()
 end
@@ -476,7 +519,7 @@ end
 function pnl_methods:sizeToChildren(w, h)
 	checkluatype(w, TYPE_BOOL)
 	checkluatype(h, TYPE_BOOL)	
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SizeToChildren(w, h)
 	uwp:InvalidateLayout()
@@ -485,7 +528,7 @@ end
 --- Resizes the panel so that its width and height fit all of the content inside.
 --- Only works on Label derived panels such as DLabel by default, and on any panel that manually implemented the Panel:SizeToContents method, such as DNumberWang and DImage.
 function pnl_methods:sizeToContents()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SizeToContents()
 end
@@ -496,7 +539,7 @@ end
 --@param number addValue The number of extra pixels to add to the width. Can be a negative number, to reduce the width.
 function pnl_methods:sizeToContentsX(addVal)
 	checkluatype(addVal, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SizeToContentsX(addVal)
 end
@@ -507,7 +550,7 @@ end
 --@param number addValue The number of extra pixels to add to the height. Can be a negative number, to reduce the height.
 function pnl_methods:sizeToContentsY(addVal)
 	checkluatype(addVal, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SizeToContentsY(addVal)
 end
@@ -589,12 +632,12 @@ end
 
 --- Sets a callback function to run when the frame is closed. This applies when the close button in the DFrame's control box is clicked. 
 --- This is not called when the DFrame is removed with Panel:remove, see PANEL:onRemove for that.
---@param function callback The function to run when the frame is closed. Has one argument which is the frame itself.
+--@param function callback The function to run when the frame is closed.
 function dfrm_methods:onClose(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dfrmunwrap(self)
 	
-	uwp.OnClose = function() instance:runFunction(func, self) end
+	function uwp:OnClose() instance:runFunction(func) end
 end
 
 --- Centers the frame relative to the whole screen and invalidates its layout.
@@ -608,7 +651,7 @@ end
 --@param boolean draggable Whether to be draggable or not.
 function dfrm_methods:setDraggable(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetDraggable(enable)
 end
@@ -616,7 +659,7 @@ end
 --- Gets whether the frame can be dragged by the user.
 --@return boolean Whether the frame is draggable.
 function dfrm_methods:getDraggable()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetDraggable()
 end
@@ -625,7 +668,7 @@ end
 --@param string title New title of the frame.
 function dfrm_methods:setTitle(val)
 	checkluatype(val, TYPE_STRING)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetTitle(val)
 end
@@ -633,7 +676,7 @@ end
 --- Gets the title of the frame.
 --@return string The title of the frame.
 function dfrm_methods:getTitle()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetTitle(val)
 end
@@ -641,7 +684,7 @@ end
 --- Determines if the frame or one of its children has the screen focus.
 --@return boolean Whether or not the frame has focus.
 function dfrm_methods:isActive()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:IsActive()
 end
@@ -652,7 +695,7 @@ end
 --@param boolean sizable Whether the frame should be resizeable or not.
 function dfrm_methods:setSizable(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetSizable(enable)
 end
@@ -660,7 +703,7 @@ end
 --- Gets whether the DFrame can be resized by the user.
 --@return boolean Whether the DFrame can be resized.
 function dfrm_methods:setSizable()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetSizable()
 end
@@ -669,7 +712,7 @@ end
 --@param number minwidth The minimum width the user can resize the frame to.
 function dfrm_methods:setMinWidth(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetMinWidth(val)
 end
@@ -677,7 +720,7 @@ end
 --- Gets the minimum width the DFrame can be resized to by the user.
 --@return number The minimum width.
 function dfrm_methods:getMinWidth()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetMinWidth()
 end
@@ -686,7 +729,7 @@ end
 --@param number minheight The minimum height the user can resize the frame to.
 function dfrm_methods:setMinHeight(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetMinHeight(val)
 end
@@ -694,7 +737,7 @@ end
 --- Gets the minimum height the DFrame can be resized to by the user.
 --@return number The minimum height.
 function dfrm_methods:getMinHeight()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetMinHeight()
 end
@@ -703,7 +746,7 @@ end
 --@param boolean locked If true, the frame cannot be dragged outside of the screen bounds.
 function dfrm_methods:setScreenLock(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetScreenLock(enable)
 end
@@ -712,7 +755,7 @@ end
 --@param string iconpath Set to nil to remove the icon. Otherwise, set to file path to create the icon.
 function dfrm_methods:setIcon(path)
 	checkluatype(path, TYPE_STRING)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetIcon(path)
 end
@@ -721,7 +764,7 @@ end
 --@param boolean blur Whether or not to create background blur or not.
 function dfrm_methods:setBackgroundBlur(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetBackgroundBlur(enable)
 end
@@ -729,7 +772,7 @@ end
 --- Returns whether the background is being blurred by DFrame:setBackGroundBlur.
 --@return boolean Whether the background is blurred.
 function dfrm_methods:setBackgroundBlur()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetBackgroundBlur()
 end
@@ -738,7 +781,7 @@ end
 --@param boolean show false hides the control box; this is true by default.
 function dfrm_methods:showCloseButton(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:ShowCloseButton(enable)
 end
@@ -746,7 +789,7 @@ end
 --- Gets whether or not the shadow effect bordering the DFrame is being drawn.
 --@return boolean Whether or not the shadow is being drawn.
 function dfrm_methods:getPaintShadow()
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	return uwp:GetPaintShadow()
 end
@@ -755,7 +798,7 @@ end
 --@param boolean draw Whether or not to draw the shadow. This is true by default.
 function dfrm_methods:setPaintShadow(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	
 	uwp:SetPaintShadow(enable)
 end
@@ -802,23 +845,23 @@ end
 --- Called when the label is left clicked (on key release) by the player.
 --- This will be called after DLabel:onDepressed and DLabel:onReleased.
 --- This can be overridden; by default, it calls DLabel:toggle.
---@param function callback The function to run when the label is pressed. Has one argument which is the DLabel itself.
+--@param function callback The function to run when the label is pressed.
 function dlab_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 	
-	uwp.DoClick = function() instance:runFunction(func, self) end
+	function uwp:DoClick() instance:runFunction(func) end
 end
 
 --- Called when the label is double clicked by the player with left clicks.
 --- DLabel:setDoubleClickingEnabled must be set to true for this hook to work, which it is by default.
 --- This will be called after DLabel:onDepressed and DLabel:onReleased and DLabel:onClick.
---@param function callback The function to run when the label is double clicked. Has one argument which is the DLabel itself.
+--@param function callback The function to run when the label is double clicked.
 function dlab_methods:onDoubleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 
-	uwp.DoDoubleClick = function() instance:runFunction(func, self) end
+	function uwp:DoDoubleClick() instance:runFunction(func) end
 end
 
 --- Sets whether or not double clicking should call DLabel:DoDoubleClick.
@@ -841,50 +884,50 @@ end
 
 --- Called when the label is right clicked (on key release) by the player.
 --- This will be called after DLabel:onDepressed and DLabel:onReleased.
---@param function callback The function to run when the label is right clicked. Has one argument which is the DLabel itself.
+--@param function callback The function to run when the label is right clicked.
 function dlab_methods:onRightClick(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 
-	uwp.DoRightClick = function() instance:runFunction(func, self) end
+	function uwp:DoRightClick() instance:runFunction(func) end
 end
 
 --- Called when the label is middle clicked (on key release) by the player.
 --- This will be called after DLabel:onDepressed and DLabel:onReleased.
---@param function callback The function to run when the label is middle clicked. Has one argument which is the DLabel itself.
+--@param function callback The function to run when the label is middle clicked.
 function dlab_methods:onMiddleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 
-	uwp.DoMiddleClick = function() instance:runFunction(func, self) end
+	function uwp:DoMiddleClick() instance:runFunction(func) end
 end
 
 --- Called when the player presses the label with any mouse button.
---@param function callback The function to run when the label is pressed. Has one argument which is the DLabel itself.
+--@param function callback The function to run when the label is pressed.
 function dlab_methods:onDepressed(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 
-	uwp.OnDepressed = function() instance:runFunction(func, self) end
+	function uwp:OnDepressed() instance:runFunction(func) end
 end
 
 --- Called when the player releases any mouse button on the label. This is always called after DLabel:onDepressed.
---@param function callback The function to run when the label is released. Has one argument which is the DLabel itself.
+--@param function callback The function to run when the label is released.
 function dlab_methods:onReleased(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 
-	uwp.OnReleased = function() instance:runFunction(func, self) end
+	function uwp:OnReleased() instance:runFunction(func) end
 end
 
 --- Called when the toggle state of the label is changed by DLabel:Toggle.
 --- In order to use toggle functionality, you must first call DLabel:setIsToggle with true, as it is disabled by default.
---@param function callback The function to run when the label is toggled. Has 2 arguments: the DLabel itself and the state of the toggled button.
+--@param function callback The function to run when the label is toggled. Has one argument which is the new toggle state.
 function dlab_methods:onToggled(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dlabunwrap(self)
 
-	uwp.OnReleased = function(toggleState) instance:runFunction(func, self, toggleState) end
+	function uwp:OnToggled(toggleState) instance:runFunction(func, toggleState) end
 end
 
 --- Enables or disables toggle functionality for a label. Retrieved with DLabel:getIsToggle.
@@ -995,12 +1038,12 @@ function vgui_library.createDButton(parent, name)
 end
 
 --- Called when the button is left clicked (on key release) by the player. This will be called after DButton:isDown.
---@param function callback The function to run when the button is pressed. Has one argument which is the Button itself.
+--@param function callback The function to run when the button is pressed.
 function dbut_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dbutunwrap(self)
 	
-	uwp.DoClick = function() instance:runFunction(func, self) end
+	function uwp:DoClick() instance:runFunction(func) end
 end
 
 --- Sets an image to be displayed as the button's background.
@@ -1037,7 +1080,7 @@ end
 --@param number size The resolution size of the avatar to use. Acceptable sizes are 32, 64, 184.
 function aimg_methods:setPlayer(ply, size)
 	checkluatype(size, TYPE_NUMBER)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 	local uwply = plyunwrap(ply)
 
 	uwp:SetPlayer(uwply, size)
@@ -1049,7 +1092,7 @@ end
 function aimg_methods:setSteamID(steamid, size)
 	checkluatype(size, TYPE_NUMBER)
 	checkluatype(steamid, TYPE_STRING)
-	local uwp = pnlunwrap(self)
+	local uwp = unwrap(self)
 
 	uwp:SetSteamID(steamid, size)
 end
@@ -1241,12 +1284,12 @@ end
 
 --- Called internally by DTextEntry:OnTextChanged when the user modifies the text in the DTextEntry.
 --- You should override this function to define custom behavior when the DTextEntry text changes.
---@param function callback The function to run when the user modifies the text. There is only one argument which is the DTextEntry itself.
+--@param function callback The function to run when the user modifies the text.
 function dtxe_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dtxeunwrap(self)
 
-	uwp.OnChange = function() instance:runFunction(func, self) end
+	function uwp:OnChange() instance:runFunction(func) end
 end
 
 --- Called internally when the text changes of the DTextEntry are applied.
@@ -1256,22 +1299,22 @@ end
 --- 	When Enter is pressed after typing
 --- 	When DTextEntry:setValue is used
 --- 	For every key typed - only if DTextEntry:setUpdateOnType was set to true (default is false)
---@param function callback The function to run when the text changes are applied. Has 2 arguments: The DTextEntry itself and the value that was applied.
+--@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dtxeunwrap(self)
 
-	uwp.OnValueChange = function(value) instance:runFunction(func, self, value) end
+	function uwp:OnValueChange(value) instance:runFunction(func, value) end
 end
 
 --- Called whenever enter is pressed on a DTextEntry.
 --- DTextEntry:isEditing will still return true in this callback!
---@param function callback The function to run when the text changes are applied. Has 2 arguments: The DTextEntry itself and the value that was applied.
+--@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onEnter(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dtxeunwrap(self)
 
-	uwp.OnEnter = function(value) instance:runFunction(func, self, value) end
+	function uwp:OnEnter(value) instance:runFunction(func, value) end
 end
 
 --- Returns whether this DTextEntry is being edited or not. (i.e. has focus)
@@ -1283,21 +1326,21 @@ function dtxe_methods:isEditing()
 end
 
 --- Called whenever the DTextEntry gains focus.
---@param function callback The function to run when entry gains focus. There is only one argument which is the DTextEntry itself.
+--@param function callback The function to run when entry gains focus.
 function dtxe_methods:onGetFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dtxeunwrap(self)
 
-	uwp.OnGetFocus = function() instance:runFunction(func, self) end
+	function uwp:OnGetFocus() instance:runFunction(func) end
 end
 
 --- Called whenever the DTextEntry loses focus.
---@param function callback The function to run when the entry loses focus. There is only one argument which is the DTextEntry itself.
+--@param function callback The function to run when the entry loses focus.
 function dtxe_methods:onLoseFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dtxeunwrap(self)
 
-	uwp.OnLoseFocus = function() instance:runFunction(func, self) end
+	function uwp:OnLoseFocus() instance:runFunction(func) end
 end
 
 --- Sets the text color of the DTextEntry.
@@ -1379,6 +1422,217 @@ function dimg_methods:getKeepAspect()
 	local uwp = dimgunwrap(self)
 
 	return uwp:GetKeepAspect()
+end
+
+--- Creates a DCheckBox. The DCheckBox is a checkbox. It allows you to get a boolean value from the user. Inherits functions from DButton.
+--@param Panel? parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DCheckBox The new DCheckBox.
+function vgui_library.createDCheckBox(parent, name)
+	if parent then parent = pnlunwrap(parent) end
+	
+	local new = vgui.Create("DCheckBox", parent, name)
+	if !parent then panels[new] = true end
+	return dchkwrap(new)
+end
+
+--- Sets the checked state of the checkbox, and calls the checkbox's DCheckBox:onChange method.
+--@param boolean checked Whether the box should be checked or not.
+function dchk_methods:setValue(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = dchkunwrap(self)
+
+	uwp:SetValue(enable)
+end
+
+--- Sets the checked state of the checkbox. Does not call the checkbox's DCheckBox:onChange method, unlike DCheckBox:setValue.
+--@param boolean checked Whether the box should be checked or not.
+function dchk_methods:setChecked(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = dchkunwrap(self)
+
+	uwp:SetChecked(enable)
+end
+
+--- Toggles the checked state of the checkbox, and calls the checkbox's DCheckBox:onChange method. This is called by DCheckBox:onClick.
+function dchk_methods:toggle()
+	local uwp = dchkunwrap(self)
+	
+	uwp:Toggle()
+end
+
+--- Gets the checked state of the checkbox.
+--@return boolean Whether the box is checked or not.
+function dchk_methods:getChecked()
+	local uwp = dchkunwrap(self)
+	
+	return uwp:GetChecked()
+end
+
+--- Returns whether the state of the checkbox is being edited. This means whether the user is currently clicking (mouse-down) on the checkbox, and applies to both the left and right mouse buttons.
+--@return boolean Whether the checkbox is being clicked.
+function dchk_methods:isEditing()
+	local uwp = dchkunwrap(self)
+	
+	return uwp:IsEditing()
+end
+
+--- Called when the "checked" state is changed.
+--@param function callback The function to run when the checked state is changed. Has one argument which is the new checked value of the checkbox.
+function dchk_methods:onChange(func)
+	checkluatype(func, TYPE_FUNCTION)
+	local uwp = dchkunwrap(self)
+	
+	function uwp:OnChange(bval) instance:runFunction(func, bval) end
+end
+
+--- Creates a DNumSlider. The DNumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
+--@param Panel? parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DCheckBox The new DCheckBox.
+function vgui_library.createDNumSlider(parent, name)
+	if parent then parent = pnlunwrap(parent) end
+	
+	local new = vgui.Create("DNumSlider", parent, name)
+	if !parent then panels[new] = true end
+	return dnmswrap(new)
+end
+
+--- Sets the minimum value for the slider.
+--@param number min The value to set as minimum for the slider.
+function dnms_methods:setMin(val)
+	checkluatype(val, TYPE_NUMBER)
+	local uwp = dnmsunwrap(self)
+	
+	uwp:SetMin(val)
+end
+
+--- Returns the minimum value of the slider.
+--@return number The minimum value of the slider
+function dnms_methods:getMin()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:GetMin()
+end
+
+--- Sets the maximum value for the slider.
+--@param number max The value to set as maximum for the slider.
+function dnms_methods:setMax(val)
+	checkluatype(val, TYPE_NUMBER)
+	local uwp = dnmsunwrap(self)
+	
+	uwp:SetMax(val)
+end
+
+--- Returns the maximum value of the slider.
+--@return number The maximum value of the slider
+function dnms_methods:getMax()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:GetMax()
+end
+
+--- Sets the desired amount of numbers after the decimal point.
+--@param number decimals 0 for whole numbers only, 1 for one number after the decimal point, etc.
+function dnms_methods:setDecimals(val)
+	checkluatype(val, TYPE_NUMBER)
+	local uwp = dnmsunwrap(self)
+	
+	uwp:SetDecimals(val)
+end
+
+--- Returns the amount of numbers after the decimal point.
+--@return number 0 for whole numbers only, 1 for one number after the decimal point, etc.
+function dnms_methods:getDecimals()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:GetDecimals()
+end
+
+--- Returns the DTextEntry component of the slider.
+--@return DTextEntry The DTextEntry.
+function dnms_methods:getTextArea()
+	local uwp = dnmsunwrap(self)
+	
+	return dtxewrap(uwp:GetTextArea())
+end
+
+--- Sets the minimum and the maximum value of the slider.
+--@param number min The minimum value of the slider.
+--@param number max The maximum value of the slider.
+function dnms_methods:setMinMax(min, max)
+	checkluatype(min, TYPE_NUMBER)
+	checkluatype(max, TYPE_NUMBER)
+	local uwp = dnmsunwrap(self)
+	
+	uwp:SetMinMax(min, max)
+end
+
+--- Sets the default value of the slider, to be used by DNumSlider:resetToDefaultValue or by middle mouse clicking the draggable knob of the slider.
+--@param number default The new default value of the slider to set.
+function dnms_methods:setDefaultValue(val)
+	checkluatype(val, TYPE_NUMBER)
+	local uwp = dnmsunwrap(self)
+	
+	uwp:SetDefaultValue(val)
+end
+
+--- Returns the default value of the slider, if one was set by DNumSlider:setDefaultValue
+--@return number The default value of the slider
+function dnms_methods:getDefaultValue()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:GetDefaultValue()
+end
+
+--- Sets the value of the DNumSlider. Calls the slider's onValueChange method.
+--@param number value The value to set.
+function dnms_methods:setValue(val)
+	checkluatype(val, TYPE_NUMBER)
+	local uwp = dnmsunwrap(self)
+	
+	uwp:SetValue(val)
+end
+
+--- Returns the value of the DNumSlider.
+--@return number The value of the slider.
+function dnms_methods:getValue()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:GetValue()
+end
+
+--- Returns true if either the DTextEntry, the DSlider or the DNumberScratch are being edited.
+--@return boolean Whether or not the DNumSlider is being edited by the player.
+function dnms_methods:isEditing()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:IsEditing()
+end
+
+--- Resets the slider to the default value, if one was set by DNumSlider:setDefaultValue.
+--- This function is called by the DNumSlider when user middle mouse clicks on the draggable knob of the slider.
+function dnms_methods:resetToDefaultValue()
+	local uwp = dnmsunwrap(self)
+	
+	uwp:ResetToDefaultValue()
+end
+
+--- Returns the range of the slider, basically maximum value - minimum value.
+--@return number The range of the slider.
+function dnms_methods:getRange()
+	local uwp = dnmsunwrap(self)
+	
+	return uwp:GetRange()
+end
+
+--- Called when the value of the slider is changed, through code or changing the slider.
+--@param function callback The function to run when the value is changed. Has one argument which is the new value that was set.
+function dnms_methods:onValueChange(func)
+	checkluatype(func, TYPE_FUNCTION)
+	local uwp = dnmsunwrap(self)
+	
+	function uwp:OnValueChanged(val) instance:runFunction(func, val) end
 end
 
 end
