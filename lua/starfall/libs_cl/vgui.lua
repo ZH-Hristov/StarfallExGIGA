@@ -556,11 +556,11 @@ function pnl_methods:sizeToContentsY(addVal)
 end
 
 --- Creates a DPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DPanel The new DPanel
 function vgui_library.createDPanel(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DPanel", parent, name)
 	if !parent then panels[new] = true end -- Only insert parent panels as they will have all their children removed anyway.
@@ -619,11 +619,11 @@ function dpnl_methods:getDisabled()
 end
 
 --- Creates a DFrame. The DFrame is the momma of basically all VGUI elements. 98% of the time you will parent your element to this.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DFrame The new DFrame
 function vgui_library.createDFrame(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DFrame", parent, name)
 	if !parent then panels[new] = true end
@@ -804,11 +804,11 @@ function dfrm_methods:setPaintShadow(enable)
 end
 
 --- Creates a DScrollPanel. DScrollPanel is a VGUI Element similar to DPanel however it has a vertical scrollbar docked to the right which can be used to put more content in a smaller area.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DScrollPanel The new DScrollPanel
 function vgui_library.createDScrollPanel(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DScrollPanel", parent, name)
 	if !parent then panels[new] = true end
@@ -831,11 +831,11 @@ function dscrl_methods:clear()
 end
 
 --- Creates a DLabel. A standard Derma text label. A lot of this panels functionality is a base for button elements, such as DButton.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DLabel The new DLabel.
 function vgui_library.createDLabel(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DLabel", parent, name)
 	if !parent then panels[new] = true end
@@ -1026,11 +1026,11 @@ function dlab_methods:getAutoStretchVertical()
 end
 
 --- Creates a DButton. Inherits functions from DLabel.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DButton The new DButton.
 function vgui_library.createDButton(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DButton", parent, name)
 	if !parent then panels[new] = true end
@@ -1064,11 +1064,11 @@ function dbut_methods:isDown()
 end
 
 --- Creates an AvatarImage. Inherits functions from Panel.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return AvatarImage The new AvatarImage.
 function vgui_library.createAvatarImage(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("AvatarImage", parent, name)
 	if !parent then panels[new] = true end
@@ -1098,11 +1098,11 @@ function aimg_methods:setSteamID(steamid, size)
 end
 
 --- Creates a DProgress. A progressbar, works with a fraction between 0 and 1 where 0 is 0% and 1 is 100%. Inherits functions from Panel.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DProgress The new DProgress.
 function vgui_library.createDProgress(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DProgress", parent, name)
 	if !parent then panels[new] = true end
@@ -1127,11 +1127,11 @@ function dprg_methods:getFraction()
 end
 
 --- Creates a DTextEntry. A form which may be used to display text the player is meant to select and copy or alternately allow them to enter some text of their own. Inherits functions from Panel.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DTextEntry The new DTextEntry.
 function vgui_library.createDTextEntry(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DTextEntry", parent, name)
 	if !parent then panels[new] = true end
@@ -1360,11 +1360,11 @@ function dtxe_methods:getTextColor()
 end
 
 --- Creates a DImage. A panel which displays an image. Inherits functions from DPanel.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DImage The new DImage.
 function vgui_library.createDImage(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DImage", parent, name)
 	if !parent then panels[new] = true end
@@ -1425,11 +1425,11 @@ function dimg_methods:getKeepAspect()
 end
 
 --- Creates a DCheckBox. The DCheckBox is a checkbox. It allows you to get a boolean value from the user. Inherits functions from DButton.
---@param Panel? parent Panel to parent to.
+--@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DCheckBox The new DCheckBox.
 function vgui_library.createDCheckBox(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DCheckBox", parent, name)
 	if !parent then panels[new] = true end
@@ -1487,11 +1487,11 @@ function dchk_methods:onChange(func)
 end
 
 --- Creates a DNumSlider. The DNumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
---@param Panel? parent Panel to parent to.
+--@param any? parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DCheckBox The new DCheckBox.
 function vgui_library.createDNumSlider(parent, name)
-	if parent then parent = pnlunwrap(parent) end
+	if parent then parent = unwrap(parent) end
 	
 	local new = vgui.Create("DNumSlider", parent, name)
 	if !parent then panels[new] = true end
