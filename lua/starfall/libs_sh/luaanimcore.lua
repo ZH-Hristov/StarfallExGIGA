@@ -1,4 +1,4 @@
-if (SERVER) then return end
+if (!game.Singleplayer() and SERVER) then return end
 
 local animations = {}
 
