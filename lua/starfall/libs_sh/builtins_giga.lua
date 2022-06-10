@@ -326,7 +326,6 @@ else
 			unlockControls(instance)
 		end
 	end
-
 end
 
 end

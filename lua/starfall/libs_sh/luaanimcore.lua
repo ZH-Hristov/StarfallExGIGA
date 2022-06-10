@@ -616,7 +616,9 @@ end)
 function animations.ResetEntityAnimationProperties(ent)
 	local anims = ent.starfallgiga_animations
 	if anims and table.Count(anims) > 0 then
-		ent:SetIK(false)
+		if CLIENT then
+			ent:SetIK(false)
+		end
 		ResetInSequence(ent)
 	else
 		--ent:SetIK(true)
