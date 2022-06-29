@@ -4,11 +4,17 @@ local registerprivilege = SF.Permissions.registerPrivilege
 
 --Can only return if you are the first argument
 local function returnOnlyOnYourself(instance, args, ply)
-	if args[1] and instance.player == ply or instance.player:IsSuperAdmin() then return args[2] end
+	if args[1] and instance.player == ply or superOrAdmin(instance) then return args[2] end
 end
 
 local function adminOnlyReturnHook(instance, args, ply)
 	if instance.player:IsAdmin() then return args[2] end
+end
+
+local function superOrAdmin(instance)
+	if instance.player == SF.Superuser then return true end
+	if instance.player:IsSuperAdmin() then return true end
+	return false
 end
 
 duplicator.RegisterEntityModifier( "STARFALL_SAVETRIGGERS", function(ply, dent, data)
@@ -73,7 +79,7 @@ SF.hookAdd("PlayerPostThink")
 -- @param number act The activity. See https://wiki.facepunch.com/gmod/Enums/ACT
 -- @return number The new, translated activity.
 SF.hookAdd("TranslateActivity", nil, nil, function(instance, args, ply, act)
-	if ply:GetOwner() == instance.player or instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if ply:GetOwner() == instance.player or superOrAdmin(instance) or instance.player==SF.Superuser then
 		if args[2] then return args[2] end
 	end
 end)
@@ -103,7 +109,7 @@ SF.hookAdd("ScalePlayerDamage", nil, function(instance, ply, hitgr, dmg)
 		instance.Types.Vector.Wrap(dmg:GetDamageForce())
 	}
 	end, function(instance, args, ply, hitgr, dmginfo)
-	if args[2] and instance.player:IsSuperAdmin() then dmginfo:ScaleDamage(args[2]) end
+	if args[2] and superOrAdmin(instance) then dmginfo:ScaleDamage(args[2]) end
 end)
 
 --- Allows you to change the players inputs before they are processed by the server.
@@ -225,21 +231,20 @@ if SERVER then
 	-- @param Vector dmgpos Damage pos.
 	-- @param Vector dmgforce Damage force.
 	-- @return number? Return to scale the damage by the scaler variable.
-
-SF.hookAdd("ScaleNPCDamage", nil, function(instance, ply, hitgr, dmg) 
-	return true, {
-		instance.WrapObject(ply),
-		hitgr,
-		instance.WrapObject(dmg:GetAttacker()),
-		instance.WrapObject(dmg:GetInflictor()),
-		dmg:GetDamage(),
-		dmg:GetDamageType(),
-		instance.Types.Vector.Wrap(dmg:GetDamagePosition()),
-		instance.Types.Vector.Wrap(dmg:GetDamageForce())
-	}
-	end, function(instance, args, ply, hitgr, dmginfo)
-	if args[2] and instance.player:IsSuperAdmin() then dmginfo:ScaleDamage(args[2]) end
-end)
+	SF.hookAdd("ScaleNPCDamage", nil, function(instance, ply, hitgr, dmg) 
+		return true, {
+			instance.WrapObject(ply),
+			hitgr,
+			instance.WrapObject(dmg:GetAttacker()),
+			instance.WrapObject(dmg:GetInflictor()),
+			dmg:GetDamage(),
+			dmg:GetDamageType(),
+			instance.Types.Vector.Wrap(dmg:GetDamagePosition()),
+			instance.Types.Vector.Wrap(dmg:GetDamageForce())
+		}
+		end, function(instance, args, ply, hitgr, dmginfo)
+		if args[2] and superOrAdmin(instance) then dmginfo:ScaleDamage(args[2]) end
+	end)
 	
 	--- Called when a Starfall trigger is activated.
 	-- @name OnStarFallTrigger
@@ -275,6 +280,20 @@ end)
 		}
 	end, adminOnlyReturnHook)
 	
+	--- Returns whether or not a player is allowed to pick an item up. Return false to disallow pickup. (Admin only)
+	--- Admins can return to set whether the pickup is allowed.
+	-- @name PlayerCanPickupItem
+	-- @class hook
+	-- @server
+	-- @param Player player Player attempting to pick up
+	-- @param Entity item The item the player is attempting to pick up
+	SF.hookAdd("PlayerCanPickupItem", nil, function(instance, ply, item)
+		return true, {
+			instance.WrapObject(ply),
+			instance.WrapObject(item)
+		}
+	end, adminOnlyReturnHook)
+	
 	--- Called when an entity receives a damage event, after passing damage filters, etc.
 	-- @name PostEntityTakeDamage
 	-- @class hook
@@ -299,6 +318,17 @@ end)
 			instance.Types.Vector.Wrap(dmg:GetDamageForce())
 		}
 	end, nil)
+	
+	--- Called to give players the default set of weapons. Return true to prevent default loadout. (Admin only)
+	-- @name PlayerLoadout
+	-- @class hook
+	-- @server
+	-- @param Player Player to give weapons to.
+	SF.hookAdd("PlayerLoadout", nil, function(instance, ply)
+		return true, {
+			instance.WrapObject(ply)
+		}
+	end, adminOnlyReturnHook)
 	
 	--- Called when a player switches their weapon. Allows overriding if admin.
 	-- @name PlayerSwitchWeaponEX
@@ -331,7 +361,7 @@ local owrap, ounwrap = instance.WrapObject, instance.UnwrapObject
 local ents_methods, ent_meta, ewrap, eunwrap = instance.Types.Entity.Methods, instance.Types.Entity, instance.Types.Entity.Wrap, instance.Types.Entity.Unwrap
 local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
 local ang_meta, awrap, aunwrap = instance.Types.Angle, instance.Types.Angle.Wrap, instance.Types.Angle.Unwrap
-local wep_meta, wwrap, wunwrap = instance.Types.Weapon, instance.Types.Weapon.Wrap, instance.Types.Weapon.Unwrap
+local wep_meta, wwrap, wunwrap, weapon_methods = instance.Types.Weapon, instance.Types.Weapon.Wrap, instance.Types.Weapon.Unwrap, instance.Types.Weapon.Methods
 local veh_meta, vhwrap, vhunwrap = instance.Types.Vehicle, instance.Types.Vehicle.Wrap, instance.Types.Vehicle.Unwrap
 local cwrap, cunwrap = instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local cmv_meta, cuc_meta, cmv_methods, cuc_methods = instance.Types.CMoveData, instance.Types.CUserCmd, instance.Types.CMoveData.Methods, instance.Types.CUserCmd.Methods
@@ -352,9 +382,16 @@ end
 --- Marks the entity to call GM:ShouldCollide.
 -- @param boolean enable Enable or disable the custom collision check.
 function ents_methods:setCustomCollisionCheck(new)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		eunwrap(self):SetCustomCollisionCheck(new)
 	end
+end
+
+--- Returns whether this entity has the specified spawnflags bits set.
+--@param number flag The spawnflag bits to check.
+--@return boolean Whether the entity has that spawnflag set or not.
+function ents_methods:hasSpawnFlags(val)
+	return eunwrap(self):HasSpawnFlags(val)
 end
 
 --- Adds keys to the move data, as if player pressed them.
@@ -362,7 +399,7 @@ end
 -- @param number keys Key(s) to add, check builtin IN_KEY enums.
 function cmv_methods:addKey(keys)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:AddKey(keys)
 	end
 end
@@ -372,7 +409,7 @@ end
 -- @param number buttons A number representing which buttons are down, check builtin IN_KEY enums.
 function cmv_methods:setButtons(buttons)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetButtons(buttons)
 	end
 end
@@ -382,7 +419,7 @@ end
 -- @param number keys Key(s) to remove, check builtin IN_KEY enums.
 function cmv_methods:removeKey(keys)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		local newbuttons = bit.band(cmd:GetButtons(), bit.bnot(keys))
 		cmd:SetButtons(newbuttons)
 	end
@@ -399,7 +436,7 @@ end
 -- @param number speed Forward speed
 function cmv_methods:setForwardSpeed(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetForwardSpeed(speed)
 	end
 end
@@ -408,7 +445,7 @@ end
 -- @param number speed Side speed
 function cmv_methods:setSideSpeed(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetSideSpeed(speed)
 	end
 end
@@ -431,7 +468,7 @@ end
 -- @param Vector The velocity to set.
 function cmv_methods:setVelocity(new)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetVelocity(vunwrap(new))
 	end
 end
@@ -440,7 +477,7 @@ end
 -- @param number speed Up speed
 function cmv_methods:setUpSpeed(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetUpSpeed(speed)
 	end
 end
@@ -448,7 +485,7 @@ end
 --- Removes all keys from the command.
 function cuc_methods:clearButtons()
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:ClearButtons()
 	end
 end
@@ -456,7 +493,7 @@ end
 --- Clears the movement from the command.
 function cuc_methods:clearMovement()
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:ClearMovement()
 	end
 end
@@ -465,7 +502,7 @@ end
 -- @param number speed The new speed to request. The client will not be able to move faster than their set walk/sprint speed.
 function cuc_methods:setForwardSpeed(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetForwardSpeed(speed)
 	end
 end
@@ -474,7 +511,7 @@ end
 -- @param number speed The new speed to request. The client will not be able to move faster than their set walk/sprint speed.
 function cuc_methods:setSideSpeed(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetSideSpeed(speed)
 	end
 end
@@ -483,7 +520,7 @@ end
 -- @param number speed The new speed to request.
 function cuc_methods:setUpSpeed(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetUpSpeed(speed)
 	end
 end
@@ -493,7 +530,7 @@ end
 -- @param number buttons Bitflag representing which buttons are "down", check builtin IN_KEY enums.
 function cuc_methods:setButtons(buttons)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetButtons(buttons)
 	end
 end
@@ -503,7 +540,7 @@ end
 -- @param number key Bitflag to be removed from the key bitflag, check builtin IN_KEY enums.
 function cuc_methods:removeKey(key)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:RemoveKey(key)
 	end
 end
@@ -520,7 +557,7 @@ end
 -- @param number speed The new speed to request. The client will not be able to move faster than their set walk/sprint speed.
 function cuc_methods:setForwardMove(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetForwardMove(speed)
 	end
 end
@@ -529,7 +566,7 @@ end
 -- @param number speed The new speed to request.
 function cuc_methods:setSideMove(speed)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetSideMove(speed)
 	end
 end
@@ -539,7 +576,7 @@ end
 function cuc_methods:setViewAngles(ang)
 	local cmd = ounwrap(self)
 	ang = aunwrap(ang)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetViewAngles(ang)
 	end
 end
@@ -548,7 +585,7 @@ end
 -- @param number newspeed Angular horizontal move delta.
 function cuc_methods:setMouseX(new)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetMouseX(new)
 	end
 end
@@ -557,7 +594,7 @@ end
 -- @param number newspeed Angular horizontal move delta.
 function cuc_methods:setMouseY(new)
 	local cmd = ounwrap(self)
-	if instance.player:IsSuperAdmin() or instance.player==SF.SuperUser then
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		cmd:SetMouseY(new)
 	end
 end
@@ -584,7 +621,7 @@ end
 --- Strips a player of their weapons
 -- @server
 function player_methods:stripWeapons()
-	if instance.player==SF.SuperUser or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):StripWeapons()
 	end
 end
@@ -594,7 +631,7 @@ end
 -- @param number amount The amount of ammo to give
 -- @param string|number idorname The string ammo name or number id of the ammo
 function player_methods:giveAmmo(amount, ammotype, hidePopup)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):GiveAmmo(amount, ammotype, hidePopup)
 	end
 end
@@ -604,7 +641,7 @@ end
 -- @param number amount The amount to set the ammo to
 -- @param string|number idorname The string ammo name or number id of the ammo
 function player_methods:setAmmo(amount, ammotype)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):SetAmmo(amount, ammotype)
 	end
 end
@@ -613,7 +650,7 @@ end
 -- @shared 
 -- @param number newspeed The new walk speed when sv_friction is below 10. Higher sv_friction values will result in slower speed. Has to be 7 or above or the player won't be able to move.
 function player_methods:setWalkSpeed(mvsp)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):SetWalkSpeed(mvsp)
 	end
 end
@@ -622,7 +659,7 @@ end
 -- @shared 
 -- @param number newspeed The new sprint speed when sv_friction is below 10. Higher sv_friction values will result in slower speed. Has to be 7 or above or the player won't be able to move.
 function player_methods:setRunSpeed(mvsp)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):SetRunSpeed(mvsp)
 	end
 end
@@ -631,7 +668,7 @@ end
 -- @shared 
 -- @param number newspeed The new slow walking speed.
 function player_methods:setSlowWalkSpeed(mvsp)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):SetSlowWalkSpeed(mvsp)
 	end
 end
@@ -640,7 +677,7 @@ end
 -- @shared 
 -- @param number newspeed The walk speed multiplier that crouch speed should be.
 function player_methods:setCrouchedWalkSpeed(mvsp)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):SetCrouchedWalkSpeed(mvsp)
 	end
 end
@@ -665,7 +702,7 @@ end
 -- @shared
 -- @param string mdlname The path to the model.
 function ents_methods:setModel(model)
-	if eunwrap(self):GetOwner() == instance.player or instance.player==SF.SuperUser or instance.player:IsAdmin() then
+	if eunwrap(self):GetOwner() == instance.player or instance.player==SF.Superuser or instance.player:IsAdmin() then
 		eunwrap(self):SetModel(model)
 	end
 end
@@ -683,7 +720,7 @@ end
 --- Sets the jump power, eg. the velocity the player will applied to when he jumps.
 -- @param number jumpPower The new jump velocity.
 function player_methods:setJumpPower(new)
-	if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+	if superOrAdmin(instance) then
 		getply(self):SetJumpPower(new)
 	end
 end
@@ -691,7 +728,7 @@ end
 --- Sets local position relative to the parented position. This is for use with Entity:SetParent to offset position.
 -- @param Vector newpos The local position.
 function ents_methods:setLocalPos(new)
-	if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 		eunwrap(self):SetLocalPos(vunwrap(new))
 	end
 end
@@ -699,7 +736,7 @@ end
 --- Sets angles relative to angles of Entity:getParent
 -- @param Angle newang The local angle.
 function ents_methods:setLocalAngles(new)
-	if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 		eunwrap(self):SetLocalAngles(aunwrap(new))
 	end
 end
@@ -779,9 +816,36 @@ function ents_methods:getNWEntity(key, val)
 		return eunwrap(self):GetNWEntity(instancekey..key, val)
 end
 
+--- Animates an animatable prop
+-- @shared
+-- @param number|string animation Animation number or string name.
+-- @param number? frame Optional int (Default 0) The starting frame number. Does nothing if nil
+-- @param number? rate Optional float (Default 1) Frame speed. Does nothing if nil
+function ents_methods:setAnimation(animation, frame, rate)
+	local ent = eunwrap(self)
+	if !superOrAdmin(instance) or ent:GetClass() != "starfall_animatableprop" then return end
+
+	if isstring(animation) then
+		animation = ent:LookupSequence(animation)
+	elseif not isnumber(animation) then
+		SF.ThrowTypeError("number or string", SF.GetType(animation), 2)
+	end
+	
+	if animation~=nil then
+		ent:ResetSequence(animation)
+	end
+	if frame ~= nil then
+		checkluatype(frame, TYPE_NUMBER)
+		ent:SetCycle(frame)
+	end
+	if rate ~= nil then
+		checkluatype(rate, TYPE_NUMBER)
+		ent:SetPlaybackRate(rate)
+	end
+end
 
 if SERVER then
-	local FrozenPlayers, triggers, nwents
+	local FrozenPlayers, triggers, nwents, animatableprops
 	
 	local nwvarremovecase = {
 		number = function(ent, key) ent:SetNWInt(key, nil) end,
@@ -797,6 +861,7 @@ if SERVER then
 		FrozenPlayers = {}
 		triggers = {}
 		nwents = {}
+		animatableprops = {}
 	end)
 
 	instance:AddHook("deinitialize", function()
@@ -823,7 +888,31 @@ if SERVER then
 				end
 			end
 		end
+		
+		for ent, _ in pairs(animatableprops) do
+			SafeRemoveEntity(ent)
+		end
 	end)
+	
+	--- Lets you change the number of bullets in the given weapons primary clip.
+	--@server
+	--@param number ammo The amount of bullets the clip should contain.
+	function weapon_methods:setClip1(val)
+		local wep = wunwrap(self)
+		if superOrAdmin(instance) then
+			wep:SetClip1(val)
+		end
+	end
+	
+	--- Lets you change the number of bullets in the given weapons secondary clip.
+	--@server
+	--@param number ammo The amount of bullets the clip should contain.
+	function weapon_methods:setClip2(val)
+		local wep = wunwrap(self)
+		if superOrAdmin(instance) then
+			wep:SetClip2(val)
+		end
+	end
 	
 	--- Plays a scripted sequence on an NPC. Allows for root motion.
 	-- @server
@@ -850,12 +939,46 @@ if SERVER then
 		ss:Fire("BeginSequence", "", 0)
 	end
 	
+	--- Returns the weapon the NPC is carrying.
+	--@server
+	--@return Entity The NPC's current weapon.
+	function npc_methods:getActiveWeapon()
+		local npc = npcunwrap(self)
+		
+		return ewrap(npc:GetActiveWeapon())
+	end
+	
+	--- Makes a physics prop into an animatable prop entity.
+	-- @server
+	--@return Entity animatableProp The prop as an animatable prop.
+	function ents_methods:makeAnimatable()
+		local ent = eunwrap(self)
+		if !superOrAdmin() or ent:GetClass() != "prop_physics" then return end
+		
+		local prop_animatable = ents.Create( "starfall_animatableprop" )
+		prop_animatable:SetModel( ent:GetModel() )
+		prop_animatable:SetPos( ent:GetPos() )
+		prop_animatable:SetAngles( ent:GetAngles() )
+		prop_animatable:SetSequence( ent:GetSequence() )
+		prop_animatable:SetCycle( ent:GetCycle() )
+		prop_animatable:SetSkin( ent:GetSkin() or 0 )
+		
+		prop_animatable:Spawn()
+		prop_animatable:Activate()
+		
+		prop_animatable.EntityMods = ent.EntityMods
+		
+		ent:Remove()
+		animatableprops[prop_animatable] = true
+		return ewrap(prop_animatable)
+	end
+	
 	--- Sets the mapping name of the entity. Same as the ent_setname console command.
 	-- @server
 	-- @param string name The name to set for the entity.
 	function ents_methods:setName(name)
 		local ent = eunwrap(self)
-		if ent:GetOwner() == instance.player or instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if ent:GetOwner() == instance.player or superOrAdmin(instance) then
 			ent:SetName(name)
 		end
 	end
@@ -864,7 +987,7 @@ if SERVER then
 	-- @param number act The activity number to send to the entity.
 	-- @server
 	function ents_methods:restartGesture(act)
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):RestartGesture(act)
 		end
 	end
@@ -876,7 +999,7 @@ if SERVER then
 	function ents_methods:setNWInt(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWInt(instancekey..key, val)
 		end
 	end
@@ -888,7 +1011,7 @@ if SERVER then
 	function ents_methods:setNWString(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) then
 			ent:SetNWString(instancekey..key, val)
 		end
 	end
@@ -900,7 +1023,7 @@ if SERVER then
 	function ents_methods:setNWVector(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWVector(instancekey..key, vunwrap(val))
 		end
 	end
@@ -912,7 +1035,7 @@ if SERVER then
 	function ents_methods:setNWFloat(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWFloat(instancekey..key, val)
 		end
 	end
@@ -924,7 +1047,7 @@ if SERVER then
 	function ents_methods:setNWAngle(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWAngle(instancekey..key, aunwrap(val))
 		end
 	end
@@ -936,7 +1059,7 @@ if SERVER then
 	function ents_methods:setNWBool(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWBool(instancekey..key, val)
 		end
 	end
@@ -948,7 +1071,7 @@ if SERVER then
 	function ents_methods:setNWEntity(key, val)
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
-		if instance.player:IsSuperAdmin() or instance.player == SF.SuperUser then
+		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWEntity(instancekey..key, eunwrap(val))
 		end
 	end
@@ -957,7 +1080,7 @@ if SERVER then
 	-- @server
 	-- @param boolean frozen Whether the player should be frozen.
 	function player_methods:freeze(frozen)
-		if instance.player:IsAdmin() or instance.player:IsSuperAdmin() then
+		if superOrAdmin(instance) then
 			getply(self):Freeze(frozen)
 			if frozen then table.insert(FrozenPlayers, getply(self)) end
 		end
@@ -967,7 +1090,7 @@ if SERVER then
 	-- @server
 	-- @param number movetype The new movetype, see https://wiki.facepunch.com/gmod/Enums/MOVETYPE
 	function ents_methods:setMoveType(movetype)
-		if instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if superOrAdmin(instance) then
 			eunwrap(self):SetMoveType(movetype)
 		end
 	end
@@ -975,7 +1098,7 @@ if SERVER then
 	--- Sets the entity's collision group. No restrictions, admin only.
 	-- @param number group The COLLISION_GROUP value to set it to
 	function ents_methods:setCollisionGroupEX(group)
-		if !instance.player:IsAdmin() then SF.Throw("You are not an admin!", 2) end
+		if !superOrAdmin(instance) then SF.Throw("You are not an admin!", 2) end
 		checkluatype(group, TYPE_NUMBER)
 		if group < 0 or group >= LAST_SHARED_COLLISION_GROUP then SF.Throw("Invalid collision group value", 2) end
 		local ent = eunwrap(self)
@@ -987,7 +1110,7 @@ if SERVER then
 	-- @server
 	-- @param number newhealth New health value.
 	function ents_methods:setHealth(new)
-		if instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if superOrAdmin(instance) then
 			ounwrap(self):SetHealth(new)
 		end
 	end
@@ -996,7 +1119,7 @@ if SERVER then
 	-- @server
 	-- @param number newmaxhealth New max health value.
 	function ents_methods:setMaxHealth(new)
-		if instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if superOrAdmin(instance) then
 			ounwrap(self):SetMaxHealth(new)
 		end
 	end
@@ -1057,11 +1180,62 @@ if SERVER then
 		return ewrap(colly)
 	end
 	
+	--- Creates a trigger box with a custom size.
+	-- @server
+	-- @param Vector origin The position the middle of the trigger will be in.
+	-- @param Vector mins The size of the bottom corner.
+	-- @param Vector maxs The size of the opposite corner.
+	-- @param string|table? filter A string or table of strings of entity classes. Trigger will be activated only by these classes. Filters players by default.
+	-- @param function onEnter The function to run when a valid entity enters the trigger.
+	-- @param function? onExit The function to run when a valid entity exits the trigger.
+	-- @return Entity The trigger entity.
+	function trigger_library.createBox(origin, mins, maxs, filter, onEnter, onExit)
+		local colly = ents.Create("starfall_triggerbox")
+		colly:SetModel("models/hunter/blocks/cube025x025x025.mdl")
+		colly:SetMaterial("models/wireframe")
+		colly:SetPos( vunwrap(origin) )
+		colly:SetSize(vunwrap(mins), vunwrap(maxs))
+		colly:SetMoveType(MOVETYPE_NONE)
+		colly:GetPhysicsObject():Wake()
+		colly:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+		colly:SetTrigger(true)
+		colly.filter = {}
+		
+		if filter then
+			for _, cls in pairs(filter) do
+				colly.filter[cls] = true
+			end
+		else
+			colly.filter = {player = true}
+		end
+		
+		function colly:StartTouch(ent)
+			local cls = ent:GetClass()
+			if self.filter[cls] then
+				instance:runFunction(onEnter, ent)
+			end
+		end
+		
+		if onExit then
+			function colly:EndTouch(ent)
+				local cls = ent:GetClass()
+				if self.filter[cls] then
+					instance:runFunction(onExit, ent)
+				end
+			end
+		end
+		
+		colly:SetSolidFlags(12)
+		colly:DrawShadow(false)
+		table.insert(triggers, colly)
+		return ewrap(colly)
+	end
+	
 	--- Sets an entity's local velocity
 	-- @server
 	-- @param Vector velocity Velocity to apply to entity.
 	function ents_methods:setLocalVelocity(velocity)
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):SetLocalVelocity(vunwrap(velocity))
 		end
 	end
@@ -1071,7 +1245,7 @@ if SERVER then
 	-- @param string scene Filepath to scene.
 	-- @param number? delay Delay in seconds until the scene starts playing.
 	function ents_methods:playScene(scene, delay)
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):PlayScene(scene, delay)
 		end
 	end
@@ -1097,15 +1271,33 @@ if SERVER then
 	-- @param Weapon newwep The weapon to try to pick up.
 	-- @param boolean? ammoOnly If set to true, the player will only attempt to pick up the ammo from the weapon. The weapon will not be picked up even if the player doesn't have a weapon of this type, and the weapon will be removed if the player picks up any ammo from it.
 	function player_methods:pickupWeapon(wep, ammoonly)
-		if getply(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if getply(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			getply(self):PickupWeapon(eunwrap(wep), ammoonly)
+		end
+	end
+	
+	--- Sets a player's armor.
+	--@server
+	--@param number amount The amount that the player armor is going to be set to.
+	function player_methods:setArmor(val)
+		if getply(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			getply(self):SetArmor(val)
+		end
+	end
+	
+	--- Sets the maximum amount of armor the player should have. This affects default built-in armor pickups, but not Player:setArmor.
+	--@server
+	--@param number max The new max armor value.
+	function player_methods:setMaxArmor(val)
+		if getply(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			getply(self):SetMaxArmor(val)
 		end
 	end
 	
 	--- Forces an entity to spawn. Initializes the entity and starts its networking. If called on a player, it will respawn them.
 	-- @server
 	function ents_methods:spawn()
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):Spawn()
 		end
 	end
@@ -1116,7 +1308,7 @@ if SERVER then
 	-- @param number solidType The solid type of the physics object to create, see Enums/SOLID. Should be SOLID_VPHYSICS (6) in most cases.
 	-- @return boolean Returns true on success, false otherwise. This will fail if the entity's current model has no associated physics mesh.
 	function ents_methods:physicsInitStatic(val)
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			return eunwrap(self):PhysicsInitStatic(val)
 		end
 	end
@@ -1129,7 +1321,7 @@ if SERVER then
 	-- @param string physMat Physical material from surfaceproperties.txt
 	-- @return boolean Returns true on success, false otherwise.
 	function ents_methods:physicsInitSphere(radius, physmat)
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			return eunwrap(self):PhysicsInitSphere(radius, physmat)
 		end
 	end
@@ -1276,7 +1468,7 @@ else
 	--- Forces the entity to reconfigure its bones. You might need to call this after changing your model's scales or when manually drawing the entity multiple times at different positions.
 	-- @client
 	function ents_methods:setupBones()
-		if eunwrap(self):GetOwner() == instance.player or instance.player:IsAdmin() or instance.player==SF.SuperUser then
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):SetupBones()
 		end
 	end

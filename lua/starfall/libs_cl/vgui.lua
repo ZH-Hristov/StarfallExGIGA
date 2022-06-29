@@ -1,6 +1,9 @@
 -- Global to all starfalls
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
+local function checkoptional(val, chk)
+	if val then checkluatype(val, chk) end
+end
 
 --- Panel type
 -- @name Panel
@@ -37,6 +40,13 @@ SF.RegisterType("DFrame", false, true, debug.getregistry().DFrame, "Panel")
 -- @libtbl dscrl_meta
 SF.RegisterType("DScrollPanel", false, true, debug.getregistry().DScrollPanel, "DPanel")
 
+--- DColorMixer type
+-- @name DColorMixer
+-- @class type
+-- @libtbl dclm_methods
+-- @libtbl dclm_meta
+SF.RegisterType("DColorMixer", false, true, debug.getregistry().DColorMixer, "DPanel")
+
 --- DLabel type
 -- @name DLabel
 -- @class type
@@ -50,6 +60,13 @@ SF.RegisterType("DLabel", false, true, debug.getregistry().DLabel, "Panel")
 -- @libtbl dbut_methods
 -- @libtbl dbut_meta
 SF.RegisterType("DButton", false, true, debug.getregistry().DButton, "DLabel")
+
+--- DComboBox type
+-- @name DComboBox
+-- @class type
+-- @libtbl dcom_methods
+-- @libtbl dcom_meta
+SF.RegisterType("DComboBox", false, true, debug.getregistry().DComboBox, "DComboBox")
 
 --- DCheckBox type
 -- @name DCheckBox
@@ -119,6 +136,8 @@ local dprg_methods, dprg_meta, dprgwrap, dprgunwrap = instance.Types.DProgress.M
 local dtxe_methods, dtxe_meta, dtxewrap, dtxeunwrap = instance.Types.DTextEntry.Methods, instance.Types.DTextEntry, instance.Types.DTextEntry.Wrap, instance.Types.DTextEntry.Unwrap
 local dimg_methods, dimg_meta, dimgwrap, dimgunwrap = instance.Types.DImage.Methods, instance.Types.DImage, instance.Types.DImage.Wrap, instance.Types.DImage.Unwrap
 local dnms_methods, dnms_meta, dnmswrap, dnmsunwrap = instance.Types.DNumSlider.Methods, instance.Types.DNumSlider, instance.Types.DNumSlider.Wrap, instance.Types.DNumSlider.Unwrap
+local dcom_methods, dcom_meta, dcomwrap, dcomunwrap = instance.Types.DComboBox.Methods, instance.Types.DComboBox, instance.Types.DComboBox.Wrap, instance.Types.DComboBox.Unwrap
+local dclm_methods, dclm_meta, dclmwrap, dclmunwrap = instance.Types.DColorMixer.Methods, instance.Types.DColorMixer, instance.Types.DColorMixer.Wrap, instance.Types.DColorMixer.Unwrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local plyunwrap = instance.Types.Player.Unwrap
 local vgui_library = instance.Libraries.vgui
@@ -169,6 +188,14 @@ end
 
 function dnms_meta:__tostring()
 	return "DNumSlider"
+end
+
+function dcom_meta:__tostring()
+	return "DComboBox"
+end
+
+function dclm_meta:__tostring()
+	return "DColorMixer"
 end
 
 local function unwrap(pnl)
@@ -553,6 +580,40 @@ function pnl_methods:sizeToContentsY(addVal)
 	local uwp = unwrap(self)
 
 	uwp:SizeToContentsY(addVal)
+end
+
+--- Enables or disables the mouse input for the panel.
+--@param boolean mouseInput Whenever to enable or disable mouse input.
+function pnl_methods:setMouseInputEnabled(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = unwrap(self)
+	
+	uwp:SetMouseInputEnabled(enable)
+end
+
+--- Returns true if the panel can receive mouse input.
+--return boolean mouseInputEnabled
+function pnl_methods:getMouseInputEnabled()
+	local uwp = unwrap(self)
+	
+	return uwp:IsMouseInputEnabled()
+end
+
+--- Enables or disables the keyboard input for the panel.
+--@param boolean keyboardInput Whenever to enable or disable keyboard input.
+function pnl_methods:setKeyboardInputEnabled(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = unwrap(self)
+	
+	uwp:SetKeyboardInputEnabled(enable)
+end
+
+--- Returns true if the panel can receive keyboard input.
+--return boolean keyboardInputEnabled
+function pnl_methods:getKeyboardInputEnabled()
+	local uwp = unwrap(self)
+	
+	return uwp:IsKeyboardInputEnabled()
 end
 
 --- Creates a DPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
@@ -1633,6 +1694,262 @@ function dnms_methods:onValueChange(func)
 	local uwp = dnmsunwrap(self)
 	
 	function uwp:OnValueChanged(val) instance:runFunction(func, val) end
+end
+
+--- Creates a DComboBox. A field with multiple selectable values. Inherits functions from DButton.
+--@param any? parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DComboBox The new DComboBox.
+function vgui_library.createDComboBox(parent, name)
+	if parent then parent = unwrap(parent) end
+	
+	local new = vgui.Create("DComboBox", parent, name)
+	if !parent then panels[new] = true end
+	return dcomwrap(new)
+end
+
+--- Adds a choice to the combo box.
+--@param string name The text show to the user.
+--@param any? value The data accompanying this string. If left empty, the value argument is used instead.
+--@param boolean? selected Should this be the default selected text show to the user or not.
+--@param string? icon Adds an icon for this choice.
+--@return number The index of the new option.
+function dcom_methods:addChoice(name, val, def, icon)
+	checkluatype(name, TYPE_STRING)
+	checkoptional(def, TYPE_BOOL)
+	checkoptional(icon, TYPE_STRING)
+	local uwp = dcomunwrap(self)
+	
+	return uwp:AddChoice(name, val, def, icon)
+end
+
+--- Adds a spacer below the currently last item in the drop down. Recommended to use with DComboBox:setSortItems set to false.
+function dcom_methods:addSpacer()
+	local uwp = dcomunwrap(self)
+	
+	uwp:AddSpacer()
+end
+
+--- Sets whether or not the items should be sorted alphabetically in the dropdown menu of the DComboBox. If set to false, items will appear in the order they were added by DComboBox:addChoice calls. Enabled by default.
+--@param boolean sort true to enable, false to disable.
+function dcom_methods:setSortItems(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = dcomunwrap(self)
+	
+	uwp:SetSortItems(enable)
+end
+
+--- Opens the combo box drop down menu. Called when the combo box is clicked.
+function dcom_methods:openMenu()
+	local uwp = dcomunwrap(self)
+	
+	uwp:OpenMenu()
+end
+
+--- Closes the combo box menu. Called when the combo box is clicked while open.
+function dcom_methods:closeMenu()
+	local uwp = dcomunwrap(self)
+	
+	uwp:CloseMenu()
+end
+
+--- Sets the text shown in the combo box when the menu is not collapsed.
+--@param string txt The text in the DComboBox.
+function dcom_methods:setValue(txt)
+	checkluatype(txt, TYPE_STRING)
+	local uwp = dcomunwrap(self)
+	
+	uwp:SetValue(txt)
+end
+
+--- Returns whether or not the combo box's menu is opened.
+--@return boolean True if the menu is open, false otherwise.
+function dcom_methods:isMenuOpen()
+	local uwp = dcomunwrap(self)
+	
+	return uwp:IsMenuOpen()
+end
+
+--- Returns the currently selected option's text and data
+--@return string The option's text value.
+--@return any The option's stored data.
+function dcom_methods:getSelected()
+	local uwp = dcomunwrap(self)
+	
+	return uwp:GetSelected()
+end
+
+--- Returns the index (ID) of the currently selected option.
+--@return number The ID of the currently selected option.
+function dcom_methods:getSelectedID()
+	local uwp = dcomunwrap(self)
+	
+	return uwp:GetSelectedID()
+end
+
+--- Returns an option's text based on the given index.
+--@param number index The option index.
+--@return string The option's text value.
+function dcom_methods:getOptionText(id)
+	checkluatype(id, TYPE_NUMBER)
+	local uwp = dcomunwrap(self)
+	
+	return uwp:GetOptionText(id)
+end
+
+--- Returns an option's text based on the given data.
+--@param string data The data to look up the name of. If given a number and no matching data was found, the function will test given data against each tonumber'd data entry.
+--@return string The option's text value. If no matching data was found, the data itself will be returned. If multiple identical data entries exist, the first instance will be returned.
+function dcom_methods:getOptionTextByData(data)
+	checkluatype(data, TYPE_STRING)
+	local uwp = dcomunwrap(self)
+	
+	return uwp:GetOptionTextByData(data)
+end
+
+--- Returns an option's data based on the given index.
+--@param number index The option index.
+--@return any The option's data value.
+function dcom_methods:getOptionData(id)
+	checkluatype(id, TYPE_NUMBER)
+	local uwp = dcomunwrap(self)
+	
+	return uwp:GetOptionData(id)
+end
+
+--- Clears the combo box's text value, choices, and data values.
+function dcom_methods:clear()
+	local uwp = dcomunwrap(self)
+	
+	uwp:Clear()
+end
+
+--- Selects a combo box option by its index and changes the text displayed at the top of the combo box.
+--@param string value The text to display at the top of the combo box.
+--@param number index The option index.
+function dcom_methods:chooseOption(val, index)
+	checkluatype(val, TYPE_STRING)
+	checkluatype(index, TYPE_NUMBER)
+	local uwp = dcomunwrap(self)
+	
+	uwp:ChooseOption(val, index)
+end
+
+--- Selects an option within a combo box based on its table index.
+--@param number index Selects the option with given index.
+function dcom_methods:chooseOptionID(index)
+	checkluatype(index, TYPE_NUMBER)
+	local uwp = dcomunwrap(self)
+	
+	uwp:ChooseOptionID(index)
+end
+
+--- Called when an option in the combo box is selected.
+--@param function callback The function to run when an option is selected. Has three arguments: (The index of the option, the name of the option, the data assigned to the option)
+function dcom_methods:onSelect(func)
+	checkluatype(func, TYPE_FUNCTION)
+	local uwp = dcomunwrap(self)
+
+	function uwp:OnSelect(id, val, data) instance:runFunction(func, id, val, data) end
+end
+
+--- Creates a DColorMixer. A standard Derma color mixer. Inherits functions from DPanel.
+--@param any? parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DColorMixer The new DColorMixer.
+function vgui_library.createDColorMixer(parent, name)
+	if parent then parent = unwrap(parent) end
+	
+	local new = vgui.Create("DColorMixer", parent, name)
+	if !parent then panels[new] = true end
+	return dclmwrap(new)
+end
+
+--- Called when the player changes the color of the DColorMixer.
+--@param function callback The function to run when the color is changed. Has one argument which is the new color.
+function dclm_methods:valueChanged(func)
+	checkluatype(func, TYPE_FUNCTION)
+	local uwp = dclmunwrap(self)
+
+	function uwp:OnSelect(clr) instance:runFunction(func, cwrap( Color(clr.r, clr.g, clr.b, clr.a) )) end
+end
+
+--- Show / Hide the colors indicators in DColorMixer.
+--@param boolean show Show / Hide the colors indicators.
+function dclm_methods:setWangs(show)
+	checkluatype(show, TYPE_BOOL)
+	local uwp = dclmunwrap(self)
+	
+	uwp:SetWangs(show)
+end
+
+--- Returns whether the wangs are hidden.
+--@return boolean Are wangs hidden?
+function dclm_methods:getWangs()
+	local uwp = dclmunwrap(self)
+	
+	return uwp:GetWangs()
+end
+
+
+--- Show or hide the palette panel.
+--@param boolean show Show or hide the palette panel?
+function dclm_methods:setPalette(show)
+	checkluatype(show, TYPE_BOOL)
+	local uwp = dclmunwrap(self)
+	
+	uwp:SetPalette(show)
+end
+
+--- Returns whether the palette panel is hidden.
+--@return boolean Is palette panel hidden?
+function dclm_methods:getPalette()
+	local uwp = dclmunwrap(self)
+	
+	return uwp:GetPalette()
+end
+
+--- Returns whether the alpha bar is hidden.
+--@param boolean show Show or hide the alpha bar?
+function dclm_methods:setAlphaBar(show)
+	checkluatype(show, TYPE_BOOL)
+	local uwp = dclmunwrap(self)
+	
+	uwp:SetAlphaBar(show)
+end
+
+--- Show or hide the alpha bar.
+--@return boolean Is alpha bar hidden?
+function dclm_methods:getAlphaBar()
+	local uwp = dclmunwrap(self)
+	
+	return uwp:GetAlphaBar()
+end
+
+--- Sets the label's text to show.
+--@param string text Set to non empty string to show the label and its text. Give it an empty string or nothing and the label will be hidden.
+function dclm_methods:setLabel(txt)
+	checkluatype(txt, TYPE_STRING)
+	local uwp = dclmunwrap(self)
+	
+	uwp:SetLabel(txt)
+end
+
+--- Sets the color of the DColorMixer.
+--@param Color clr The color to set.
+function dclm_methods:setColor(clr)
+	clr = cunwrap(clr)
+	local uwp = dclmunwrap(self)
+	
+	uwp:SetColor(clr)
+end
+
+--- Returns the current selected color.
+--@return Color The current selected color.
+function dclm_methods:getColor()
+	local uwp = dclmunwrap(self)
+	
+	return cwrap(uwp:GetColor())
 end
 
 end
