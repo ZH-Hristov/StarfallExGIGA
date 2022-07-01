@@ -97,6 +97,17 @@ function builtins_library.enableHudAdmin(ply, active)
 	end
 end
 
+--- Returns an iterator function that can be used to loop through a table in order of member values, when the values of the table are also tables and contain that member.
+-- @shared
+-- @param table table Table to create iterator for.
+-- @param any key Key of the value member to sort by.
+-- @param boolean? descending Whether the iterator should iterate in descending order or not.
+-- @return function Iterator function.
+-- @return table The table the iterator was created for.
+function builtins_library.sortedPairsByMemberValue(tbl, mkey, desc)
+	return SortedPairsByMemberValue(tbl, mkey, desc)
+end
+
 --- Sets the map's lighting. Slow on big maps with lots of static props.
 -- @shared
 -- @param string lightstyle The light style. "a" is darkest, "z" is brightest.

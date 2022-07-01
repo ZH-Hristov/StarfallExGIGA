@@ -347,13 +347,119 @@ function pnl_methods:clear()
 	uwp:Clear()
 end
 
+--- Returns a table with all the child panels of the panel.
+--@return table Children
+function pnl_methods:getChildren()
+	local uwp = unwrap(self)
+	
+	return instance.Sanitize(uwp:GetChildren())
+end
+
+--- Returns the amount of children of the of panel.
+--@return number The amount of children the panel has.
+function pnl_methods:getChildCount()
+	local uwp = unwrap(self)
+	
+	return uwp:ChildCount()
+end
+
+--- Places the panel above the passed panel with the specified offset.
+--@param Panel panel Panel to position relatively to.
+--@param number? offset The align offset.
+function pnl_methods:moveAbove(pnl, off)
+	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
+	local uwp = unwrap(self)
+	pnl = unwrap(pnl)
+	
+	uwp:MoveAbove(pnl, off)
+end
+
+--- Places the panel below the passed panel with the specified offset.
+--@param Panel panel Panel to position relatively to.
+--@param number? offset The align offset.
+function pnl_methods:moveBelow(pnl, off)
+	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
+	local uwp = unwrap(self)
+	pnl = unwrap(pnl)
+	
+	uwp:MoveBelow(pnl, off)
+end
+
+--- Places the panel left to the passed panel with the specified offset.
+--@param Panel panel Panel to position relatively to.
+--@param number? offset The align offset.
+function pnl_methods:moveLeftOf(pnl, off)
+	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
+	local uwp = unwrap(self)
+	pnl = unwrap(pnl)
+	
+	uwp:MoveLeftOf(pnl, off)
+end
+
+--- Places the panel right to the passed panel with the specified offset.
+--@param Panel panel Panel to position relatively to.
+--@param number? offset The align offset.
+function pnl_methods:moveRightOf(pnl, off)
+	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
+	local uwp = unwrap(self)
+	pnl = unwrap(pnl)
+	
+	uwp:MoveRightOf(pnl, off)
+end
+
+--- Moves this panel object in front of the specified sibling (child of the same parent) in the render order, and shuffles up the Z-positions of siblings now behind.
+--@param Panel sibling The panel to move this one in front of. Must be a child of the same parent panel.
+--@return boolean false if the passed panel is not a sibling, otherwise nil.
+function pnl_methods:moveToAfter(pnl)
+	local uwp = unwrap(self)
+	pnl = unwrap(pnl)
+	
+	return uwp:MoveToAfter(pnl)
+end
+
+--- Moves this panel object behind the specified sibling (child of the same parent) in the render order, and shuffles up the Panel:setZPos of siblings now in front.
+--@param Panel sibling The panel to move this one behind. Must be a child of the same parent panel.
+--@return boolean false if the passed panel is not a sibling, otherwise nil.
+function pnl_methods:moveToBefore(pnl)
+	local uwp = unwrap(self)
+	pnl = unwrap(pnl)
+	
+	return uwp:MoveToBefore(pnl)
+end
+
+--- Sets the panels z position which determines the rendering order.
+--- Panels with lower z positions appear behind panels with higher z positions.
+--- This also controls in which order panels docked with Panel:dock appears.
+--@param number zindex The z position of the panel. Can't be lower than -32768 or higher than 32767.
+function pnl_methods:setZPos(pos)
+	checkluatype(pos, TYPE_NUMBER)
+	local uwp = unwrap(self)
+	
+	uwp:SetZPos(pos)
+end
+
+--- Moves the panel object behind all other panels on screen. If the panel has been made a pop-up with Panel:MakePopup, it will still draw in front of any panels that haven't.
+function pnl_methods:moveToBack()
+	local uwp = unwrap(self)
+	
+	uwp:MoveToBack()
+end
+
+--- Moves the panel in front of all other panels on screen. Unless the panel has been made a pop-up using Panel:makePopup, it will still draw behind any that have.
+function pnl_methods:moveToFront()
+	local uwp = unwrap(self)
+	
+	uwp:MoveToFront()
+end
+
 --- Resizes the panel object's width so that its right edge is aligned with the left of the passed panel. 
 --- An offset greater than zero will reduce the panel's width to leave a gap between it and the passed panel.
 --@param Panel targetPanel The panel to align the bottom of this one with.
 --@param number offset The gap to leave between this and the passed panel. Negative values will cause the panel's height to increase, forming an overlap.
 function pnl_methods:stretchRightTo(target, off)
 	local uwp = unwrap(self)
-	local uwtp = pnlunwrap(target)
+	local uwtp = unwrap(target)
+	checkluatype(off, TYPE_NUMBER)
 
 	uwp:StretchRightTo(uwtp, off)
 end
@@ -364,7 +470,8 @@ end
 --@param number offset The gap to leave between this and the passed panel. Negative values will cause the panel's height to increase, forming an overlap.
 function pnl_methods:stretchBottomTo(target, off)
 	local uwp = unwrap(self)
-	local uwtp = pnlunwrap(target)
+	local uwtp = unwrap(target)
+	checkluatype(off, TYPE_NUMBER)
 
 	uwp:StretchBottomTo(uwtp, off)
 end
@@ -376,11 +483,63 @@ function pnl_methods:makePopup()
 	uwp:MakePopup()
 end
 
+--- Parents the panel to the HUD. Makes it invisible on the escape-menu and disables controls.
+function pnl_methods:parentToHUD()
+	local uwp = unwrap(self)
+	
+	uwp:ParentToHUD()
+end
+
+--- Sets the alignment of the contents. Check https://wiki.facepunch.com/gmod/Panel:SetContentAlignment for directions.
+--@param number align The direction of the content, based on the number pad.
+function pnl_methods:setContentAlignment(align)
+	checkluatype(align, TYPE_NUMBER)
+	local uwp = unwrap(self)
+	
+	uwp:SetContentAlignment(align)
+end
+
+--- Sets whenever all the default border of the panel should be drawn or not.
+--param boolean paint Whenever to draw the border or not.
+function pnl_methods:setPaintBorderEnabled(paint)
+	checkluatype(paint, TYPE_BOOL)
+	local uwp = unwrap(self)
+	
+	uwp:SetPaintBorderEnabled(paint)
+end
+
 --- Centers the panel.
 function pnl_methods:center()
 	local uwp = unwrap(self)
 	
 	uwp:Center()
+end
+
+--- Centers the panel horizontally with specified fraction.
+--@param number frac The center fraction.
+function pnl_methods:centerHorizontal(frac)
+	checkluatype(frac, TYPE_NUMBER)
+	local uwp = unwrap(self)
+	
+	uwp:CenterHorizontal(frac)
+end
+
+--- Centers the panel vertically with specified fraction.
+--@param number frac The center fraction.
+function pnl_methods:centerVertical(frac)
+	checkluatype(frac, TYPE_NUMBER)
+	local uwp = unwrap(self)
+	
+	uwp:CenterVertical(frac)
+end
+
+--- Sets the appearance of the cursor. You can find a list of all available cursors with image previews at https://wiki.facepunch.com/gmod/Cursors.
+--@param string type The cursor to be set. Check the page in the description for valid types.
+function pnl_methods:setCursor(str)
+	checkluatype(str, TYPE_STRING)
+	local uwp = unwrap(self)
+	
+	uwp:SetCursor(str)
 end
 
 --- Removes the panel and all its children.
@@ -616,6 +775,61 @@ function pnl_methods:getKeyboardInputEnabled()
 	return uwp:IsKeyboardInputEnabled()
 end
 
+--- Set a function to run when the panel's size changes
+--@param function callback The function to run when the size changes. Has 2 arguments, which are the new width and height.
+function pnl_methods:setOnSizeChanged(func)
+	local uwp = unwrap(self)
+	checkluatype(func, TYPE_FUNCTION)
+	if !uwp.scf then
+		local oldsc
+		if uwp.OnSizeChanged then
+			oldsc = uwp.OnSizeChanged
+			function uwp:OnSizeChanged(nw, nh)
+				oldsc(self, nw, nh)
+				instance:runFunction(self.scf, nw, nh)
+			end
+		else
+			function uwp:OnSizeChanged(nw, nh)
+				instance:runFunction(self.scf, nw, nh)
+			end
+		end
+	end
+	
+	uwp.scf = func
+end
+
+--- Set a function to run when the panel is pressed while in focus.
+--@param function callback The function to run when the panel is pressed. Has 1 argument which is the keycode of the mouse button pressed. Check the MOUSE enums.
+function pnl_methods:setOnMousePressed(func)
+	local uwp = unwrap(self)
+	checkluatype(func, TYPE_FUNCTION)
+	if !uwp.mcf then
+		local oldmc = uwp.OnMousePressed
+		function uwp:OnMousePressed(mk)
+			oldmc(self, mk)
+			instance:runFunction(self.mcf, mk)
+		end
+	end
+	
+	uwp.mcf = func
+end
+
+--- Set a function to run when a mouse button is released while the panel is in focus.
+--@param function callback The function to run when the mouse is released. Has 1 argument which is the keycode of the mouse button pressed. Check the MOUSE enums.
+function pnl_methods:setOnMouseReleased(func)
+	local uwp = unwrap(self)
+	checkluatype(func, TYPE_FUNCTION)
+	if !uwp.mrf then
+		local oldmr = uwp.OnMouseReleased
+		function uwp:OnMouseReleased(mk)
+			oldmr(self, mk)
+			instance:runFunction(self.mrf, mk)
+		end
+	end
+	
+	uwp.mrf = func
+end
+
 --- Creates a DPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
@@ -763,7 +977,7 @@ end
 
 --- Gets whether the DFrame can be resized by the user.
 --@return boolean Whether the DFrame can be resized.
-function dfrm_methods:setSizable()
+function dfrm_methods:getSizable()
 	local uwp = unwrap(self)
 	
 	return uwp:GetSizable()
@@ -1866,12 +2080,14 @@ function vgui_library.createDColorMixer(parent, name)
 end
 
 --- Called when the player changes the color of the DColorMixer.
---@param function callback The function to run when the color is changed. Has one argument which is the new color.
+--@param function callback The function to run when the color is changed. Has one argument which is the new color as a table.
 function dclm_methods:valueChanged(func)
 	checkluatype(func, TYPE_FUNCTION)
 	local uwp = dclmunwrap(self)
 
-	function uwp:OnSelect(clr) instance:runFunction(func, cwrap( Color(clr.r, clr.g, clr.b, clr.a) )) end
+	function uwp:ValueChanged(clr)
+		instance:runFunction(func, {r = clr.r, g = clr.g, b = clr.b, a = clr.a}) 
+	end
 end
 
 --- Show / Hide the colors indicators in DColorMixer.
