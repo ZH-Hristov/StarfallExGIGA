@@ -446,10 +446,8 @@ if SERVER then
 	function player_methods:setViewEntity(ent)
 		local ply = getply(self)
 		if ent~=nil then ent = getent(ent) end
-
-		if SF.IsHUDActive(instance.entity, ply) then
-			ply:SetViewEntity(ent)
-		end
+		if not SF.IsHUDActive(instance.entity, ply) then SF.Throw("Player isn't connected to HUD!", 2) end
+		ply:SetViewEntity(ent)
 	end
 
 	--- Returns whether or not the player has godmode
@@ -592,7 +590,13 @@ if CLIENT then
 		local ply = getply(self)
 		if instance.owner ~= ply then checkpermission(instance, ply, "entities.setRenderProperty") end
 
-		if slot == nil then slot = GESTURE_SLOT_CUSTOM else checkluatype(slot, TYPE_NUMBER) end
+		if slot == nil then
+			slot = GESTURE_SLOT_CUSTOM
+		else
+			checkluatype(slot, TYPE_NUMBER)
+			if slot < 0 or slot > 6 then return end
+		end
+
 		if weight == nil then weight = 1 else checkluatype(weight, TYPE_NUMBER) end
 
 		if isstring(animation) then

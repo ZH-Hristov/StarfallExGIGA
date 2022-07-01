@@ -139,7 +139,7 @@ function ENT:SetupFiles(sfdata)
 
 		if self.instance and self.instance.ppdata.models and self.instance.mainfile then
 			local model = self.instance.ppdata.models[self.instance.mainfile]
-			if model and SF.CheckModel(model, self.owner) then
+			if model and SF.CheckModel(model, self.owner, true) then
 				self:SetCustomModel(model)
 			end
 		end
@@ -301,11 +301,12 @@ if SERVER then
 				disconnect(false)
 			end
 		else
+			if not enabled then ply:SetViewEntity() end
 			huds[ply] = enabled or nil
 		end
 		local instance = chip.instance
 		if instance then
-			instance:runScriptHook(enabled and "hudconnected" or "huddisconnected", instance.WrapObject(activator))
+			instance:runScriptHook(enabled and "hudconnected" or "huddisconnected", instance.WrapObject(activator), instance.WrapObject(ply))
 			instance:RunHook(enabled and "starfall_hud_connected" or "starfall_hud_disconnected", activator)
 		end
 		if not dontsync then syncHud(ply, chip, activator, enabled) end
@@ -332,7 +333,7 @@ else
 
 			local instance = chip.instance
 			if instance then
-				instance:runScriptHook(enabled and "hudconnected" or "huddisconnected", instance.WrapObject(activator))
+				instance:runScriptHook(enabled and "hudconnected" or "huddisconnected", instance.WrapObject(activator), instance.WrapObject(ply))
 				instance:RunHook(enabled and "starfall_hud_connected" or "starfall_hud_disconnected", activator)
 			end
 			if not dontsync then syncHud(ply, chip, activator, enabled) end

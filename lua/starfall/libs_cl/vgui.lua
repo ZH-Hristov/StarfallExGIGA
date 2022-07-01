@@ -66,7 +66,7 @@ SF.RegisterType("DButton", false, true, debug.getregistry().DButton, "DLabel")
 -- @class type
 -- @libtbl dcom_methods
 -- @libtbl dcom_meta
-SF.RegisterType("DComboBox", false, true, debug.getregistry().DComboBox, "DComboBox")
+SF.RegisterType("DComboBox", false, true, debug.getregistry().DComboBox, "DButton")
 
 --- DCheckBox type
 -- @name DCheckBox

@@ -479,7 +479,7 @@ SF.Parent = {
 			self.ent:SetAngles(ang)
 		end,
 		
-		setParents = {
+		parentTypes = {
 			entity = {
 				function(self)
 					self.ent:SetParent(self.parent)
@@ -502,83 +502,91 @@ SF.Parent = {
 					self.ent:FollowBone(self.parent, self.param)
 				end,
 				function(self)
-					self.ent:FollowBone()
+					self.ent:FollowBone(NULL, 0)
 				end
 			}
 		},
 
 		setParent = function(self, parent, type, param)
 			if self.parent and self.parent:IsValid() then
-				self.parent.sf_parent.children[self.ent] = nil
-				self:unParentType()
+				self.parent.sfParent.children[self.ent] = nil
+				self:removeParent()
 			end
 			if parent then
 				self.parent = parent
 				self.param = param
-				self.setParentType, self.unParentType = unpack(self.setParents[type])
+				self.applyParent, self.removeParent = unpack(self.parentTypes[type])
 
-				local sf_parent = parent.sf_parent
-				if sf_parent then
-					sf_parent.children[self.ent] = self
-				end
+				parent.sfParent.children[self.ent] = self
 				self:updateTransform()
-				self:setParentType()
+				self:applyParent()
 			else
 				self.parent = nil
 				self.param = nil
-				self.setParentType = nil
-				self.unParentType = nil
+				self.applyParent = nil
+				self.removeParent = nil
 			end
 		end,
 
 		fix = function(self)
-			local empty = true
+			local cleanup = true
 			if self.parent and self.parent:IsValid() then
-				self:applyTransform()
-				self:setParentType()
-				empty = false
+				cleanup = false
 			end
 			for child, data in pairs(self.children) do
 				if child:IsValid() then
 					data:applyTransform()
-					data:setParentType()
-					empty = false
+					data:applyParent()
+					cleanup = false
+					
+					if child.sfParent then
+						child.sfParent:fix()
+					end
 				else
 					self.children[child] = nil
 				end
 			end
-			if empty then
-				self.ent.sf_parent = nil
+			if cleanup then
+				self.ent.sfParent = nil
 			end
 		end,
 	},
-	__call = function(meta, parent, child, type, param)
-		if SF.ParentChainTooLong(parent, child) then SF.Throw("Parenting chain of entities can't exceed 16 or crash may occur", 3) end
-		if not parent.sf_parent then
-			parent.sf_parent = setmetatable({
-				ent = parent,
-				children = {}
-			}, meta)
-		end
 
-		local sf_parent = child.sf_parent
-		if not sf_parent then
-			sf_parent = setmetatable({
-				ent = child,
-				children = {}
-			}, meta)
-			child.sf_parent = sf_parent
+	__call = function(meta, child, parent, type, param)
+		if parent then
+			if SF.ParentChainTooLong(parent, child) then SF.Throw("Parenting chain cannot exceed 16 or crash may occur", 3) end
+
+			if not parent.sfParent then
+				parent.sfParent = setmetatable({
+					ent = parent,
+					children = {}
+				}, meta)
+			end
+
+			local sfParent = child.sfParent
+			if not sfParent then
+				sfParent = setmetatable({
+					ent = child,
+					children = {}
+				}, meta)
+				child.sfParent = sfParent
+			end
+
+			sfParent:setParent(parent, type, param)
+		elseif child.sfParent then
+			child.sfParent:setParent()
+		else
+			child:SetParent()
 		end
-		sf_parent:setParent(parent, type, param)
 	end
 }
 setmetatable(SF.Parent, SF.Parent)
 
 if CLIENT then
-	-- Need to fix the children and parent of any entity retransmitted
-	hook.Add("NotifyShouldTransmit", "SF_HologramReparent", function(ent)
-		local sf_parent = ent.sf_parent
-		if sf_parent then sf_parent:fix() end
+	-- When parent is retransmitted, it loses it's children
+	hook.Add("NotifyShouldTransmit", "SF_HologramParentFix", function(ent)
+		local sfParent = ent.sfParent
+		if sfParent then sfParent:fix() end
 	end)
 end
 
@@ -1070,7 +1078,7 @@ do
 		[TYPE_ENTITY] = function(ss, x) ss:writeInt8(TYPE_ENTITY) ss:writeInt16(x:EntIndex()) end,
 		[TYPE_VECTOR] = function(ss, x) ss:writeInt8(TYPE_VECTOR) for i=1, 3 do ss:writeFloat(x[i]) end end,
 		[TYPE_ANGLE] = function(ss, x) ss:writeInt8(TYPE_ANGLE) for i=1, 3 do ss:writeFloat(x[i]) end end,
-		[TYPE_COLOR] = function(ss, x) ss:writeInt8(TYPE_COLOR) for i=1, 4 do ss:writeInt8(x[i]) end end,
+		[TYPE_COLOR] = function(ss, x) ss:writeInt8(TYPE_COLOR) ss:writeInt8(x.r) ss:writeInt8(x.g) ss:writeInt8(x.b) ss:writeInt8(x.a) end,
 		[TYPE_MATRIX] = function(ss, x) ss:writeInt8(TYPE_MATRIX) for k, v in ipairs{x:Unpack()} do ss:writeFloat(v) end end,
 	}
 	local stringtotypefuncs = {
@@ -1108,6 +1116,8 @@ do
 					return
 				end
 			end
+
+			if IsColor(val) then return typetostringfuncs[TYPE_COLOR](ss, val) end
 			
 			ss:writeInt8(TYPE_TABLE)
 			
@@ -1205,10 +1215,10 @@ function SF.CheckMaterial(material)
 end
 
 
-function SF.CheckModel(model, player)
+function SF.CheckModel(model, player, prop)
 	if #model > 260 then return false end
 	model = SF.NormalizePath(string.lower(model))
-	if util.IsValidModel(model) and util.IsValidProp(model) then
+	if string.GetExtensionFromFilename(model) == "mdl" and (CLIENT or (util.IsValidModel(model) and (not prop or util.IsValidProp(model)))) then
 		if player and player:IsValid() then
 			if hook.Run("PlayerSpawnObject", player, model)~=false then
 				return model
@@ -1217,7 +1227,7 @@ function SF.CheckModel(model, player)
 			return model
 		end
 	end
-	return false
+	SF.Throw("Invalid model: "..model, 3)
 end
 
 function SF.CheckRagdoll(model)
@@ -1273,6 +1283,19 @@ function SF.NormalizePath(path)
 		end
 	end
 	return table.concat(pathtbl, "/")
+end
+
+function SF.GetExecutingPath()
+	local curdir
+	local stackLevel = 3
+	repeat
+		local info = debug.getinfo(stackLevel, "S")
+		if not info then break end
+
+		curdir = string.match(info.short_src, "^SF:(.*[/\\])")
+		stackLevel = stackLevel + 1
+	until curdir
+	return curdir
 end
 
 --- Returns True if parent chain length is going to exceed 16

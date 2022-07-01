@@ -5,6 +5,8 @@ local function cleanupRender(instance)
 	instance:cleanupRender()
 end
 
+local isSP = game.SinglePlayer()
+
 local haspermission = SF.Permissions.hasAccess
 
 local function hudPrepareSafeArgs(instance, ...)
@@ -44,6 +46,12 @@ else
 	-- @class hook
 	-- @client
 	SF.hookAdd("RenderScreenspaceEffects", "drawscreenspace", hudPrepareSafeArgs, cleanupRender)
+	
+	--- Steamworks Library
+	-- @name steamworks
+	-- @class library
+	-- @libtbl steamworks_library
+	SF.RegisterLibrary("steamworks")
 end
 
 return function(instance)
@@ -59,6 +67,7 @@ local builtins_library = instance.env
 local fileServer_library = instance.Libraries.fileServer
 local render_library = instance.Libraries.render
 local input_library = instance.Libraries.input
+local steamworks_library = instance.Libraries.steamworks
 
 local getent
 local getply
@@ -325,6 +334,81 @@ else
 		else
 			unlockControls(instance)
 		end
+	end
+	
+	--- Loads a GMod save from the workshop. SP only.
+	-- @client
+	-- @param number saveid The save's workshop ID.
+	function builtins_library.loadWorkshopSave(id)
+		if !game.SinglePlayer then return end
+		
+		steamworks.DownloadUGC( id, function( name )
+			RunConsoleCommand("gm_load", name)
+		end )
+	end
+	
+	--- Downloads a file from the supplied addon and saves it as a .cache file in garrysmod/cache folder.
+	-- @client
+	-- @param number previewid The Preview ID of workshop item.
+	-- @param function callback The function to process retrieved data. The first and only argument is a string, containing path to the saved file.
+	function steamworks_library.download(previd, callback)
+		if !isSP then return end
+		
+		steamworks.Download(previd, true, function(name)
+			instance:runFunction(callback, name)
+		end)
+	end
+	
+	--- Retrieves info about supplied Steam Workshop addon.
+	-- @client
+	-- @param number workshopid The ID of Steam Workshop item.
+	-- @param function callback The function to process retrieved data, with one argument which is the data about the item. See https://wiki.facepunch.com/gmod/Structures/UGCFileInfo.
+	function steamworks_library.fileInfo(wsid, callback)
+		if !isSP then return end
+		
+		steamworks.FileInfo(wsid, function(tbl)
+			instance:runFunction(callback, tbl)
+		end)
+	end
+	
+	--- Retrieves a customized list of Steam Workshop addons.
+	-- @client
+	-- @param string? type The type of items to retrieve. Check https://wiki.facepunch.com/gmod/steamworks.GetList
+	-- @param table? tags A table of tags to match.
+	-- @param number? offset How much of results to skip from first one. Mainly used for pages.
+	-- @param number? toRetrieve How much items to retrieve, up to 50 at a time.
+	-- @param number? days When getting Most Popular content from Steam, this determines a time period. ( 7 = most popular addons in last 7 days, 1 = most popular addons today, etc )
+	-- @param number? userid "0" to retrieve all addons, "1" to retrieve addons only published by you, or a valid SteamID64 of a user to get workshop items of.
+	-- @param function callback The function to process retrieved data. The first and only argument is a table, containing all the info, or nil in case of error.
+	function steamworks_library.getList(tp, tags, offset, retr, days, userid, callback)
+		tp = tp or "popular"
+		offset = offset or 0
+		retr = retr or 5
+		days = days or 7
+		userid = userid or 0
+		
+		steamworks.GetList(tp, tags, offset, retr, days, userid, function(data)
+			instance:runFunction(callback, data)
+		end)
+	end
+	
+	--- Loads the specified image from the /cache folder, used in combination steamworks.download. Most addons will provide a 512x512 png image.
+	-- @client
+	-- @param string name The name of the file.
+	-- @return Material The material, returns nil if the cached file is not an image.
+	function builtins_library.addonMaterial(name)
+		if !isSP then return end
+
+		return instance.Types.Material.Wrap(AddonMaterial(name))
+	end
+	
+	--- Opens specified URL in the steam overlay browser.
+	-- @client
+	-- @param string url URL to open, it has to start with either http:// or https://.
+	function steamworks_library.openURL(url)
+		if !isSP then return end
+		
+		gui.OpenURL(url)
 	end
 end
 

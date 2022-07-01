@@ -300,49 +300,51 @@ function ents_methods:getLinkedComponents()
 	return list
 end
 
---- Parents or unparents an entity. Only holograms can be parented to players and, in clientside, only clientside holograms can be parented.
+--- Parents or unparents an entity. Only holograms can be parented to players and clientside holograms can only be parented in the CLIENT realm.
 -- @param Entity? parent Entity parent (nil to unparent)
--- @param number|string? attachment Optional attachment name or ID
+-- @param number|string? attachment Optional attachment name or ID.
 -- @param number|string? bone Optional bone name or ID. Can't be used at the same time as attachment
 function ents_methods:setParent(parent, attachment, bone)
 	local child = getent(self)
-	if CLIENT and debug.getmetatable(child)~=SF.Cl_Hologram_Meta then SF.Throw("Can only setParent clientside holograms in the clientside!", 2) end
 	checkpermission(instance, child, "entities.setParent")
-	if attachment~=nil and bone~=nil then SF.Throw("Can't have both attachment and bone args set!", 2) end
+	if CLIENT and debug.getmetatable(child) ~= SF.Cl_Hologram_Meta then SF.Throw("Only clientside holograms can be parented in the CLIENT realm!", 2) end
+	if attachment ~= nil and bone ~= nil then SF.Throw("Arguments `attachment` and `bone` are mutually exclusive!", 2) end
 	if parent ~= nil then
 		parent = getent(parent)
-		if parent:IsPlayer() and not child.IsSFHologram then SF.Throw("Can only setParent holograms onto players!", 2) end
+		if parent:IsPlayer() and not child.IsSFHologram then SF.Throw("Only holograms can be parented to players!", 2) end
 		local param, type
-		if bone~=nil then
+		if bone ~= nil then
 			if isstring(bone) then
 				bone = parent:LookupBone(bone) or -1
 			elseif not isnumber(bone) then
 				SF.ThrowTypeError("string or number", SF.GetType(bone), 2)
 			end
-			if bone < 0 or bone > 255 then SF.Throw("Invalid bone provided", 2) end
+			if bone < 0 or bone > 255 then SF.Throw("Invalid bone provided!", 2) end
 			type = "bone"
 			param = bone
-		elseif attachment~=nil then
+		elseif attachment ~= nil then
+			if CLIENT then SF.Throw("Parenting to an attachment is not supported in clientside!", 2) end
 			if isstring(attachment) then
-				attachment = parent:LookupAttachment(attachment)
-			elseif not isnumber(attachment) then
+				if parent:LookupAttachment(attachment) < 1 then SF.Throw("Invalid attachment provided!", 2) end
+			elseif isnumber(attachment) then
+				local attachments = parent:GetAttachments()
+				if attachments and attachments[attachment] then
+					attachment = attachments[attachment].name
+				else
+					SF.Throw("Invalid attachment ID provided!", 2)
+				end
+			else
 				SF.ThrowTypeError("string or number", SF.GetType(attachment), 2)
 			end
-			if attachment < 0 or attachment > 255 then SF.Throw("Invalid attachment provided", 2) end
 			type = "attachment"
 			param = attachment
 		else
 			type = "entity"
 		end
 
-		SF.Parent(parent, child, type, param)
+		SF.Parent(child, parent, type, param)
 	else
-		local sf_parent = child.sf_parent
-		if sf_parent then
-			sf_parent:setParent()
-		else
-			child:SetParent()
-		end
+		SF.Parent(child)
 	end
 end
 -- Backward compatability
@@ -1711,6 +1713,25 @@ end
 -- @return Vector The nearest hit point of the entity's bounding box in world coordinates, or Vector(0, 0, 0) for some entities such as worldspawn.
 function ents_methods:getNearestPoint(pos)
 	return vwrap(getent(self):NearestPoint(vunwrap(pos)))
+end
+
+--- Returns a table of save values for an entity.
+-- These tables are not the same between the client and the server, and different entities may have different fields.
+-- @shared
+-- @param boolean showAll If set, shows all variables, not just the ones for save.
+-- @return table A table containing all save values in key/value format. The value may be a sequential table (starting to 1) if the field in question is an array in engine.
+function ents_methods:getSaveTable(showAll)
+	return instance.Sanitize(getent(self):GetSaveTable(showAll and true or false))
+end
+
+--- Returns a variable from the entity's save table.
+-- @shared
+-- @param string variableName Name of the internal save table variable.
+-- @return any The internal variable associated with the name.
+function ents_methods:getInternalVariable(variableName)
+	checkluatype(variableName, TYPE_STRING)
+	local result = getent(self):GetInternalVariable(variableName)
+	return istable(result) and instance.Sanitize(result) or owrap(result)
 end
 
 end

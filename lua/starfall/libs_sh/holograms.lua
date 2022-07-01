@@ -134,14 +134,11 @@ end
 function holograms_library.create(pos, ang, model, scale)
 	checkpermission(instance, nil, "hologram.create")
 	checkluatype(model, TYPE_STRING)
-	model = SF.NormalizePath(model)
-
-	if (SERVER and not util.IsValidModel(model)) or (CLIENT and string.GetExtensionFromFilename(model) ~= "mdl") then SF.Throw("Invalid model", 2) end
-
-	local pos = vunwrap(pos)
-	local ang = aunwrap(ang)
 
 	local ply = instance.player
+	pos = vunwrap(pos)
+	ang = aunwrap(ang)
+	model = SF.CheckModel(model, ply)
 
 	plyCount:checkuse(ply, 1)
 
@@ -155,8 +152,7 @@ function holograms_library.create(pos, ang, model, scale)
 			holoent:CallOnRemove("starfall_hologram_delete", hologramOnDestroy)
 			holoent:Spawn()
 
-			if ply ~= SF.Superuser then gamemode.Call("PlayerSpawnedSENT", ply, holoent) end
-
+			if CPPI then holoent:CPPISetOwner(ply) end
 			holograms[holoent] = true
 
 			if scale~=nil then
@@ -255,9 +251,9 @@ else
 		holo:SetPos(pos)
 
 		if CLIENT then
-			local sf_parent = holo.sf_parent
-			if sf_parent and sf_parent.parent and sf_parent.parent:IsValid() then
-				sf_parent:updateTransform()
+			local sfParent = holo.sfParent
+			if sfParent and sfParent.parent and sfParent.parent:IsValid() then
+				sfParent:updateTransform()
 			end
 		end
 	end
@@ -273,9 +269,9 @@ else
 		holo:SetAngles(angle)
 		
 		if CLIENT then
-			local sf_parent = holo.sf_parent
-			if sf_parent and sf_parent.parent and sf_parent.parent:IsValid() then
-				sf_parent:updateTransform()
+			local sfParent = holo.sfParent
+			if sfParent and sfParent.parent and sfParent.parent:IsValid() then
+				sfParent:updateTransform()
 			end
 		end
 	end

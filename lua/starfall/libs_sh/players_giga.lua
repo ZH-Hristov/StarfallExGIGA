@@ -333,12 +333,25 @@ if SERVER then
 	--- Called when a player switches their weapon. Allows overriding if admin.
 	-- @name PlayerSwitchWeaponEX
 	-- @class hook
-	-- @shared
+	-- @server
 	-- @param Player ply Player changing weapon
 	-- @param Weapon oldwep Old weapon
 	-- @param Weapon newweapon New weapon
 	-- @return boolean Return true to disallow weapon switch.
 	SF.hookAdd("PlayerSwitchWeapon", "playerswitchweaponex", nil, adminOnlyReturnHook)
+	
+	--- Called when a serverside ragdoll of an entity has been created.
+	-- @name CreateEntityRagdoll
+	-- @class hook
+	-- @server
+	-- @param Entity owner Entity that owns the ragdoll.
+	-- @param Entity ragdoll The ragdoll entity.
+	SF.hookAdd("CreateEntityRagdoll", nil, function(instance, owner, rag)
+		return true, {
+			instance.WrapObject(owner),
+			instance.WrapObject(rag)
+		}
+	end)
 	
 else
 	--- Allows you to modify the supplied User Command with mouse input. This could be used to make moving the mouse do funky things to view angles.
@@ -351,6 +364,19 @@ else
 	-- @param Angle ang The current view angle.
 	-- @return boolean? Return true if we modified something.
 	SF.hookAdd("InputMouseApply", nil, nil, adminOnlyReturnHook)
+	
+	--- Called whenever an entity becomes a clientside ragdoll.
+	-- @name CreateClientsideRagdoll
+	-- @class hook
+	-- @client
+	-- @param Entity owner Entity that owns the ragdoll.
+	-- @param Entity ragdoll The ragdoll entity.
+	SF.hookAdd("CreateClientsideRagdoll", nil, function(instance, owner, rag)
+		return true, {
+			instance.WrapObject(owner),
+			instance.Types.Entity.Wrap(rag)
+		}
+	end)
 end
 
 return function(instance)
@@ -385,6 +411,12 @@ function ents_methods:setCustomCollisionCheck(new)
 	if superOrAdmin(instance) or instance.player==SF.Superuser then
 		eunwrap(self):SetCustomCollisionCheck(new)
 	end
+end
+
+--- Returns players death ragdoll.
+-- @return Entity The ragdoll. Unlike normal clientside ragdolls (C_ClientRagdoll), this will be a C_HL2MPRagdoll on the client, and hl2mp_ragdoll on the server.
+function player_methods:getRagdollEntity()
+	return ewrap(getply(self):GetRagdollEntity())
 end
 
 --- Returns whether this entity has the specified spawnflags bits set.
@@ -1470,6 +1502,14 @@ else
 	function ents_methods:setupBones()
 		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):SetupBones()
+		end
+	end
+	
+	--- Removes a clientside entity.
+	-- @client
+	function ents_methods:removeClient()
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			eunwrap(self):Remove()
 		end
 	end
 	
