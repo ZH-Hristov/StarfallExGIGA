@@ -19,6 +19,13 @@ SF.RegisterType("Panel", false, true, debug.getregistry().Panel)
 -- @libtbl dpnl_meta
 SF.RegisterType("DPanel", false, true, debug.getregistry().DPanel, "Panel")
 
+--- DFileBrowser type
+-- @name DFileBrowser
+-- @class type
+-- @libtbl dfb_methods
+-- @libtbl dfb_meta
+SF.RegisterType("DFileBrowser", false, true, debug.getregistry().DFileBrowser, "DPanel")
+
 --- DNumSlider type
 -- @name DNumSlider
 -- @class type
@@ -103,6 +110,13 @@ SF.RegisterType("DTextEntry", false, true, debug.getregistry().DTextEntry, "Pane
 -- @libtbl dimg_meta
 SF.RegisterType("DImage", false, true, debug.getregistry().DImage, "DPanel")
 
+--- DImageButton type
+-- @name DImageButton
+-- @class type
+-- @libtbl dimgb_methods
+-- @libtbl dimgb_meta
+SF.RegisterType("DImageButton", false, true, debug.getregistry().DImageButton, "DButton")
+
 --- VGUI functions.
 -- @name vgui
 -- @class library
@@ -126,6 +140,7 @@ end)
 local checkpermission = instance.player ~= SF.Superuser and SF.Permissions.check or function() end
 local pnl_methods, pnl_meta, pnlwrap, pnlunwrap = instance.Types.Panel.Methods, instance.Types.Panel, instance.Types.Panel.Wrap, instance.Types.Panel.Unwrap
 local dpnl_methods, dpnl_meta, dpnlwrap, dpnlunwrap = instance.Types.DPanel.Methods, instance.Types.DPanel, instance.Types.DPanel.Wrap, instance.Types.DPanel.Unwrap
+local dfb_methods, dfb_meta, dfbwrap, dfbunwrap = instance.Types.DFileBrowser.Methods, instance.Types.DFileBrowser, instance.Types.DFileBrowser.Wrap, instance.Types.DFileBrowser.Unwrap
 local dfrm_methods, dfrm_meta, dfrmwrap, dfrmunwrap = instance.Types.DFrame.Methods, instance.Types.DFrame, instance.Types.DFrame.Wrap, instance.Types.DFrame.Unwrap
 local dscrl_methods, dscrl_meta, dscrlwrap, dscrlunwrap = instance.Types.DScrollPanel.Methods, instance.Types.DScrollPanel, instance.Types.DScrollPanel.Wrap, instance.Types.DScrollPanel.Unwrap
 local dlab_methods, dlab_meta, dlabwrap, dlabunwrap = instance.Types.DLabel.Methods, instance.Types.DLabel, instance.Types.DLabel.Wrap, instance.Types.DLabel.Unwrap
@@ -135,6 +150,7 @@ local aimg_methods, aimg_meta, aimgwrap, aimgunwrap = instance.Types.AvatarImage
 local dprg_methods, dprg_meta, dprgwrap, dprgunwrap = instance.Types.DProgress.Methods, instance.Types.DProgress, instance.Types.DProgress.Wrap, instance.Types.DProgress.Unwrap
 local dtxe_methods, dtxe_meta, dtxewrap, dtxeunwrap = instance.Types.DTextEntry.Methods, instance.Types.DTextEntry, instance.Types.DTextEntry.Wrap, instance.Types.DTextEntry.Unwrap
 local dimg_methods, dimg_meta, dimgwrap, dimgunwrap = instance.Types.DImage.Methods, instance.Types.DImage, instance.Types.DImage.Wrap, instance.Types.DImage.Unwrap
+local dimgb_methods, dimgb_meta, dimgbwrap, dimgbunwrap = instance.Types.DImageButton.Methods, instance.Types.DImageButton, instance.Types.DImageButton.Wrap, instance.Types.DImageButton.Unwrap
 local dnms_methods, dnms_meta, dnmswrap, dnmsunwrap = instance.Types.DNumSlider.Methods, instance.Types.DNumSlider, instance.Types.DNumSlider.Wrap, instance.Types.DNumSlider.Unwrap
 local dcom_methods, dcom_meta, dcomwrap, dcomunwrap = instance.Types.DComboBox.Methods, instance.Types.DComboBox, instance.Types.DComboBox.Wrap, instance.Types.DComboBox.Unwrap
 local dclm_methods, dclm_meta, dclmwrap, dclmunwrap = instance.Types.DColorMixer.Methods, instance.Types.DColorMixer, instance.Types.DColorMixer.Wrap, instance.Types.DColorMixer.Unwrap
@@ -182,6 +198,10 @@ function dimg_meta:__tostring()
 	return "DImage"
 end
 
+function dimgb_meta:__tostring()
+	return "DImageButton"
+end
+
 function dchk_meta:__tostring()
 	return "DCheckBox"
 end
@@ -196,6 +216,10 @@ end
 
 function dclm_meta:__tostring()
 	return "DColorMixer"
+end
+
+function dfb_meta:__tostring()
+	return "DFileBrowser"
 end
 
 local function unwrap(pnl)
@@ -893,6 +917,203 @@ function dpnl_methods:getDisabled()
 	return uwp:getDisabled()
 end
 
+--- Creates a DFileBrowser. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
+--@param any parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DFileBrowser The new DFileBrowser
+function vgui_library.createDFileBrowser(parent, name)
+	if parent then parent = unwrap(parent) end
+	
+	local new = vgui.Create("DFileBrowser", parent, name)
+	if !parent then panels[new] = true end -- Only insert parent panels as they will have all their children removed anyway.
+	return dfbwrap(new)
+end
+
+--- Clears the file tree and list, and resets all values.
+function dfb_methods:clear()
+	local uwp = dfbunwrap(self)
+	
+	uwp:Clear()
+end
+
+--- Sets the root directory/folder of the file tree. This needs to be set for the file tree to be displayed.
+--@param string baseDir The path to the folder to use as the root.
+function dfb_methods:setBaseFolder(dir)
+	checkluatype(dir, TYPE_STRING)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetBaseFolder(dir)
+end
+
+--- Returns the root directory/folder of the file tree.
+--@return string The path to the root folder.
+function dfb_methods:getBaseFolder()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetBaseFolder()
+end
+
+--- Sets the directory/folder from which to display the file list.
+--@param string currentDir The directory to display files from.
+function dfb_methods:setCurrentFolder(dir)
+	checkluatype(dir, TYPE_STRING)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetCurrentFolder(dir)
+end
+
+--- Returns the current directory/folder being displayed.
+--@return string The directory the file list is currently displaying.
+function dfb_methods:getCurrentFolder()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetCurrentFolder()
+end
+
+--- Sets the file type filter for the file list. This accepts the same file extension wildcards as file.find.
+--@param string fileTypes A list of file types to display, separated by spaces e.g. "*.lua *.txt *.mdl"
+function dfb_methods:setFileTypes(fTypes)
+	checkluatype(fTypes, TYPE_STRING)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetFileTypes(fTypes)
+end
+
+--- Returns the current file type filter on the file list.
+--@return string The current filter applied to the file list.
+function dfb_methods:getFileTypes()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetFileTypes()
+end
+
+--- Enables or disables the model viewer mode. In this mode, files are displayed as SpawnIcons instead of a list.
+--- This should only be used for .mdl files; the spawn icons will display error models for others. See DFileBrowser:setFileTypes
+--@param boolean enable Whether or not to display files using SpawnIcons.
+function dfb_methods:setModels(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetModels(enable)
+end
+
+--- Returns whether or not the model viewer mode is enabled. In this mode, files are displayed as SpawnIcons instead of a list.
+--@return boolean Whether or not files will be displayed using SpawnIcons.
+function dfb_methods:getModels()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetModels()
+end
+
+--- Sets the name to use for the file tree.
+--@param string treeName The name for the root of the file tree. Passing no value causes this to be the base folder name. See DFileBrowser:setBaseFolder.
+function dfb_methods:setName(name)
+	checkluatype(name TYPE_STRING)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetName(name)
+end
+
+--- Returns the name being used for the file tree.
+--@return string The name used for the root of the file tree.
+function dfb_methods:getName()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:SetName()
+end
+
+--- Opens or closes the file tree.
+--@param boolean? open true to open the tree, false to close it.
+--@param boolean? useAnim If true, the DTree's open/close animation is used.
+function dfb_methods:setOpen(open, useAnim)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetOpen(open, useAnim)
+end
+
+--- Returns whether or not the file tree is open.
+--@return boolean Whether or not the file tree is open.
+function dfb_methods:getOpen()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetOpen()
+end
+
+--- Sets the access path for the file tree. This is set to GAME by default.
+--@param string path The access path i.e. "GAME", "LUA", "DATA" etc.
+function dfb_methods:setPath(path)
+	checkluatype(path, TYPE_STRING)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetPath(path)
+end
+
+--- Returns the access path of the file tree. This is GAME unless changed with DFileBrowser:setPath.
+--@return string The current access path i.e. "GAME", "LUA", "DATA" etc.
+function dfb_methods:getPath()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetPath()
+end
+
+--- Sets the search filter for the file tree. This accepts the same wildcards as file.find.
+--@param string filter The filter to use on the file tree.
+function dfb_methods:setSearch(filter)
+	checkluatype(filter, TYPE_STRING)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SetSearch(filter)
+end
+
+--- Returns the current search filter on the file tree.
+--@return string The filter in use on the file tree.
+function dfb_methods:getSearch()
+	local uwp = dfbunwrap(self)
+	
+	return uwp:GetSearch()
+end
+
+--- Sorts the file list.
+--- This is only functional when not using the model viewer. See DFileBrowser:setModels
+--@param boolean? descending The sort order. true for descending (z-a), false for ascending (a-z).
+function dfb_methods:sortFiles(desc)
+	local uwp = dfbunwrap(self)
+	
+	uwp:SortFiles(desc)
+end
+
+--- Set a function to run when a file is selected.
+--@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
+function dfb_methods:onSelect(func)
+	local uwp = dfbunwrap(self)
+	
+	function uwp:OnSelect(_, filepath)
+		instance:runFunction(func, filepath)
+	end
+end
+
+--- Set a function to run when a file is right-clicked.
+--- When not in model viewer mode, DFileBrowser:onSelect will also be called if the file is not already selected.
+--@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
+function dfb_methods:onRightClick(func)
+	local uwp = dfbunwrap(self)
+	
+	function uwp:OnRightClick(filepath)
+		instance:runFunction(func, filepath)
+	end
+end
+
+--- Set a function to run when a file is double-clicked.
+--- Double-clicking a file or icon will trigger both this and DFileBrowser:onSelect.
+--@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
+function dfb_methods:onDoubleClick(func)
+	local uwp = dfbunwrap(self)
+	
+	function uwp:OnDoubleClick(filepath)
+		instance:runFunction(func, filepath)
+	end
+end
+
 --- Creates a DFrame. The DFrame is the momma of basically all VGUI elements. 98% of the time you will parent your element to this.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
@@ -1046,7 +1267,7 @@ end
 
 --- Returns whether the background is being blurred by DFrame:setBackGroundBlur.
 --@return boolean Whether the background is blurred.
-function dfrm_methods:setBackgroundBlur()
+function dfrm_methods:getBackgroundBlur()
 	local uwp = unwrap(self)
 	
 	return uwp:GetBackgroundBlur()
@@ -1697,6 +1918,72 @@ function dimg_methods:getKeepAspect()
 	local uwp = dimgunwrap(self)
 
 	return uwp:GetKeepAspect()
+end
+
+--- Creates a DImageButton. An image button. This panel inherits all methods of DButton, such as DLabel:onClick.
+--@param any parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DImageButton The new DImageButton.
+function vgui_library.createDImageButton(parent, name)
+	if parent then parent = unwrap(parent) end
+	
+	local new = vgui.Create("DImageButton", parent, name)
+	if !parent then panels[new] = true end
+	return dimgbwrap(new)
+end
+
+--- Sets the image to load into the frame. If the first image can't be loaded and strBackup is set, that image will be loaded instead.
+--@param string imagePath The path of the image to load. When no file extension is supplied the VMT file extension is used.
+--@param string? backup The path of the backup image.
+function dimgb_methods:setImage(imagePath, backup)
+	checkluatype(imagePath, TYPE_STRING)
+	local uwp = dimgbunwrap(self)
+
+	uwp:SetImage(imagePath, backup)
+end
+
+--- Returns the image loaded in the image panel.
+--@return string The path to the image that is loaded.
+function dimgb_methods:getImage()
+	local uwp = dimgbunwrap(self)
+
+	return uwp:GetImage()
+end
+
+--- Sets whether the DImageButton should keep the aspect ratio of its image when being resized.
+--- Note that this will not try to fit the image inside the button, but instead it will fill the button with the image.
+--@param boolean keep True to keep the aspect ratio, false not to.
+function dimgb_methods:setKeepAspect(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = dimgbunwrap(self)
+
+	uwp:SetKeepAspect(enable)
+end
+
+--- Sets the image's color override.
+--@param Color imgColor The color override of the image. Uses the Color.
+function dimgb_methods:setImageColor(clr)
+	local uwp = dimgbunwrap(self)
+	local uwc = cunwrap(clr)
+
+	uwp:SetColor(uwc)
+end
+
+--- Sets whether the image inside the DImageButton should be stretched to fill the entire size of the button, without preserving aspect ratio. If set to false, the image will not be resized at all.
+--@param boolean stretch True to stretch, false to not to stretch.
+function dimgb_methods:setStretchToFit(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = dimgbunwrap(self)
+	
+	uwp:SetStretchToFit(enable)
+end
+
+--- Returns whether the image inside the button should be stretched to fit it or not.
+--@return boolean Stretch?
+function dimgb_methods:getStretchToFit()
+	local uwp = dimgbunwrap(self)
+	
+	return uwp:GetStretchToFit()
 end
 
 --- Creates a DCheckBox. The DCheckBox is a checkbox. It allows you to get a boolean value from the user. Inherits functions from DButton.
