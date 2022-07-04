@@ -47,6 +47,20 @@ SF.RegisterType("DFrame", false, true, debug.getregistry().DFrame, "Panel")
 -- @libtbl dscrl_meta
 SF.RegisterType("DScrollPanel", false, true, debug.getregistry().DScrollPanel, "DPanel")
 
+--- DMenu type
+-- @name DMenu
+-- @class type
+-- @libtbl dmen_methods
+-- @libtbl dmen_meta
+SF.RegisterType("DMenu", false, true, debug.getregistry().DMenu, "DScrollPanel")
+
+--- DMenuOption type
+-- @name DMenuOption
+-- @class type
+-- @libtbl dmeno_methods
+-- @libtbl dmeno_meta
+SF.RegisterType("DMenuOption", false, true, debug.getregistry().DMenuOption, "Button")
+
 --- DColorMixer type
 -- @name DColorMixer
 -- @class type
@@ -154,6 +168,8 @@ local dimgb_methods, dimgb_meta, dimgbwrap, dimgbunwrap = instance.Types.DImageB
 local dnms_methods, dnms_meta, dnmswrap, dnmsunwrap = instance.Types.DNumSlider.Methods, instance.Types.DNumSlider, instance.Types.DNumSlider.Wrap, instance.Types.DNumSlider.Unwrap
 local dcom_methods, dcom_meta, dcomwrap, dcomunwrap = instance.Types.DComboBox.Methods, instance.Types.DComboBox, instance.Types.DComboBox.Wrap, instance.Types.DComboBox.Unwrap
 local dclm_methods, dclm_meta, dclmwrap, dclmunwrap = instance.Types.DColorMixer.Methods, instance.Types.DColorMixer, instance.Types.DColorMixer.Wrap, instance.Types.DColorMixer.Unwrap
+local dmen_methods, dmen_meta, dmenwrap, dmenunwrap = instance.Types.DMenu.Methods, instance.Types.DMenu, instance.Types.DMenu.Wrap, instance.Types.DMenu.Unwrap
+local dmeno_methods, dmeno_meta, dmenowrap, dmenounwrap = instance.Types.DMenuOption.Methods, instance.Types.DMenuOption, instance.Types.DMenuOption.Wrap, instance.Types.DMenuOption.Unwrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local plyunwrap = instance.Types.Player.Unwrap
 local vgui_library = instance.Libraries.vgui
@@ -220,6 +236,14 @@ end
 
 function dfb_meta:__tostring()
 	return "DFileBrowser"
+end
+
+function dmen_meta:__tostring()
+	return "DMenu"
+end
+
+function dmeno_meta:__tostring()
+	return "DMenuOption"
 end
 
 local function unwrap(pnl)
@@ -854,6 +878,22 @@ function pnl_methods:setOnMouseReleased(func)
 	uwp.mrf = func
 end
 
+--- Enables or disables painting of the panel manually with Panel:paintManual.
+--@param boolean enable True if the panel should be painted manually.
+function pnl_methods:setPaintedManually(enable)
+	checkluatype(enable, TYPE_BOOL)
+	local uwp = unwrap(self)
+	
+	uwp:SetPaintedManually(enable)
+end
+
+--- Paints the panel at its current position. To use this you must call Panel:setPaintedManually(true).
+function pnl_methods:paintManual()
+	local uwp = unwrap(self)
+	
+	uwp:PaintManual()
+end
+
 --- Creates a DPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
@@ -1008,7 +1048,7 @@ end
 --- Sets the name to use for the file tree.
 --@param string treeName The name for the root of the file tree. Passing no value causes this to be the base folder name. See DFileBrowser:setBaseFolder.
 function dfb_methods:setName(name)
-	checkluatype(name TYPE_STRING)
+	checkluatype(name, TYPE_STRING)
 	local uwp = dfbunwrap(self)
 	
 	uwp:SetName(name)
@@ -1324,6 +1364,170 @@ function dscrl_methods:clear()
 	local uwp = dscrlunwrap(self)
 	
 	uwp:Clear()
+end
+
+--- Creates a DMenu. A simple menu with sub menu, icon and convar support. Inherits from DScrollPanel.
+--@param any parent Panel to parent to.
+--@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
+--@return DMenu The new DMenu
+function vgui_library.createDMenu(parent, name)
+	if parent then parent = unwrap(parent) end
+	
+	local new = vgui.Create("DMenu", parent, name)
+	if !parent then panels[new] = true end
+	return dmenwrap(new)
+end
+
+--- Add an option to the DMenu
+--@param string name Name of the option.
+--@param function func Function to execute when this option is clicked.
+--@return DMenuOption Returns the created DMenuOption panel.
+function dmen_methods:addOption(name, func)
+	checkluatype(name, TYPE_STRING)
+	checkluatype(func, TYPE_FUNCTION)
+	local uwp = dmenunwrap(self)
+	
+	local dmo = uwp:AddOption(name, function()
+		instance:runFunction(func)
+	end)
+	return dmenowrap(dmo)
+end
+
+--- Adds a panel to the DMenu as if it were an option.
+--@param Panel pnl The panel that you want to add.
+function dmen_methods:addPanel(pnl)
+	local uwp = dmenunwrap(self)
+	local uwp2 = unwrap(pnl)
+	
+	uwp:AddPanel(uwp2)
+end
+
+--- Adds a horizontal line spacer.
+function dmen_methods:addSpacer()
+	local uwp = dmenunwrap(self)
+	
+	uwp:AddSpacer()
+end
+
+--- Add a sub menu to the DMenu.
+--@param string name Name of the sub menu.
+--@param function? func Function to execute when this sub menu is clicked.
+--@return DMenu The created sub DMenu.
+--@return DMenuOption Function to execute when this sub menu is clicked.
+function dmen_methods:addSubMenu(name, func)
+	checkluatype(name, TYPE_STRING)
+	if func != nil then checkluatype(func, TYPE_FUNCTION) end
+	local uwp = dmenunwrap(self)
+	
+	local dm, dmo = uwp:AddSubMenu(name, function()
+		if func then
+			instance:runFunction(func)
+		end
+	end)
+	return dmenwrap(dm), dmenowrap(dm)
+end
+
+--- Returns the number of child elements of the DMenu.
+--@return number The number of child elements.
+function dmen_methods:getChildCount()
+	local uwp = dmenunwrap(self)
+	
+	return uwp:ChildCount()
+end
+
+--- Sets the maximum height the DMenu can have. If the height of all menu items exceed this value, a scroll bar will be automatically added.
+--@param number maxHeight The maximum height of the DMenu to set, in pixels.
+function dmen_methods:setMaxHeight(mh)
+	checkluatype(mh, TYPE_NUMBER)
+	local uwp = dmenunwrap(self)
+	
+	uwp:SetMaxHeight(mh)
+end
+
+--- Returns the maximum height of the DMenu.
+--@return number The maximum height in pixels.
+function dmen_methods:getMaxHeight()
+	local uwp = dmenunwrap(self)
+	
+	return uwp:GetMaxHeight()
+end
+
+--- Sets the minimum width of the DMenu. The menu will be stretched to match the given value.
+--@param number minimumWidth The minimum width of the DMenu in pixels
+function dmen_methods:setMinimumWidth(mh)
+	checkluatype(mh, TYPE_NUMBER)
+	local uwp = dmenunwrap(self)
+	
+	uwp:SetMinimumWidth(mh)
+end
+
+--- Returns the minimum width of the DMenu in pixels
+--@return number The minimum width of the DMenu.
+function dmen_methods:getMinimumWidth()
+	local uwp = dmenunwrap(self)
+	
+	return uwp:GetMinimumWidth()
+end
+
+--- Opens the DMenu at the specified position or cursor position if X and Y are not given.
+--@param number? x Position (X coordinate) to open the menu at.
+--@param number? y Position (Y coordinate) to open the menu at.
+function dmen_methods:open(x, y)
+	local uwp = dmenunwrap(self)
+	
+	uwp:Open(x, y)
+end
+
+--- Creates a sub DMenu and returns it. Has no duplicate call protection.
+--@return DMenu The created DMenu to add options to.
+function dmeno_methods:addSubMenu()
+	local uwp = dmenounwrap(self)
+	
+	return dmenwrap(uwp:AddSubMenu())
+end
+
+--- Sets the checked state of the DMenuOption. Does not invoke DMenuOption:onChecked.
+--@param boolean checked New checked state.
+function dmeno_methods:setChecked(chk)
+	checkluatype(chk, TYPE_BOOL)
+	local uwp = dmenounwrap(self)
+	
+	uwp:SetChecked(chk)
+end
+
+--- Returns the checked state of DMenuOption.
+--@return boolean Are we checked or not.
+function dmeno_methods:getChecked()
+	local uwp = dmenounwrap(self)
+	
+	return uwp:GetChecked()
+end
+
+--- Sets whether the DMenuOption is a checkbox option or a normal button option.
+--@param boolean checkable Checkable?
+function dmeno_methods:setIsCheckable(chk)
+	checkluatype(chk, TYPE_BOOL)
+	local uwp = dmenounwrap(self)
+	
+	uwp:SetIsCheckable(chk)
+end
+
+--- Returns whether the DMenuOption is a checkbox option or a normal button option.
+--@return boolean Is checkable?
+function dmeno_methods:getIsCheckable()
+	local uwp = dmenounwrap(self)
+	
+	return uwp:GetIsCheckable()
+end
+
+--- Set a function to run when the DMenuOption's checked state changes.
+--@param function callback Function to run. Has one argument which is the new checked state.
+function dmeno_methods:onChecked(func)
+	local uwp = dmenunwrap(self)
+	
+	function uwp:OnChecked(new)
+		instance:runFunction(func, new)
+	end
 end
 
 --- Creates a DLabel. A standard Derma text label. A lot of this panels functionality is a base for button elements, such as DButton.
