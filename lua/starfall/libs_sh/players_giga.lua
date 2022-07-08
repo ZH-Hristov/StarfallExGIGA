@@ -199,6 +199,8 @@ SF.RegisterLibrary("trigger")
 SF.RegisterLibrary("projectedtexture")
 
 if SERVER then
+	
+	util.AddNetworkString("SF_nwvartocl")
 
 	--- Called when a player takes damage from falling, allows to override the damage.
 	-- @name GetFallDamage
@@ -354,6 +356,12 @@ if SERVER then
 	end)
 	
 else
+
+	net.Receive("SF_nwvartocl", function()
+		local ent = net.ReadEntity()
+		nwents[ent] = true
+	end)
+
 	--- Allows you to modify the supplied User Command with mouse input. This could be used to make moving the mouse do funky things to view angles.
 	-- @name InputMouseApply
 	-- @class hook
@@ -404,6 +412,57 @@ local function getply(self)
 		SF.Throw("Entity is not valid.", 3)
 	end
 end
+
+local FrozenPlayers, triggers, nwents, animatableprops
+
+local nwvarremovecase = {
+	number = function(ent, key) ent:SetNWInt(key, nil) end,
+	string = function(ent, key) ent:SetNWString(key, nil) end,
+	Vector = function(ent, key) ent:SetNWVector(key, nil) end,
+	Angle = function(ent, key) ent:SetNWAngle(key, nil) end,
+	boolean = function(ent, key) ent:SetNWBool(key, nil) end,
+	Player = function(ent, key) ent:SetNWEntity(key, nil) end,
+	Entity = function(ent, key) ent:SetNWEntity(key, nil) end
+}
+
+instance:AddHook("initialize", function()
+	FrozenPlayers = {}
+	triggers = {}
+	nwents = {}
+	animatableprops = {}
+end)
+
+instance:AddHook("deinitialize", function()
+	if SERVER then
+		if #FrozenPlayers > 0 then
+			for _, v in pairs(FrozenPlayers) do
+				v:Freeze(false)
+			end
+		end
+		
+		if #triggers > 0 then
+			for _, v in pairs(triggers) do
+				SafeRemoveEntity(v)
+			end
+		end
+
+		for ent, _ in pairs(animatableprops) do
+			SafeRemoveEntity(ent)
+		end
+	end
+	
+	if !table.IsEmpty(nwents) then
+		for ent, _ in ipairs(nwents) do
+			local curent = Entity(ent)
+			local curtbl = curent:GetNWVarTable()
+			for k, v in pairs(curtbl) do
+				if string.StartWith(k, instancekey) then
+					nwvarremovecase[type(v)](curent, k)
+				end
+			end
+		end
+	end
+end)
 
 --- Marks the entity to call GM:ShouldCollide.
 -- @param boolean enable Enable or disable the custom collision check.
@@ -845,7 +904,7 @@ end
 -- @param string key The key that is associated with the value
 -- @param Entity fallback The value to return if we failed to retrieve the value. (If it isn't set)
 function ents_methods:getNWEntity(key, val)
-		return eunwrap(self):GetNWEntity(instancekey..key, val)
+	return eunwrap(self):GetNWEntity(instancekey..key, val)
 end
 
 --- Animates an animatable prop
@@ -877,55 +936,7 @@ function ents_methods:setAnimation(animation, frame, rate)
 end
 
 if SERVER then
-	local FrozenPlayers, triggers, nwents, animatableprops
-	
-	local nwvarremovecase = {
-		number = function(ent, key) ent:SetNWInt(key, nil) end,
-		string = function(ent, key) ent:SetNWString(key, nil) end,
-		Vector = function(ent, key) ent:SetNWVector(key, nil) end,
-		Angle = function(ent, key) ent:SetNWAngle(key, nil) end,
-		boolean = function(ent, key) ent:SetNWBool(key, nil) end,
-		Player = function(ent, key) ent:SetNWEntity(key, nil) end,
-		Entity = function(ent, key) ent:SetNWEntity(key, nil) end
-	}
 
-	instance:AddHook("initialize", function()
-		FrozenPlayers = {}
-		triggers = {}
-		nwents = {}
-		animatableprops = {}
-	end)
-
-	instance:AddHook("deinitialize", function()
-		if #FrozenPlayers > 0 then
-			for _, v in pairs(FrozenPlayers) do
-				v:Freeze(false)
-			end
-		end
-		
-		if #triggers > 0 then
-			for _, v in pairs(triggers) do
-				SafeRemoveEntity(v)
-			end
-		end
-	
-		if !table.IsEmpty(nwents) then
-			for ent, _ in ipairs(nwents) do
-				local curent = Entity(ent)
-				local curtbl = curent:GetNWVarTable()
-				for k, v in pairs(curtbl) do
-					if string.StartWith(k, instancekey) then
-						nwvarremovecase[type(v)](curent, k)
-					end
-				end
-			end
-		end
-		
-		for ent, _ in pairs(animatableprops) do
-			SafeRemoveEntity(ent)
-		end
-	end)
-	
 	--- Lets you change the number of bullets in the given weapons primary clip.
 	--@server
 	--@param number ammo The amount of bullets the clip should contain.
@@ -985,7 +996,7 @@ if SERVER then
 	--@return Entity animatableProp The prop as an animatable prop.
 	function ents_methods:makeAnimatable()
 		local ent = eunwrap(self)
-		if !superOrAdmin() or ent:GetClass() != "prop_physics" then return end
+		if !superOrAdmin(instance) or ent:GetClass() != "prop_physics" then return end
 		
 		local prop_animatable = ents.Create( "starfall_animatableprop" )
 		prop_animatable:SetModel( ent:GetModel() )
@@ -1033,6 +1044,9 @@ if SERVER then
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWInt(instancekey..key, val)
+			net.Start("SF_nwvartocl")
+			net.WriteEntity(ent)
+			net.Broadcast()
 		end
 	end
 	
@@ -1057,6 +1071,9 @@ if SERVER then
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWVector(instancekey..key, vunwrap(val))
+			net.Start("SF_nwvartocl")
+			net.WriteEntity(ent)
+			net.Broadcast()
 		end
 	end
 	
@@ -1069,6 +1086,9 @@ if SERVER then
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWFloat(instancekey..key, val)
+			net.Start("SF_nwvartocl")
+			net.WriteEntity(ent)
+			net.Broadcast()
 		end
 	end
 	
@@ -1081,6 +1101,9 @@ if SERVER then
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWAngle(instancekey..key, aunwrap(val))
+			net.Start("SF_nwvartocl")
+			net.WriteEntity(ent)
+			net.Broadcast()
 		end
 	end
 	
@@ -1093,6 +1116,9 @@ if SERVER then
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWBool(instancekey..key, val)
+			net.Start("SF_nwvartocl")
+			net.WriteEntity(ent)
+			net.Broadcast()
 		end
 	end
 	
@@ -1105,6 +1131,9 @@ if SERVER then
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
 			ent:SetNWEntity(instancekey..key, eunwrap(val))
+			net.Start("SF_nwvartocl")
+			net.WriteEntity(ent)
+			net.Broadcast()
 		end
 	end
 	
