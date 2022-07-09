@@ -199,8 +199,6 @@ SF.RegisterLibrary("trigger")
 SF.RegisterLibrary("projectedtexture")
 
 if SERVER then
-	
-	util.AddNetworkString("SF_nwvartocl")
 
 	--- Called when a player takes damage from falling, allows to override the damage.
 	-- @name GetFallDamage
@@ -357,11 +355,6 @@ if SERVER then
 	
 else
 
-	net.Receive("SF_nwvartocl", function()
-		local ent = net.ReadEntity()
-		nwents[ent] = true
-	end)
-
 	--- Allows you to modify the supplied User Command with mouse input. This could be used to make moving the mouse do funky things to view angles.
 	-- @name InputMouseApply
 	-- @class hook
@@ -416,13 +409,14 @@ end
 local FrozenPlayers, triggers, nwents, animatableprops
 
 local nwvarremovecase = {
-	number = function(ent, key) ent:SetNWInt(key, nil) end,
-	string = function(ent, key) ent:SetNWString(key, nil) end,
-	Vector = function(ent, key) ent:SetNWVector(key, nil) end,
-	Angle = function(ent, key) ent:SetNWAngle(key, nil) end,
-	boolean = function(ent, key) ent:SetNWBool(key, nil) end,
-	Player = function(ent, key) ent:SetNWEntity(key, nil) end,
-	Entity = function(ent, key) ent:SetNWEntity(key, nil) end
+	Int = function(ent, key) ent:SetNW2Int(key, nil) end,
+	Float = function(ent, key) ent:SetNW2Float(key, nil) end,
+	String = function(ent, key) ent:SetNW2String(key, nil) end,
+	Vector = function(ent, key) ent:SetNW2Vector(key, nil) end,
+	Angle = function(ent, key) ent:SetNW2Angle(key, nil) end,
+	Bool = function(ent, key) ent:SetNW2Bool(key, nil) end,
+	Player = function(ent, key) ent:SetNW2Entity(key, nil) end,
+	Entity = function(ent, key) ent:SetNW2Entity(key, nil) end
 }
 
 instance:AddHook("initialize", function()
@@ -433,31 +427,29 @@ instance:AddHook("initialize", function()
 end)
 
 instance:AddHook("deinitialize", function()
-	if SERVER then
-		if #FrozenPlayers > 0 then
-			for _, v in pairs(FrozenPlayers) do
-				v:Freeze(false)
-			end
+	if #FrozenPlayers > 0 then
+		for _, v in pairs(FrozenPlayers) do
+			v:Freeze(false)
 		end
-		
-		if #triggers > 0 then
-			for _, v in pairs(triggers) do
-				SafeRemoveEntity(v)
-			end
+	end
+	
+	if #triggers > 0 then
+		for _, v in pairs(triggers) do
+			SafeRemoveEntity(v)
 		end
+	end
 
-		for ent, _ in pairs(animatableprops) do
-			SafeRemoveEntity(ent)
-		end
+	for ent, _ in pairs(animatableprops) do
+		SafeRemoveEntity(ent)
 	end
 	
 	if !table.IsEmpty(nwents) then
 		for ent, _ in ipairs(nwents) do
 			local curent = Entity(ent)
-			local curtbl = curent:GetNWVarTable()
+			local curtbl = curent:GetNW2VarTable()
 			for k, v in pairs(curtbl) do
-				if string.StartWith(k, instancekey) then
-					nwvarremovecase[type(v)](curent, k)
+				if string.StartWith(k, instancekey) and k.type then
+					nwvarremovecase[v.type](curent, k)
 				end
 			end
 		end
@@ -862,49 +854,49 @@ end
 -- @param string key The key that is associated with the value.
 -- @param number fallback The value to return if we failed to retrieve the value (If it isn't set).
 function ents_methods:getNWInt(key, val)
-	return eunwrap(self):GetNWInt(instancekey..key, val)
+	return eunwrap(self):GetNW2Int(instancekey..key, val)
 end
 
 --- Retrieves a networked string value at specified index on the entity that is set by Entity:setNWString.
 -- @param string key The key that is associated with the value
 -- @param string fallback The value to return if we failed to retrieve the value. (If it isn't set)
 function ents_methods:getNWString(key, val)
-	return eunwrap(self):GetNWString(instancekey..key, val)
+	return eunwrap(self):GetNW2String(instancekey..key, val)
 end
 
 --- Retrieves a networked vector value at specified index on the entity that is set by Entity:setNWVector.
 -- @param string key The key that is associated with the value
 -- @param Vector fallback The value to return if we failed to retrieve the value.
 function ents_methods:getNWVector(key, val)
-	return eunwrap(self):GetNWVector(instancekey..key, vunwrap(val))
+	return eunwrap(self):GetNW2Vector(instancekey..key, vunwrap(val))
 end
 
 --- Retrieves a networked float value at specified index on the entity that is set by Entity:setNWFloat.
 -- @param string key The key that is associated with the value
 -- @param number fallback The value to return if we failed to retrieve the value.
 function ents_methods:getNWFloat(key, val)
-	return eunwrap(self):GetNWFloat(instancekey..key, val)
+	return eunwrap(self):GetNW2Float(instancekey..key, val)
 end
 
 --- Retrieves a networked angle value at specified index on the entity that is set by Entity:getNWAngle.
 -- @param string key The key that is associated with the value
 -- @param Angle fallback The value to return if we failed to retrieve the value.
 function ents_methods:getNWAngle(key, val)
-	return eunwrap(self):GetNWAngle(instancekey..key, aunwrap(val))
+	return eunwrap(self):GetNW2Angle(instancekey..key, aunwrap(val))
 end
 
 --- Retrieves a networked boolean value at specified index on the entity that is set by Entity:setNWBool.
 -- @param string key The key that is associated with the value
 -- @param boolean fallback The value to return if we failed to retrieve the value.
 function ents_methods:getNWBool(key, val)
-	return eunwrap(self):GetNWBool(instancekey..key, val)
+	return eunwrap(self):GetNW2Bool(instancekey..key, val)
 end
 
 --- Retrieves a networked entity value at specified index on the entity that is set by Entity:setNWEntity.
 -- @param string key The key that is associated with the value
 -- @param Entity fallback The value to return if we failed to retrieve the value. (If it isn't set)
 function ents_methods:getNWEntity(key, val)
-	return eunwrap(self):GetNWEntity(instancekey..key, val)
+	return eunwrap(self):GetNW2Entity(instancekey..key, val)
 end
 
 --- Animates an animatable prop
@@ -1043,10 +1035,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
-			ent:SetNWInt(instancekey..key, val)
-			net.Start("SF_nwvartocl")
-			net.WriteEntity(ent)
-			net.Broadcast()
+			ent:SetNW2Int(instancekey..key, val)
 		end
 	end
 	
@@ -1058,7 +1047,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) then
-			ent:SetNWString(instancekey..key, val)
+			ent:SetNW2String(instancekey..key, val)
 		end
 	end
 	
@@ -1070,10 +1059,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
-			ent:SetNWVector(instancekey..key, vunwrap(val))
-			net.Start("SF_nwvartocl")
-			net.WriteEntity(ent)
-			net.Broadcast()
+			ent:SetNW2Vector(instancekey..key, vunwrap(val))
 		end
 	end
 	
@@ -1085,10 +1071,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
-			ent:SetNWFloat(instancekey..key, val)
-			net.Start("SF_nwvartocl")
-			net.WriteEntity(ent)
-			net.Broadcast()
+			ent:SetNW2Float(instancekey..key, val)
 		end
 	end
 	
@@ -1100,10 +1083,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
-			ent:SetNWAngle(instancekey..key, aunwrap(val))
-			net.Start("SF_nwvartocl")
-			net.WriteEntity(ent)
-			net.Broadcast()
+			ent:SetNW2Angle(instancekey..key, aunwrap(val))
 		end
 	end
 	
@@ -1115,10 +1095,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
-			ent:SetNWBool(instancekey..key, val)
-			net.Start("SF_nwvartocl")
-			net.WriteEntity(ent)
-			net.Broadcast()
+			ent:SetNW2Bool(instancekey..key, val)
 		end
 	end
 	
@@ -1130,10 +1107,7 @@ if SERVER then
 		local ent = eunwrap(self)
 		if !nwents[ent:EntIndex()] then nwents[ent:EntIndex()] = true end
 		if superOrAdmin(instance) or instance.player == SF.Superuser then
-			ent:SetNWEntity(instancekey..key, eunwrap(val))
-			net.Start("SF_nwvartocl")
-			net.WriteEntity(ent)
-			net.Broadcast()
+			ent:SetNW2Entity(instancekey..key, eunwrap(val))
 		end
 	end
 	
