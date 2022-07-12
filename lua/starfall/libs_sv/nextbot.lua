@@ -52,6 +52,8 @@ registerprivilege("nextbot.jumpAcrossGap", "Nextbot jump across gap", "Allows th
 registerprivilege("nextbot.setClimbAllowed", "Nextbot allow climb", "Allows the user to set whether the nextbot can climb nav ladders.", {entities = {}})
 registerprivilege("nextbot.setAvoidAllowed", "Nextbot allow avoid", "Allows the user to set whether the nextbot can try to avoid obstacles.", {entities = {}})
 registerprivilege("nextbot.setJumpGapsAllowed", "Nextbot allow jump gaps", "Allows the user to set whether the nextbot can jump gaps.", {entities = {}})
+registerprivilege("nextbot.setHealth", "Nextbot allow set health", "Allows the user to set whether the nextbot's health", {entities = {}})
+registerprivilege("nextbot.setMaxHealth", "Nextbot allow set max health", "Allows the user to set whether the nextbot's max health", {entities = {}})
 
 local nbCount = SF.LimitObject("nextbots", "nextbots", 30, "The number of props allowed to spawn via Starfall")
 
@@ -93,7 +95,6 @@ end
 -- @param string? model The model the nextbot will use. If nil, uses Kleiner.
 -- @return NextBot The nextbot.
 function nextbot_library.create(pos, mdl)
-
 	checkpermission(instance, nil, "nextbot.create")
 	checkluatype(mdl, TYPE_STRING)
 	local upos = vunwrap(pos)
@@ -108,6 +109,9 @@ function nextbot_library.create(pos, mdl)
 	nb.chip = instance.entity
 	nb:Spawn()
 	nextbots[nb] = true
+
+	if CPPI then nb:CPPISetOwner(ply) end
+
 	return nbwrap(nb)
 end
 	
@@ -117,6 +121,16 @@ end
 function nextbot_library.canSpawn()
 	if not SF.Permissions.hasAccess(instance, nil, "nextbot.create") then return false end
 	return nbCount:check(instance.player) > 0
+end
+	
+function nb_methods:setHealth(val)
+	if not SF.Permissions.hasAccess(instance, nil, "nextbot.setHealth") then return false end
+	nbunwrap(self):SetHealth(val)
+end
+	
+function nb_methods:setMaxHealth(val)
+	if not SF.Permissions.hasAccess(instance, nil, "nextbot.setMaxHealth") then return false end
+	nbunwrap(self):SetMaxHealth(val)
 end
 
 --- Makes the nextbot try to go to a specified position.
