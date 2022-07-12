@@ -65,6 +65,7 @@ local nextbots = {}
 local nextbot_library, nb_meta, nb_methods = instance.Libraries.nextbot, instance.Types.NextBot, instance.Types.NextBot.Methods
 local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
 local navarea_methods, navarea_meta, navwrap, navunwrap = instance.Types.NavArea.Methods, instance.Types.NavArea, instance.Types.NavArea.Wrap, instance.Types.NavArea.Unwrap
+local eunwrap = instance.Types.Entity.Unwrap
 local nbwrap, nbunwrap = instance.Types.NextBot.Wrap, instance.Types.NextBot.Unwrap
 
 local function nextbotOnDestroy(ent)
@@ -108,6 +109,7 @@ function nextbot_library.create(pos, mdl)
 	nb:SetModel(mdl or "models/kleiner.mdl")
 	nb.chip = instance.entity
 	nb:Spawn()
+	nb:SetOwner(ply)
 	nextbots[nb] = true
 
 	if CPPI then nb:CPPISetOwner(ply) end
@@ -123,15 +125,6 @@ function nextbot_library.canSpawn()
 	return nbCount:check(instance.player) > 0
 end
 	
-function nb_methods:setHealth(val)
-	if not SF.Permissions.hasAccess(instance, nil, "nextbot.setHealth") then return false end
-	nbunwrap(self):SetHealth(val)
-end
-	
-function nb_methods:setMaxHealth(val)
-	if not SF.Permissions.hasAccess(instance, nil, "nextbot.setMaxHealth") then return false end
-	nbunwrap(self):SetMaxHealth(val)
-end
 
 --- Makes the nextbot try to go to a specified position.
 -- @server

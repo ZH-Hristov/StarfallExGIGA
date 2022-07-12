@@ -1141,24 +1141,6 @@ if SERVER then
 		ent:SetCollisionGroup(group)
 	end
 	
-	--- Sets the health of the entity.
-	-- @server
-	-- @param number newhealth New health value.
-	function ents_methods:setHealth(new)
-		if superOrAdmin(instance) then
-			ounwrap(self):SetHealth(new)
-		end
-	end
-	
-	--- Sets the maximum health for entity. Note, that you can still set entity's health above this amount with Entity:setHealth.
-	-- @server
-	-- @param number newmaxhealth New max health value.
-	function ents_methods:setMaxHealth(new)
-		if superOrAdmin(instance) then
-			ounwrap(self):SetMaxHealth(new)
-		end
-	end
-	
 	--- Applies damage to an entity
 	-- @param number amt Damage amount
 	-- @param Entity attacker Damage attacker
