@@ -16,8 +16,6 @@ SF.RegisterType("NextBot", false, true, debug.getregistry().NextBot, "Entity")
 -- @libtbl nextbot_library
 SF.RegisterLibrary("nextbot")
 
-if SERVER then
-
 registerprivilege("nextbot.create", "Create nextbot", "Allows the user to create nextbots.")
 registerprivilege("nextbot.setGotoPos", "Set nextbot goto pos", "Allows the user to set a vector pos for the nextbot to try and go to.", {entites = {}})
 registerprivilege("nextbot.removeGotoPos", "Remove nextbot goto pos", "Allows the user to remove the goto pos from a nextbot.", {entites = {}})
@@ -631,8 +629,6 @@ function nb_methods:jumpAcrossGap(landGoal, landForward)
 	local v1, v2 = vunwrap(landGoal), vunwrap(landForward)
 	checkpermission(instance, nb, "nextbot.jumpAcrossGap")
 	nb.loco:JumpAcrossGap(v1, v2)
-end
-
 end
 
 end
