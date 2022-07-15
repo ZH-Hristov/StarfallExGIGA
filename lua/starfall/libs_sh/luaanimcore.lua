@@ -818,6 +818,18 @@ function customanims_library.setAnimFrame(ent, name, fr)
 	end
 end
 
+--- Sets the power of a custom anim playing on an entity.
+-- @param Entity ent The entity.
+-- @param string name The ID name of the animation.
+-- @param number power The power to set the anim to.
+function customanims_library.setAnimPower(ent, name, fr)
+	local ent = eunwrap(ent)
+	if ent == instance.player or instance.player==SF.SuperUser or instance.player:IsAdmin() then
+		local anim = animations.GetEntityAnimation(ent, name)
+		anim.Power = fr
+	end
+end
+
 --- If true, stops a custom anim from autoplaying.
 -- @param Entity ent The entity.
 -- @param string name The ID name of the animation.
