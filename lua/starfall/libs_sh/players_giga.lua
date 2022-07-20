@@ -777,8 +777,8 @@ end
 -- @param number|string seqid The sequence ID
 -- @return number activity The activity ID.
 function ents_methods:getSequenceActivity(act)
-	if isstring(act) then act = getply(self):LookupSequence(act) end
-	return getply(self):GetSequenceActivity(act)
+	if isstring(act) then act = eunwrap(self):LookupSequence(act) end
+	return eunwrap(self):GetSequenceActivity(act)
 end
 
 --- Set an entity's model.
