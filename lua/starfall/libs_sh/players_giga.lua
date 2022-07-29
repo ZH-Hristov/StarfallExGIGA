@@ -1180,6 +1180,9 @@ if SERVER then
 	-- @return Entity returns the created trigger entity.
 	function trigger_library.create(name, model, pos, undo, filter)
 		local colly = ents.Create("starfall_trigger")
+		if !undo then
+			table.insert(triggers, colly)
+		end
 		colly:SetNWString("colName", name)
 		colly:SetNWString("filter", filter or "player")
 		colly:SetModel(model)
@@ -1191,9 +1194,6 @@ if SERVER then
 		colly:SetTrigger(true)
 		colly:SetSolidFlags(12)
 		colly:DrawShadow(false)
-		if !undo then
-			table.insert(triggers, colly)
-		end
 		return ewrap(colly)
 	end
 	
@@ -1202,12 +1202,13 @@ if SERVER then
 	-- @param Vector origin The position the middle of the trigger will be in.
 	-- @param Vector mins The size of the bottom corner.
 	-- @param Vector maxs The size of the opposite corner.
-	-- @param string|table? filter A string or table of strings of entity classes. Trigger will be activated only by these classes. Filters players by default.
+	-- @param string|table filter A string or table of strings of entity classes. Trigger will be activated only by these classes. Filters players by default.
 	-- @param function onEnter The function to run when a valid entity enters the trigger.
 	-- @param function? onExit The function to run when a valid entity exits the trigger.
 	-- @return Entity The trigger entity.
 	function trigger_library.createBox(origin, mins, maxs, filter, onEnter, onExit)
 		local colly = ents.Create("starfall_triggerbox")
+		table.insert(triggers, colly)
 		colly:SetModel("models/hunter/blocks/cube025x025x025.mdl")
 		colly:SetMaterial("models/wireframe")
 		colly:SetPos( vunwrap(origin) )
@@ -1219,6 +1220,10 @@ if SERVER then
 		colly.filter = {}
 		
 		if filter then
+			if type(filter) == "string" then
+				filter = {filter}
+			end
+			
 			for _, cls in pairs(filter) do
 				colly.filter[cls] = true
 			end
@@ -1244,7 +1249,6 @@ if SERVER then
 		
 		colly:SetSolidFlags(12)
 		colly:DrawShadow(false)
-		table.insert(triggers, colly)
 		return ewrap(colly)
 	end
 	
