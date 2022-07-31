@@ -9,6 +9,8 @@ registerprivilege("entities.setPersistent", "SetPersistent", "Allows the user to
 registerprivilege("entities.emitSound", "Emitsound", "Allows the user to play sounds on entities", { client = (CLIENT and {} or nil), entities = {} })
 registerprivilege("entities.setHealth", "SetHealth", "Allows the user to change an entity's health", { entities = {} })
 registerprivilege("entities.setMaxHealth", "SetMaxHealth", "Allows the user to change an entity's max health", { entities = {} })
+registerprivilege("entities.doNotDuplicate", "DoNotDuplicate", "Allows the user to set whether an entity will be saved on dupes or map saves", { entities = {} })
+
 
 local manipulations = SF.EntityTable("boneManipulations")
 
@@ -643,6 +645,24 @@ function ents_methods:getCollisionGroup()
 	return getent(self):GetCollisionGroup()
 end
 
+--- Gets the solid enum of the entity
+-- @return number The solid enum of the entity. https://wiki.facepunch.com/gmod/Enums/SOLID
+function ents_methods:getSolid()
+	return getent(self):GetSolid()
+end
+
+--- Gets the solid flag enum of the entity
+-- @return number The solid flag enum of the entity. https://wiki.facepunch.com/gmod/Enums/FSOLID
+function ents_methods:getSolidFlags()
+	return getent(self):GetSolidFlags()
+end
+
+--- Gets whether an entity is solid or not
+-- @return boolean whether an entity is solid or not
+function ents_methods:isSolid()
+	return getent(self):IsSolid()
+end
+
 --- Gets the movetype enum of the entity
 -- @return number The movetype enum of the entity. https://wiki.facepunch.com/gmod/Enums/MOVETYPE
 function ents_methods:getMoveType()
@@ -911,6 +931,14 @@ if SERVER then
 		checkpermission(instance, ent, "entities.setMaxHealth")
 		checkluatype(val, TYPE_NUMBER)
 		ent:SetMaxHealth(val)
+	end
+		
+	--- Stops the entity from being saved on duplication or map save.
+	-- @server
+	function ents_methods:doNotDuplicate()
+		local ent = getent(self)
+		checkpermission(instance, ent, "entities.doNotDuplicate")
+		ent.DoNotDuplicate = true
 	end
 end
 
