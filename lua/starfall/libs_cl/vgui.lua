@@ -538,6 +538,15 @@ function pnl_methods:parentToHUD()
 	uwp:ParentToHUD()
 end
 
+--- Parents the panel to the Context Menu.
+--- Panels parented to the context menu will not be clickable unless Panel:setMouseInputEnabled and Panel:setKeyboardInputEnabled are both true or Panel:makePopup has been called. 
+--- If you want the panel to have mouse input but you do not want to prevent players from moving, set Panel:setKeyboardInputEnabled to false immediately after calling Panel:makePopup.
+function pnl_methods:parentToContextMenu()
+	local uwp = unwrap(self)
+	
+	uwp:SetParent(g_ContextMenu)
+end
+
 --- Sets the alignment of the contents. Check https://wiki.facepunch.com/gmod/Panel:SetContentAlignment for directions.
 --@param number align The direction of the content, based on the number pad.
 function pnl_methods:setContentAlignment(align)
