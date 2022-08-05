@@ -547,6 +547,15 @@ function pnl_methods:parentToContextMenu()
 	uwp:SetParent(g_ContextMenu)
 end
 
+--- Causes the panel to re-layout in the next frame. Avoid calling this every frame.
+-- @param boolean? instant If true the panel will re-layout instantly and not wait for the next frame.
+function pnl_methods:invalidateLayout(now)
+	local uwp = unwrap(self)
+	if now then checkluatype(now, TYPE_BOOL) end
+	
+	uwp:InvalidateLayout(now)
+end
+
 --- Sets the alignment of the contents. Check https://wiki.facepunch.com/gmod/Panel:SetContentAlignment for directions.
 --@param number align The direction of the content, based on the number pad.
 function pnl_methods:setContentAlignment(align)
