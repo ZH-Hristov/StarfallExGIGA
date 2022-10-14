@@ -206,6 +206,31 @@ if SERVER then
 			instance:runFunction(callback, path, status, data)
 		end)
 	end
+	
+	--- Checks if a file exists
+	-- @param string path Filepath relative to data/sf_filedata/.
+	-- @return boolean? True if exists, false if not, nil if error
+	function fileServer_library.exists(path)
+		checkluatype (path, TYPE_STRING)
+		return file.Exists(path, "DATA")
+	end
+	
+	-- Enumerates a directory
+	-- @param string path The folder to enumerate, relative to data/sf_filedata/.
+	-- @param string? sorting Optional sorting argument. Either nameasc, namedesc, dateasc, datedesc
+	-- @return table Table of file names
+	-- @return table Table of directory names
+	function fileServer_library.find(path, sorting)
+		return file.Find(path, "DATA", sorting)
+	end
+	
+	--- Creates a directory
+	-- @param string path Filepath relative to data/sf_filedata/.
+	function fileServer_library.createDir(path)
+		if !instance.player:IsSuperAdmin() then return end
+		checkluatype (path, TYPE_STRING)
+		file.CreateDir(path)
+	end
 else
 	--- Draws the Color Modify shader, which can be used to adjust colors on screen. Must be in drawscreenspace hook. Note that if you leave out a field, it will retain its last value which may have changed if another caller uses this function.
 	-- @client

@@ -896,7 +896,7 @@ end
 -- @param string key The key that is associated with the value
 -- @param Entity fallback The value to return if we failed to retrieve the value. (If it isn't set)
 function ents_methods:getNWEntity(key, val)
-	return eunwrap(self):GetNW2Entity(instancekey..key, val)
+	return ewrap(eunwrap(self):GetNW2Entity(instancekey..key, val))
 end
 
 --- Animates an animatable prop
@@ -946,6 +946,17 @@ if SERVER then
 		local wep = wunwrap(self)
 		if superOrAdmin(instance) then
 			wep:SetClip2(val)
+		end
+	end
+	
+	--- Fires bullets from an entity.
+	--@server
+	--@param table bulletData Bullet data table, check https://wiki.facepunch.com/gmod/Structures/Bullet
+	function ents_methods:fireBullets(bulletData)
+		if superOrAdmin(instance) then
+			local ent = eunwrap(self)
+			bulletData = instance.Unsanitize(bulletData)
+			ent:FireBullets(bulletData)
 		end
 	end
 	

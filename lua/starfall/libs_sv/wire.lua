@@ -26,7 +26,10 @@ SF.RegisterLibrary("wire")
 -- @libtbl wirelink_meta
 SF.RegisterType("Wirelink", false, true)
 
--- Vector2 type for wire xv2
+--- Vector2 type for wire xv2
+-- @name Vector2
+-- @class type
+-- @libtbl vec2_meta
 SF.RegisterType("Vector2", nil, nil, nil, "Vector", function(checktype, vec2_meta)
 	return function(vec)
 		return setmetatable({vec[1], vec[2], 0}, vec2_meta)
@@ -160,8 +163,8 @@ end
 --- Creates a Vector2 struct for use with wire xv2 type
 -- @name builtins_library.Vector2
 -- @class function
--- @param number x X value
--- @param number y Y value
+-- @param number? x X value
+-- @param number? y Y value
 -- @return Vector2 Vector2
 function instance.env.Vector2(x, y)
 	if x ~= nil then checkluatype(x, TYPE_NUMBER) else x = 0 end
@@ -169,7 +172,6 @@ function instance.env.Vector2(x, y)
 	return v2wrap({ x, y })
 end
 
-local function identity(data) return data end
 local typeToE2Type -- Assign next line since some funcs need it
 typeToE2Type = {
 	[TYPE_NUMBER] = function(x) return x, "n" end,
@@ -188,8 +190,8 @@ typeToE2Type = {
 local inputConverters
 inputConverters =
 {
-	NORMAL = identity,
-	STRING = identity,
+	NORMAL = function(x) return isnumber(x) and x or 0 end,
+	STRING = function(x) return isstring(x) and x or "" end,
 	VECTOR = function(vec) return setmetatable({ vec[1] or vec.x, vec[2] or vec.y, vec[3] or vec.z }, vec_meta) end,
 	VECTOR2 = function(vec) return setmetatable({ vec[1] or vec.x, vec[2] or vec.y }, vec2_meta) end,
 	ANGLE = function(ang) return setmetatable({ ang[1] or ang.p, ang[2] or ang.y, ang[3] or ang.r }, ang_meta) end,

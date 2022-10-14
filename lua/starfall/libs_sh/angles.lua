@@ -30,9 +30,9 @@ end
 --- Creates an Angle struct.
 -- @name builtins_library.Angle
 -- @class function
--- @param number p Pitch
--- @param number y Yaw
--- @param number r Roll
+-- @param number? p Pitch
+-- @param number? y Yaw
+-- @param number? r Roll
 -- @return Angle Angle struct
 instance.env.Angle = function (p, y, r)
 	if p~=nil then checkluatype(p, TYPE_NUMBER) else p = 0 end
@@ -58,9 +58,8 @@ function ang_meta.__newindex(t, k, v)
 	end
 end
 
---- Gets a value at a key in the color
+--- Gets a value at a key in the angle
 -- Can be indexed with: 1, 2, 3, p, y, r, pitch, yaw, roll. 1,2,3 is most efficient.
--- @param Angle Ang
 -- @param number|string Key
 -- @return number Value
 function ang_meta.__index(t, k)

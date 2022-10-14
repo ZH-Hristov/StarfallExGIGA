@@ -228,14 +228,14 @@ builtins_library.isFirstTimePredicted = IsFirstTimePredicted
 --- Returns the current count for this Think's CPU Time.
 -- This value increases as more executions are done, may not be exactly as you want.
 -- If used on screens, will show 0 if only rendering is done. Operations must be done in the Think loop for them to be counted.
--- @return number Current quota used this Think
-function builtins_library.quotaUsed()
+-- @return number Current cpu time used this Think
+function builtins_library.cpuUsed()
 	return instance.cpu_total
 end
 
 --- Gets the Average CPU Time in the buffer
 -- @return number Average CPU Time of the buffer.
-function builtins_library.quotaAverage()
+function builtins_library.cpuAverage()
 	return instance:movingCPUAverage()
 end
 
@@ -269,7 +269,7 @@ end
 
 --- Returns the total used time for all chips by the player.
 -- @return number Total used CPU time of all your chips.
-function builtins_library.quotaTotalUsed()
+function builtins_library.cpuTotalUsed()
 	local total = 0
 	for instance, _ in pairs(SF.playerInstances[instance.player]) do
 		total = total + instance.cpu_total
@@ -279,7 +279,7 @@ end
 
 --- Returns the total average time for all chips by the player.
 -- @return number Total average CPU Time of all your chips.
-function builtins_library.quotaTotalAverage()
+function builtins_library.cpuTotalAverage()
 	local total = 0
 	for instance, _ in pairs(SF.playerInstances[instance.player]) do
 		total = total + instance:movingCPUAverage()
@@ -288,13 +288,13 @@ function builtins_library.quotaTotalAverage()
 end
 
 --- Gets the CPU Time max.
--- CPU Time is stored in a buffer of N elements, if the average of this exceeds quotaMax, the chip will error.
+-- CPU Time is stored in a buffer of N elements, if the average of this exceeds cpuMax, the chip will error.
 -- @return number Max SysTime allowed to take for execution of the chip in a Think.
-function builtins_library.quotaMax()
+function builtins_library.cpuMax()
 	return instance.cpuQuota
 end
 
---- Sets a CPU soft quota which will trigger a catchable error if the cpu goes over a certain amount.
+--- Sets a soft cpu quota which will trigger a catchable error if the cpu goes over a certain amount.
 -- @param number quota The threshold where the soft error will be thrown. Ratio of current cpu to the max cpu usage. 0.5 is 50%
 function builtins_library.setSoftQuota(quota)
 	checkluatype(quota, TYPE_NUMBER)
@@ -681,18 +681,41 @@ else
 	end
 end
 
---- Returns the table of scripts used by the chip
+--- Returns the source code of and compiled function for specified script.
+-- @param string path Path of file. Can be absolute or relative to calling file. Must be '--@include'-ed.
+-- @return string? Source code, or nil if could not be found
+-- @return function? Compiled function, or nil if could not be found
+function builtins_library.getScript(path)
+	checkluatype(path, TYPE_STRING)
+	local curdir = SF.GetExecutingPath() or ""
+	path = SF.ChoosePath(path, curdir, function(testpath)
+		return instance.scripts[testpath]
+	end) or path
+	return instance.source[path], instance.scripts[path]
+end
+
+--- Returns the source code of and compiled functions for the scripts used by the chip.
 -- @param Entity? ent Optional target entity. Default: chip()
--- @return table Table of scripts used by the chip
+-- @return table Table where keys are paths and values are strings
+-- @return table? Table where keys are paths and values are functions, or nil if another chip was specified
 function builtins_library.getScripts(ent)
-	if ent~=nil then
+	if ent ~= nil then
 		ent = getent(ent)
 		local oinstance = ent.instance
-		if not (ent.Starfall and oinstance and (oinstance.player == instance.player or oinstance.shareScripts)) then SF.Throw("Invalid starfall chip", 2) end
+		if not ent.Starfall or not oinstance then
+			SF.Throw("Invalid starfall chip", 2)
+			return
+		elseif not oinstance.shareScripts and oinstance.player ~= instance.player then
+			SF.Throw("Not allowed", 2)
+			return
+		end
 		return instance.Sanitize(oinstance.source)
-	else
-		return instance.Sanitize(instance.source)
 	end
+	local funcs = {}
+	for path, func in pairs(instance.scripts) do
+		funcs[path] = func
+	end
+	return instance.Sanitize(instance.source), funcs
 end
 
 --- Sets the chip to allow other chips to view its sources
@@ -702,7 +725,7 @@ function builtins_library.shareScripts(enable)
 end
 
 --- Runs an included script and caches the result.
--- Works pretty much like standard Lua require()
+-- The path must be an actual path, including the file extension and using slashes for directory separators instead of periods.
 -- @param string path The file path to include. Make sure to --@include it
 -- @return ... Return value(s) of the script
 function builtins_library.require(path)
@@ -717,8 +740,8 @@ function builtins_library.require(path)
 	return instance:require(path)
 end
 
---- Runs an included script and caches the result.
--- Works pretty much like standard Lua require()
+--- Runs all included scripts in a directory and caches the results.
+-- The path must be an actual path, including the file extension and using slashes for directory separators instead of periods.
 -- @param string path The directory to include. Make sure to --@includedir it
 -- @param table loadpriority Table of files that should be loaded before any others in the directory
 -- @return table Table of return values of the scripts
@@ -776,7 +799,7 @@ function builtins_library.dofile(path)
 	return (instance.scripts[path] or SF.Throw("Can't find file '" .. path .. "' (did you forget to --@include it?)", 2))()
 end
 
---- Runs an included directory, but does not cache the result.
+--- Runs all included scripts in directory, but does not cache the result.
 -- @param string path The directory to include. Make sure to --@includedir it
 -- @param table loadpriority Table of files that should be loaded before any others in the directory
 -- @return table Table of return values of the scripts
@@ -819,27 +842,43 @@ function builtins_library.dodir(path, loadpriority)
 	return returns
 end
 
---- GLua's loadstring
--- Works like loadstring, except that it executes by default in the main builtins_library
--- @param string str String to execute
--- @return function Function of str
-function builtins_library.loadstring(str, name)
-	name = "SF:" .. (name or tostring(instance.env))
-	local func = SF.CompileString(str, name, false)
-
-	-- CompileString returns an error as a string, better check before setfenv
-	if isfunction(func) then
-		return setfenv(func, instance.env)
-	end
-
-	return func
-end
-
--- Used for getfenv and setfenv.
+-- Used for loadstring, setfenv, and getfenv.
 local whitelistedEnvs = setmetatable({
-	[instance.env] = true
+	[instance.env] = true,
 }, {__mode = 'k'})
 instance.whitelistedEnvs = whitelistedEnvs
+
+--- Like Lua 5.2 or LuaJIT's load/loadstring, except it has no mode parameter and, of course, the resulting function is in your instance's environment by default.
+-- For compatibility with older versions of Starfall, loadstring is NOT an alias of this function like it is in vanilla Lua 5.2/LuaJIT.
+-- @param string code String to compile
+-- @param string? identifier Name of compiled function
+-- @param table? env Environment of compiled function
+-- @return function? Compiled function, or nil if failed to compile
+-- @return string? Error string, or nil if successfully compiled
+function builtins_library.loadstring(ld, source, mode, env)
+	checkluatype(ld, TYPE_STRING)
+	if source == nil then
+		source = "=(load)"
+	else
+		checkluatype(source, TYPE_STRING)
+	end
+	if not isstring(mode) then
+		mode, env = nil, mode
+	end
+	if env == nil then
+		env = instance.env
+	else
+		checkluatype(env, TYPE_TABLE)
+	end
+	source = "SF:"..source
+	local retval = SF.CompileString(ld, source, false)
+	if isfunction(retval) then
+		whitelistedEnvs[env] = true
+		return setfenv(retval, env)
+	end
+	return nil, tostring(retval)
+end
+builtins_library.load = builtins_library.loadstring
 
 --- Lua's setfenv
 -- Sets the environment of either the stack level or the function specified.
@@ -896,10 +935,11 @@ end
 local debug_library = instance.Libraries.debug
 
 --- GLua's debug.traceback()
--- Returns a string containing traceback info
--- @param thread? A thread to get the stacktrace of. Otherwise uses current thread and uses this arg as the message.
--- @param string? message A message to be included in the stack trace. Default: ""
--- @return number? stacklevel How far up to start the stack level. Default: 1
+-- Returns a string containing a stack trace of the given thread
+-- @param thread? A thread to get the stack trace of. If nil, this argument will be used as the message and the current thread becomes the target.
+-- @param string? message A message to be included at the beginning of the stack trace. Default: ""
+-- @param number? stacklevel Which position in the execution stack to start the traceback at. Default: 1
+-- @return string A dump of the execution stack.
 function debug_library.traceback(thread, message, stacklevel)
 	local ok, t = pcall(instance.Types.thread.Unwrap, thread)
 	if ok then
@@ -956,6 +996,10 @@ local uncatchable = {
 	["stack overflow"] = true
 }
 
+local function get_retvals_vararg(...)
+	return {...}, select('#', ...)
+end
+
 --- Lua's pcall with SF throw implementation
 -- Calls a function and catches an error that can be thrown while the execution of the call.
 -- @param function func Function to be executed and of which the errors should be caught of
@@ -963,11 +1007,11 @@ local uncatchable = {
 -- @return boolean If the function had no errors occur within it.
 -- @return ... If an error occurred, this will be a string containing the error message. Otherwise, this will be the return values of the function passed in.
 function builtins_library.pcall(func, ...)
-	local vret = { pcall(func, ...) }
-	local ok, err = vret[1], vret[2]
-
-	if ok then return unpack(vret) end
-
+	local vret, j = get_retvals_vararg(pcall(func, ...))
+	
+	if vret[1] then return unpack(vret, 1, j) end
+	
+	local err = vret[2]
 	if dgetmeta(err)==SF.Errormeta then
 		if err.userdata~=nil then
 			err = err.userdata
@@ -977,7 +1021,7 @@ function builtins_library.pcall(func, ...)
 	elseif uncatchable[err] then
 		SF.Throw(err, 2, true)
 	end
-
+	
 	return false, instance.Sanitize({err})[1]
 end
 
@@ -994,11 +1038,11 @@ end
 -- @return boolean Status of the execution; true for success, false for failure.
 -- @return ... The returns of the first function if execution succeeded, otherwise the return values of the error callback.
 function builtins_library.xpcall(func, callback, ...)
-	local vret = { xpcall(func, xpcall_Callback, ...) }
-	local ok, errData = vret[1], vret[2]
-
-	if ok then return unpack(vret) end
-
+	local vret, j = get_retvals_vararg(xpcall(func, xpcall_Callback, ...))
+	
+	if vret[1] then return unpack(vret, 1, j) end
+	
+	local errData = vret[2]
 	local err, traceback = errData[1], errData[2]
 	if dgetmeta(err)==SF.Errormeta then
 		if err.userdata~=nil then
@@ -1037,7 +1081,7 @@ end
 --- Throws an exception
 -- @param string msg Message string
 -- @param number? level Which level in the stacktrace to blame. Defaults to 1
--- @param boolean uncatchable Makes this exception uncatchable
+-- @param boolean? uncatchable Makes this exception uncatchable
 function builtins_library.throw(msg, level, uncatchable)
 	SF.Throw(msg, 1 + (level or 1), uncatchable)
 end

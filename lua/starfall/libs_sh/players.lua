@@ -5,6 +5,7 @@ local registerprivilege = SF.Permissions.registerPrivilege
 if SERVER then
 	-- Register privileges
 	registerprivilege("player.dropweapon", "DropWeapon", "Drops a weapon from the player", { entities = {} })
+	registerprivilege("player.setammo", "SetAmmo", "Whether a player can set their ammo", { usergroups = { default = 1 }, entities = {} })
 else
 	registerprivilege("player.getFriendStatus", "FriendStatus", "Whether friend status can be retrieved", { client = { default = 1 } })
 end
@@ -398,6 +399,15 @@ function player_methods:getWeapon(wep)
 	return wwrap(getply(self):GetWeapon(wep))
 end
 
+--- Returns a player's weapon color
+-- The part of the model that is colored is determined by the model itself, and is different for each model
+-- The format is Vector(r,g,b), and each color should be between 0 and 1
+-- @shared
+-- @return Vector The color
+function player_methods:getWeaponColor()
+	return vwrap(getply(self):GetWeaponColor())
+end
+
 --- Returns the entity that the player is standing on
 -- @shared
 -- @return Entity Ground entity
@@ -429,9 +439,15 @@ function player_methods:isSprinting()
 	return getply(self):IsSprinting()
 end
 
+--- Gets the player's death ragdoll
+-- @return Entity? The entity or nil if it doesn't exist
+function player_methods:getDeathRagdoll()
+	return owrap(getply(self):GetRagdollEntity())
+end
+
 if SERVER then
 	--- Lets you change the size of yourself if the server has sf_permissions_entity_owneraccess 1
-    -- @param number scale The scale to apply (min 0.001, max 100)
+	-- @param number scale The scale to apply (min 0.001, max 100)
 	-- @server
 	function player_methods:setModelScale(scale)
 		checkluatype(scale, TYPE_NUMBER)
@@ -457,7 +473,7 @@ if SERVER then
 		return getply(self):HasGodMode()
 	end
 
-	--- Drops the players' weapon
+	--- Drops the player's weapon
 	-- @server
 	-- @param Weapon|string weapon The weapon instance or class name of the weapon to drop
 	-- @param Vector? target If set, launches the weapon at the given position
@@ -475,6 +491,48 @@ if SERVER then
 			weapon = wunwrap(weapon)
 			ply:DropWeapon(weapon, target, velocity)
 		end
+	end
+
+	--- Strips the player's weapon
+	-- @server
+	-- @param string weapon The weapon class name of the weapon to strip
+	function player_methods:stripWeapon(weapon)
+		local ply = getply(self)
+		checkpermission(instance, ply, "player.dropweapon")
+		checkluatype(weapon, TYPE_STRING)
+		ply:StripWeapon(weapon)
+	end
+
+	--- Strips all the player's weapons
+	-- @server
+	function player_methods:stripWeapons()
+		local ply = getply(self)
+		checkpermission(instance, ply, "player.dropweapon")
+		ply:StripWeapons()
+	end
+
+	--- Sets the player's ammo
+	-- @server
+	-- @param number amount The ammo value
+	-- @param number|string ammoType Ammo type id or name
+	function player_methods:setAmmo(amount, ammoType)
+		local ply = getply(self)
+		checkpermission(instance, ply, "player.setammo")
+
+		checkluatype(amount, TYPE_NUMBER)
+		if not (isstring(ammoType) or isnumber(ammoType)) then
+			SF.ThrowTypeError("number or string", SF.GetType(ammoType), 2)
+		end
+
+		ply:SetAmmo(amount, ammoType)
+	end
+
+	--- Removes all a player's ammo
+	-- @server
+	function player_methods:stripAmmo()
+		local ply = getply(self)
+		checkpermission(instance, ply, "player.setammo")
+		ply:StripAmmo()
 	end
 
 	--- Returns the hitgroup where the player was last hit.
@@ -643,7 +701,7 @@ if CLIENT then
 	-- @param number? rate Optional float (Default 1), the playback rate of the animation
 	-- @param boolean? loop Optional boolean (Default false), should the animation loop
 	-- @param boolean? auto_advance Optional boolean (Default true), should the animation handle advancing itself
-	-- @param string|number|nil act Optional number or string name (Default sequence value), the activity the player should use
+	-- @param string|number|nil? act Optional number or string name (Default sequence value), the activity the player should use
 	function player_methods:setAnimation(seq, progress, rate, loop, auto_advance, act)
 		local ply = getply(self)
 		if instance.owner ~= ply then checkpermission(instance, ply, "entities.setRenderProperty") end

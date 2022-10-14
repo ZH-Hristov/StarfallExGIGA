@@ -202,6 +202,31 @@ if CLIENT then
 		end
 	end
 
+	local playerColorWhitelist = {
+		["prop_ragdoll"]       = true,
+		["starfall_cnextbot"]  = true,
+		["starfall_hologram"]  = true,
+		["gmod_wire_hologram"] = true,
+	}
+	--- Sets the sheet color of a player-model
+	-- Can only be used on players, bots, ragdolls, holograms and Starfall NextBots
+	-- @client
+	-- @param Color clr RGB color to use, alpha channel not supported
+	function ents_methods:setSheetColor(clr)
+		local ent = getent(self)
+		checkpermission(instance, ent, "entities.setRenderProperty")
+		clr = cunwrap(clr)
+		local vec = Vector(clr.r / 255, clr.g / 255, clr.b / 255)
+
+		if ent:IsPlayer() then
+			ent:SetPlayerColor(vec)
+		elseif playerColorWhitelist[ent:GetClass()] then
+			ent.GetPlayerColor = function() return vec end
+		else
+			SF.Throw("The entity isn't whitelisted", 2)
+		end
+	end
+
 	--- Sets a hologram or custom_prop's renderbounds
 	-- @client
 	-- @param Vector mins The lower bounding corner coordinate local to the hologram
@@ -353,8 +378,6 @@ function ents_methods:setParent(parent, attachment, bone)
 		SF.Parent(child)
 	end
 end
--- Backward compatability
-ents_methods.unparent = ents_methods.setParent
 
 --- Sets the color of the entity
 -- @shared
@@ -374,7 +397,7 @@ function ents_methods:setColor(clr)
 	if SERVER then duplicator.StoreEntityModifier(ent, "colour", { Color = {r = clr[1], g = clr[2], b = clr[3], a = clr[4]}, RenderMode = rendermode }) end
 end
 
---- Sets the whether an entity should be drawn or not
+--- Sets the whether an entity should be drawn or not. If serverside, will also prevent networking the entity to the client. Don't use serverside on a starfall if you want its client code to work.
 -- @shared
 -- @param boolean draw Whether to draw the entity or not.
 function ents_methods:setNoDraw(draw)
