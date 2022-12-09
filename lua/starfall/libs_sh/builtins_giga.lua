@@ -294,6 +294,51 @@ else
 		DrawToyTown(pass, height)
 	end
 	
+	--- Sets up the ambient lighting for any upcoming render operation. Ambient lighting can be seen as a cube enclosing the object to be drawn, each of its faces representing a directional light source that shines towards the object. Thus, there is a total of six different light sources that can be configured separately.
+	--- Light color components are not restricted to a specific range (i.e. 0-255), instead, higher values will result in a brighter light.
+	-- @client
+	-- @param number lightDir The light source to edit, see https://wiki.facepunch.com/gmod/Enums/BOX.
+	-- @param number red The red component of the light color.
+	-- @param number green The green component of the light color.
+	-- @param number blue The blue component of the light color.
+	function render_library.setModelLighting(ldir, r, g, b)
+		if !instance.player:IsSuperAdmin() then return end
+		render.SetModelLighting(ldir, r, g, b)
+	end
+	
+	--- Sets the color modulation.
+	-- @client
+	-- @param number r The red channel multiplier normal ranging from 0-1.
+	-- @param number g The green channel multiplier normal ranging from 0-1.
+	-- @param number b The blue channel multiplier normal ranging from 0-1.
+	function render_library.setColorModulation(r, g, b)
+		if !instance.player:IsSuperAdmin() then return end
+		render.SetColorModulation(r, g, b)
+	end
+	
+	--- Sets the lighting origin.
+	-- @param Vector pos The position from which the light should be "emitted".
+	function render_library.setLightingOrigin(pos)
+		if !instance.player:IsSuperAdmin() then return end
+		render.SetLightingOrigin(vunwrap(pos))
+	end
+	
+	--- Sets up the local lighting for any upcoming render operation. Up to 4 local lights can be defined, with one of three different types (point, directional, spot).
+	--- Disables all local lights if called with no arguments.
+	-- @param table lights A table containing up to 4 tables for each light source that should be set up. Each of these tables should contain the properties of its associated light source, see https://wiki.facepunch.com/gmod/Structures/LocalLight.
+	function render_library.setLocalModelLights(tbl)
+		if !instance.player:IsSuperAdmin() then return end
+		render.SetLocalModelLights(instance.Sanitize(tbl))
+	end
+	
+	--- Overrides the write behaviour of all next rendering operations towards the alpha channel of the current render target.
+	-- @param boolean enable Enable or disable the override.
+	-- @param boolean shouldwrite If the previous argument is true, sets whether the next rendering operations should write to the alpha channel or not. Has no effect if the previous argument is false.
+	function render_library.overrideAlphaWriteEnable(enable, shouldwrite)
+		if !instance.player:IsSuperAdmin() then return end
+		render.OverrideAlphaWriteEnable( enable, shouldwrite )
+	end
+	
 	--- Play a sound file directly on the client (such as UI sounds, etc).
 	-- @client
 	-- @param string path The path to the sound file, which must be relative to the sound/ folder.
