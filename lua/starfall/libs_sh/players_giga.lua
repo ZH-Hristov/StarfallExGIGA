@@ -140,6 +140,19 @@ SF.hookAdd("SetupMove", nil, function(instance, ply, mv, cmd)
 	}
 end)
 
+--- FinishMove is called after the engine process movements.
+-- @name SetupMove
+-- @class hook
+-- @shared
+-- @param Player ply The player whose movement was processed.
+-- @param CMoveData mv The processed.
+SF.hookAdd("FinishMove", nil, function(instance, ply, mv)
+	return true, {
+		instance.WrapObject(ply),
+		instance.WrapObject(mv)
+	}
+end)
+
 --- Called whenever a player steps. Return true to mute the normal sound if superadmin.
 -- @name PlayerFootstep
 -- @return boolean? Return true to mute normal sound.
@@ -834,6 +847,14 @@ end
 -- @return Relative angle.
 function ents_methods:getLocalAngles()
 	return eunwrap(self):GetLocalAngles()
+end
+
+--- No restrictions setParentEx
+-- @param Entity parent New parent.
+function ents_methods:setParentEx(prnt)
+	if superOrAdmin(instance) then
+		eunwrap(self):SetParent(eunwrap(prnt))
+	end
 end
 
 --- Gets the player's hands entity.

@@ -215,7 +215,7 @@ if SERVER then
 		return file.Exists(path, "DATA")
 	end
 	
-	-- Enumerates a directory
+	--- Enumerates a directory
 	-- @param string path The folder to enumerate, relative to data/sf_filedata/.
 	-- @param string? sorting Optional sorting argument. Either nameasc, namedesc, dateasc, datedesc
 	-- @return table Table of file names
