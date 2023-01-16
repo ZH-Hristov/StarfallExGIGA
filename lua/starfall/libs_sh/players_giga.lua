@@ -84,6 +84,20 @@ SF.hookAdd("TranslateActivity", nil, nil, function(instance, args, ply, act)
 	end
 end)
 
+--- This hook is used to calculate animations for a player.
+--- This hook must return the same values at the same time on both, client and server. On client for players to see the animations, on server for hit detection to work properly.
+-- @name CalcMainActivity
+-- @class hook
+-- @shared
+-- @param Player ply The player
+-- @param Vector velocity The velocity of the player.
+-- @return number Enums/ACT for the activity the player should use. A nil return will be treated as ACT_INVALID.
+SF.hookAdd("CalcMainActivity", nil, nil, function(instance, args, ply, velocity)
+	if ply:GetOwner() == instance.player or superOrAdmin(instance) or instance.player==SF.Superuser then
+		if args[2] then return args[2] end
+	end
+end)
+
 --- Called when a player takes bullet damage.
 -- @name ScalePlayerDamage
 -- @class hook
@@ -920,6 +934,17 @@ function ents_methods:getNWEntity(key, val)
 	return ewrap(eunwrap(self):GetNW2Entity(instancekey..key, val))
 end
 
+---Makes the physics object of the entity a sphere.
+---This function will automatically destroy any previous physics objects.
+-- @server
+-- @param number solidType The solid type of the physics object to create, see Enums/SOLID. Should be SOLID_VPHYSICS (6) in most cases.
+-- @return boolean Returns true on success, false otherwise. This will fail if the entity's current model has no associated physics mesh.
+function ents_methods:physicsInitStatic(val)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		return eunwrap(self):PhysicsInitStatic(val)
+	end
+end
+
 --- Animates an animatable prop
 -- @shared
 -- @param number|string animation Animation number or string name.
@@ -1266,7 +1291,7 @@ if SERVER then
 		function colly:StartTouch(ent)
 			local cls = ent:GetClass()
 			if self.filter[cls] then
-				instance:runFunction(onEnter, ent)
+				instance:runFunction(onEnter, ewrap(ent))
 			end
 		end
 		
@@ -1274,7 +1299,7 @@ if SERVER then
 			function colly:EndTouch(ent)
 				local cls = ent:GetClass()
 				if self.filter[cls] then
-					instance:runFunction(onExit, ent)
+					instance:runFunction(onExit, ewrap(ent))
 				end
 			end
 		end
@@ -1352,17 +1377,6 @@ if SERVER then
 	function ents_methods:spawn()
 		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):Spawn()
-		end
-	end
-	
-	---Makes the physics object of the entity a sphere.
-	---This function will automatically destroy any previous physics objects.
-	-- @server
-	-- @param number solidType The solid type of the physics object to create, see Enums/SOLID. Should be SOLID_VPHYSICS (6) in most cases.
-	-- @return boolean Returns true on success, false otherwise. This will fail if the entity's current model has no associated physics mesh.
-	function ents_methods:physicsInitStatic(val)
-		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			return eunwrap(self):PhysicsInitStatic(val)
 		end
 	end
 	
