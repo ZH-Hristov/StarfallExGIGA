@@ -294,18 +294,6 @@ else
 		DrawToyTown(pass, height)
 	end
 	
-	--- Sets up the ambient lighting for any upcoming render operation. Ambient lighting can be seen as a cube enclosing the object to be drawn, each of its faces representing a directional light source that shines towards the object. Thus, there is a total of six different light sources that can be configured separately.
-	--- Light color components are not restricted to a specific range (i.e. 0-255), instead, higher values will result in a brighter light.
-	-- @client
-	-- @param number lightDir The light source to edit, see https://wiki.facepunch.com/gmod/Enums/BOX.
-	-- @param number red The red component of the light color.
-	-- @param number green The green component of the light color.
-	-- @param number blue The blue component of the light color.
-	function render_library.setModelLighting(ldir, r, g, b)
-		if !instance.player:IsSuperAdmin() then return end
-		render.SetModelLighting(ldir, r, g, b)
-	end
-	
 	--- Sets the color modulation.
 	-- @client
 	-- @param number r The red channel multiplier normal ranging from 0-1.
