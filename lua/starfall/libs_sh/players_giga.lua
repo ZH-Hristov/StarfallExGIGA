@@ -1308,6 +1308,60 @@ if SERVER then
 		colly:DrawShadow(false)
 		return ewrap(colly)
 	end
+
+	--- Creates a trigger sphere with a custom radius.
+	-- @server
+	-- @param Vector origin The position the middle of the trigger will be in.
+	-- @param number radius The radius of the sphere.
+	-- @param string|table filter A string or table of strings of entity classes. Trigger will be activated only by these classes. Filters players by default.
+	-- @param function onEnter The function to run when a valid entity enters the trigger.
+	-- @param function? onExit The function to run when a valid entity exits the trigger.
+	-- @return Entity The trigger entity.
+	function trigger_library.createSphere(origin, radius, filter, onEnter, onExit)
+		local colly = ents.Create("starfall_triggerbox")
+		table.insert(triggers, colly)
+		colly:SetModel("models/hunter/blocks/cube025x025x025.mdl")
+		colly:SetMaterial("models/wireframe")
+		colly:SetPos( vunwrap(origin) )
+		colly:SetSize(radius)
+		colly:SetMoveType(MOVETYPE_NONE)
+		colly:GetPhysicsObject():Wake()
+		colly:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+		colly:SetTrigger(true)
+		colly.filter = {}
+		
+		if filter then
+			if type(filter) == "string" then
+				filter = {filter}
+			end
+			
+			for _, cls in pairs(filter) do
+				colly.filter[cls] = true
+			end
+		else
+			colly.filter = {player = true}
+		end
+		
+		function colly:StartTouch(ent)
+			local cls = ent:GetClass()
+			if self.filter[cls] then
+				instance:runFunction(onEnter, ewrap(ent))
+			end
+		end
+		
+		if onExit then
+			function colly:EndTouch(ent)
+				local cls = ent:GetClass()
+				if self.filter[cls] then
+					instance:runFunction(onExit, ewrap(ent))
+				end
+			end
+		end
+		
+		colly:SetSolidFlags(12)
+		colly:DrawShadow(false)
+		return ewrap(colly)
+	end
 	
 	--- Sets an entity's local velocity
 	-- @server
