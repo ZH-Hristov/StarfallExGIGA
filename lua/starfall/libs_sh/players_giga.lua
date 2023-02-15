@@ -1318,7 +1318,7 @@ if SERVER then
 	-- @param function? onExit The function to run when a valid entity exits the trigger.
 	-- @return Entity The trigger entity.
 	function trigger_library.createSphere(origin, radius, filter, onEnter, onExit)
-		local colly = ents.Create("starfall_triggerbox")
+		local colly = ents.Create("starfall_triggersphere")
 		table.insert(triggers, colly)
 		colly:SetModel("models/hunter/blocks/cube025x025x025.mdl")
 		colly:SetMaterial("models/wireframe")
