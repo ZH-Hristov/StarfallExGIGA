@@ -27,6 +27,7 @@ if(SERVER) then
 	function ENT:SetSize(rad)
 		self:SetRadius(rad)
 		self:PhysicsInitSphere(rad)
+		self:SetCollisionBounds(Vector(-rad, -rad, -rad), Vector(rad, rad, rad))
 	end
 	
 end
