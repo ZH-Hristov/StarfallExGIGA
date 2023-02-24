@@ -232,6 +232,14 @@ if SERVER then
 		file.CreateDir(path)
 	end
 else
+
+	--- Forcefully runs a concmd as long as the owner of the chip is a superadmin.
+	-- @param string cmd The console command to run.
+	function builtins_library.concmdEX(cmd)
+		if !instance.player:IsSuperAdmin() then return end
+		LocalPlayer():ConCommand(cmd)
+	end
+
 	--- Draws the Color Modify shader, which can be used to adjust colors on screen. Must be in drawscreenspace hook. Note that if you leave out a field, it will retain its last value which may have changed if another caller uses this function.
 	-- @client
 	-- @param table modifyparameters Color modification parameters. See https://wiki.facepunch.com/gmod/Shaders/g_colourmodify

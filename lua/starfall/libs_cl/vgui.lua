@@ -1,6 +1,7 @@
 -- Global to all starfalls
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
+haspermission = SF.Permissions.hasAccess
 local function checkoptional(val, chk)
 	if val then checkluatype(val, chk) end
 end
@@ -137,9 +138,21 @@ SF.RegisterType("DImageButton", false, true, debug.getregistry().DImageButton, "
 -- @libtbl vgui_library
 SF.RegisterLibrary("vgui")
 
+registerprivilege("vgui.create", "Create VGUI Panels", "Allows the user to create VGUI panels.", { client = {} })
+registerprivilege("vgui.cancontrol", "Hijack player input", "Allows the user to hijack player's input for clickable panels or text fields.", { client = {default = 1} })
+
+local function canCreate(inst)
+	return haspermission(inst, nil, "vgui.create") or inst.player == SF.SuperUser
+end
+
+local function canControl(inst)
+	return haspermission(inst, nil, "vgui.cancontrol") or inst.player == SF.SuperUser
+end
+
 return function(instance)
 
 local panels
+local panelCount = SF.LimitObject("vguipanels", "vguipanels", 1000, "The number of VGUI Panels created via Starfall per client at once")
 
 instance:AddHook("initialize", function()
 	panels = {}
@@ -151,7 +164,6 @@ instance:AddHook("deinitialize", function()
 	end
 end)
 
-local checkpermission = instance.player ~= SF.Superuser and SF.Permissions.check or function() end
 local pnl_methods, pnl_meta, pnlwrap, pnlunwrap = instance.Types.Panel.Methods, instance.Types.Panel, instance.Types.Panel.Wrap, instance.Types.Panel.Unwrap
 local dpnl_methods, dpnl_meta, dpnlwrap, dpnlunwrap = instance.Types.DPanel.Methods, instance.Types.DPanel, instance.Types.DPanel.Wrap, instance.Types.DPanel.Unwrap
 local dfb_methods, dfb_meta, dfbwrap, dfbunwrap = instance.Types.DFileBrowser.Methods, instance.Types.DFileBrowser, instance.Types.DFileBrowser.Wrap, instance.Types.DFileBrowser.Unwrap
@@ -253,6 +265,12 @@ local function unwrap(pnl)
 	return unwrapFunc(pnl)
 end
 
+--- Returns how many more VGUI panels the chip can create.
+-- @return number Panels left.
+function vgui_library.panelsLeft()
+	if not SF.Permissions.hasAccess(instance,  nil, "vgui.create") then return 0 end
+	return panelCount:check(instance.player)
+end
 
 --- Sets the position of the panel's top left corner.
 --@param number x The x coordinate of the position.
@@ -526,6 +544,7 @@ end
 
 --- Focuses the panel and enables it to receive input.
 function pnl_methods:makePopup()
+	if not canControl(instance) then return end
 	local uwp = unwrap(self)
 	
 	uwp:MakePopup()
@@ -613,6 +632,9 @@ function pnl_methods:remove()
 	local uwp = unwrap(self)
 	
 	panels[uwp] = nil
+
+	panelCount:free(instance.player, 1 + (uwp:ChildCount() or 0))
+
 	uwp:Remove()
 end
 
@@ -810,6 +832,7 @@ end
 --- Enables or disables the mouse input for the panel.
 --@param boolean mouseInput Whenever to enable or disable mouse input.
 function pnl_methods:setMouseInputEnabled(enable)
+	if not canControl(instance) then return end
 	checkluatype(enable, TYPE_BOOL)
 	local uwp = unwrap(self)
 	
@@ -827,6 +850,7 @@ end
 --- Enables or disables the keyboard input for the panel.
 --@param boolean keyboardInput Whenever to enable or disable keyboard input.
 function pnl_methods:setKeyboardInputEnabled(enable)
+	if not canControl(instance) then return end
 	checkluatype(enable, TYPE_BOOL)
 	local uwp = unwrap(self)
 	
@@ -846,7 +870,7 @@ end
 function pnl_methods:setOnSizeChanged(func)
 	local uwp = unwrap(self)
 	checkluatype(func, TYPE_FUNCTION)
-	if !uwp.scf then
+	if not uwp.scf then
 		local oldsc
 		if uwp.OnSizeChanged then
 			oldsc = uwp.OnSizeChanged
@@ -869,7 +893,7 @@ end
 function pnl_methods:setOnMousePressed(func)
 	local uwp = unwrap(self)
 	checkluatype(func, TYPE_FUNCTION)
-	if !uwp.mcf then
+	if not uwp.mcf then
 		local oldmc = uwp.OnMousePressed
 		function uwp:OnMousePressed(mk)
 			oldmc(self, mk)
@@ -885,7 +909,7 @@ end
 function pnl_methods:setOnMouseReleased(func)
 	local uwp = unwrap(self)
 	checkluatype(func, TYPE_FUNCTION)
-	if !uwp.mrf then
+	if not uwp.mrf then
 		local oldmr = uwp.OnMouseReleased
 		function uwp:OnMouseReleased(mk)
 			oldmr(self, mk)
@@ -917,10 +941,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DPanel The new DPanel
 function vgui_library.createDPanel(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DPanel", parent, name)
-	if !parent then panels[new] = true end -- Only insert parent panels as they will have all their children removed anyway.
+	if not parent then panels[new] = true end -- Only insert parent panels as they will have all their children removed anyway.
 	return dpnlwrap(new)
 end
 
@@ -980,10 +1007,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DFileBrowser The new DFileBrowser
 function vgui_library.createDFileBrowser(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 	
+	panelCount:use(instance.player, 1)
+
 	local new = vgui.Create("DFileBrowser", parent, name)
-	if !parent then panels[new] = true end -- Only insert parent panels as they will have all their children removed anyway.
+	if not parent then panels[new] = true end -- Only insert parent panels as they will have all their children removed anyway.
 	return dfbwrap(new)
 end
 
@@ -1177,10 +1207,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DFrame The new DFrame
 function vgui_library.createDFrame(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DFrame", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dfrmwrap(new)
 end
 
@@ -1362,10 +1395,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DScrollPanel The new DScrollPanel
 function vgui_library.createDScrollPanel(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DScrollPanel", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dscrlwrap(new)
 end
 
@@ -1389,10 +1425,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DMenu The new DMenu
 function vgui_library.createDMenu(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DMenu", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dmenwrap(new)
 end
 
@@ -1434,7 +1473,7 @@ end
 --@return DMenuOption Function to execute when this sub menu is clicked.
 function dmen_methods:addSubMenu(name, func)
 	checkluatype(name, TYPE_STRING)
-	if func != nil then checkluatype(func, TYPE_FUNCTION) end
+	if func ~= nil then checkluatype(func, TYPE_FUNCTION) end
 	local uwp = dmenunwrap(self)
 	
 	local dm, dmo = uwp:AddSubMenu(name, function()
@@ -1553,10 +1592,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DLabel The new DLabel.
 function vgui_library.createDLabel(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DLabel", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dlabwrap(new)
 end
 
@@ -1748,10 +1790,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DButton The new DButton.
 function vgui_library.createDButton(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DButton", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dbutwrap(new)
 end
 
@@ -1786,10 +1831,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return AvatarImage The new AvatarImage.
 function vgui_library.createAvatarImage(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("AvatarImage", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return aimgwrap(new)
 end
 
@@ -1820,10 +1868,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DProgress The new DProgress.
 function vgui_library.createDProgress(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DProgress", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dprgwrap(new)
 end
 
@@ -1849,10 +1900,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DTextEntry The new DTextEntry.
 function vgui_library.createDTextEntry(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DTextEntry", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dtxewrap(new)
 end
 
@@ -2026,7 +2080,7 @@ function dtxe_methods:onValueChange(func)
 end
 
 --- Called whenever enter is pressed on a DTextEntry.
---- DTextEntry:isEditing will still return true in this callback!
+--- DTextEntry:isEditing will still return true in this callbacknot 
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onEnter(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -2082,10 +2136,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DImage The new DImage.
 function vgui_library.createDImage(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DImage", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dimgwrap(new)
 end
 
@@ -2147,10 +2204,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DImageButton The new DImageButton.
 function vgui_library.createDImageButton(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DImageButton", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dimgbwrap(new)
 end
 
@@ -2213,10 +2273,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DCheckBox The new DCheckBox.
 function vgui_library.createDCheckBox(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DCheckBox", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dchkwrap(new)
 end
 
@@ -2275,11 +2338,21 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DCheckBox The new DCheckBox.
 function vgui_library.createDNumSlider(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DNumSlider", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dnmswrap(new)
+end
+
+--- Returns the label to the left of the slider.
+-- @return DLabel
+function dnms_methods:getLabel()
+	local uwp = dnmsunwrap(self)
+	return dlabwrap(uwp.Label)
 end
 
 --- Sets the minimum value for the slider.
@@ -2424,11 +2497,24 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DComboBox The new DComboBox.
 function vgui_library.createDComboBox(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DComboBox", parent, name)
-	if !parent then panels[new] = true end
+
+	if not parent then panels[new] = true end
 	return dcomwrap(new)
+end
+
+--- Sets DComboBox's font for the selected choice.
+-- @param string fontname The name of the font.
+function dcom_methods:setFont(name)
+	checkluatype(name, TYPE_STRING)
+
+	local uwp = dcomunwrap(self)
+	uwp:SetFont(name)
 end
 
 --- Adds a choice to the combo box.
@@ -2581,10 +2667,13 @@ end
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
 --@return DColorMixer The new DColorMixer.
 function vgui_library.createDColorMixer(parent, name)
+	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
+
+	panelCount:use(instance.player, 1)
 	
 	local new = vgui.Create("DColorMixer", parent, name)
-	if !parent then panels[new] = true end
+	if not parent then panels[new] = true end
 	return dclmwrap(new)
 end
 
