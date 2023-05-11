@@ -11,126 +11,126 @@ end
 -- @class type
 -- @libtbl pnl_methods
 -- @libtbl pnl_meta
-SF.RegisterType("Panel", false, true, debug.getregistry().Panel)
+SF.RegisterType("UIPanelBase", false, true, debug.getregistry().Panel)
 
 --- DPanel type
 -- @name DPanel
 -- @class type
 -- @libtbl dpnl_methods
 -- @libtbl dpnl_meta
-SF.RegisterType("DPanel", false, true, debug.getregistry().DPanel, "Panel")
+SF.RegisterType("UIPanel", false, true, debug.getregistry().DPanel, "UIPanelBase")
 
 --- DFileBrowser type
 -- @name DFileBrowser
 -- @class type
 -- @libtbl dfb_methods
 -- @libtbl dfb_meta
-SF.RegisterType("DFileBrowser", false, true, debug.getregistry().DFileBrowser, "DPanel")
+SF.RegisterType("UIFileBrowser", false, true, debug.getregistry().DFileBrowser, "UIPanel")
 
 --- DNumSlider type
 -- @name DNumSlider
 -- @class type
 -- @libtbl dnms_methods
 -- @libtbl dnms_meta
-SF.RegisterType("DNumSlider", false, true, debug.getregistry().DNumSlider, "Panel")
+SF.RegisterType("UINumSlider", false, true, debug.getregistry().DNumSlider, "UIPanelBase")
 
 --- DFrame type
 -- @name DFrame
 -- @class type
 -- @libtbl dfrm_methods
 -- @libtbl dfrm_meta
-SF.RegisterType("DFrame", false, true, debug.getregistry().DFrame, "Panel")
+SF.RegisterType("UIFrame", false, true, debug.getregistry().DFrame, "UIPanelBase")
 
 --- DScrollPanel type
 -- @name DScrollPanel
 -- @class type
 -- @libtbl dscrl_methods
 -- @libtbl dscrl_meta
-SF.RegisterType("DScrollPanel", false, true, debug.getregistry().DScrollPanel, "DPanel")
+SF.RegisterType("UIScrollPanel", false, true, debug.getregistry().DScrollPanel, "UIPanel")
 
 --- DMenu type
 -- @name DMenu
 -- @class type
 -- @libtbl dmen_methods
 -- @libtbl dmen_meta
-SF.RegisterType("DMenu", false, true, debug.getregistry().DMenu, "DScrollPanel")
+SF.RegisterType("UIMenu", false, true, debug.getregistry().DMenu, "UIScrollPanel")
 
 --- DMenuOption type
 -- @name DMenuOption
 -- @class type
 -- @libtbl dmeno_methods
 -- @libtbl dmeno_meta
-SF.RegisterType("DMenuOption", false, true, debug.getregistry().DMenuOption, "DButton")
+SF.RegisterType("UIMenuOption", false, true, debug.getregistry().DMenuOption, "UIButton")
 
 --- DColorMixer type
 -- @name DColorMixer
 -- @class type
 -- @libtbl dclm_methods
 -- @libtbl dclm_meta
-SF.RegisterType("DColorMixer", false, true, debug.getregistry().DColorMixer, "DPanel")
+SF.RegisterType("UIColorMixer", false, true, debug.getregistry().DColorMixer, "UIPanel")
 
 --- DLabel type
 -- @name DLabel
 -- @class type
 -- @libtbl dlab_methods
 -- @libtbl dlab_meta
-SF.RegisterType("DLabel", false, true, debug.getregistry().DLabel, "Panel")
+SF.RegisterType("UILabel", false, true, debug.getregistry().DLabel, "UIPanelBase")
 
 --- DButton type
 -- @name DButton
 -- @class type
 -- @libtbl dbut_methods
 -- @libtbl dbut_meta
-SF.RegisterType("DButton", false, true, debug.getregistry().DButton, "DLabel")
+SF.RegisterType("UIButton", false, true, debug.getregistry().DButton, "UILabel")
 
 --- DComboBox type
 -- @name DComboBox
 -- @class type
 -- @libtbl dcom_methods
 -- @libtbl dcom_meta
-SF.RegisterType("DComboBox", false, true, debug.getregistry().DComboBox, "DButton")
+SF.RegisterType("UIComboBox", false, true, debug.getregistry().DComboBox, "UIButton")
 
 --- DCheckBox type
 -- @name DCheckBox
 -- @class type
 -- @libtbl dchk_methods
 -- @libtbl dchk_meta
-SF.RegisterType("DCheckBox", false, true, debug.getregistry().DCheckBox, "DButton")
+SF.RegisterType("UICheckBox", false, true, debug.getregistry().DCheckBox, "UIButton")
 
 --- AvatarImage type
 -- @name AvatarImage
 -- @class type
 -- @libtbl aimg_methods
 -- @libtbl aimg_meta
-SF.RegisterType("AvatarImage", false, true, debug.getregistry().AvatarImage, "Panel")
+SF.RegisterType("UIAvatarImage", false, true, debug.getregistry().AvatarImage, "UIPanelBase")
 
 --- DProgress type
 -- @name DProgress
 -- @class type
 -- @libtbl dprg_methods
 -- @libtbl dprg_meta
-SF.RegisterType("DProgress", false, true, debug.getregistry().DProgress, "Panel")
+SF.RegisterType("UIProgress", false, true, debug.getregistry().DProgress, "UIPanelBase")
 
 --- DTextEntry type
 -- @name DTextEntry
 -- @class type
 -- @libtbl dtxe_methods
 -- @libtbl dtxe_meta
-SF.RegisterType("DTextEntry", false, true, debug.getregistry().DTextEntry, "Panel")
+SF.RegisterType("UITextEntry", false, true, debug.getregistry().DTextEntry, "UIPanelBase")
 
 --- DImage type
 -- @name DImage
 -- @class type
 -- @libtbl dimg_methods
 -- @libtbl dimg_meta
-SF.RegisterType("DImage", false, true, debug.getregistry().DImage, "DPanel")
+SF.RegisterType("UIImage", false, true, debug.getregistry().DImage, "UIPanel")
 
 --- DImageButton type
 -- @name DImageButton
 -- @class type
 -- @libtbl dimgb_methods
 -- @libtbl dimgb_meta
-SF.RegisterType("DImageButton", false, true, debug.getregistry().DImageButton, "DButton")
+SF.RegisterType("UIImageButton", false, true, debug.getregistry().DImageButton, "UIButton")
 
 --- VGUI functions.
 -- @name vgui
@@ -164,98 +164,98 @@ instance:AddHook("deinitialize", function()
 	end
 end)
 
-local pnl_methods, pnl_meta, pnlwrap, pnlunwrap = instance.Types.Panel.Methods, instance.Types.Panel, instance.Types.Panel.Wrap, instance.Types.Panel.Unwrap
-local dpnl_methods, dpnl_meta, dpnlwrap, dpnlunwrap = instance.Types.DPanel.Methods, instance.Types.DPanel, instance.Types.DPanel.Wrap, instance.Types.DPanel.Unwrap
-local dfb_methods, dfb_meta, dfbwrap, dfbunwrap = instance.Types.DFileBrowser.Methods, instance.Types.DFileBrowser, instance.Types.DFileBrowser.Wrap, instance.Types.DFileBrowser.Unwrap
-local dfrm_methods, dfrm_meta, dfrmwrap, dfrmunwrap = instance.Types.DFrame.Methods, instance.Types.DFrame, instance.Types.DFrame.Wrap, instance.Types.DFrame.Unwrap
-local dscrl_methods, dscrl_meta, dscrlwrap, dscrlunwrap = instance.Types.DScrollPanel.Methods, instance.Types.DScrollPanel, instance.Types.DScrollPanel.Wrap, instance.Types.DScrollPanel.Unwrap
-local dlab_methods, dlab_meta, dlabwrap, dlabunwrap = instance.Types.DLabel.Methods, instance.Types.DLabel, instance.Types.DLabel.Wrap, instance.Types.DLabel.Unwrap
-local dbut_methods, dbut_meta, dbutwrap, dbutunwrap = instance.Types.DButton.Methods, instance.Types.DButton, instance.Types.DButton.Wrap, instance.Types.DButton.Unwrap
-local dchk_methods, dchk_meta, dchkwrap, dchkunwrap = instance.Types.DCheckBox.Methods, instance.Types.DCheckBox, instance.Types.DCheckBox.Wrap, instance.Types.DCheckBox.Unwrap
-local aimg_methods, aimg_meta, aimgwrap, aimgunwrap = instance.Types.AvatarImage.Methods, instance.Types.AvatarImage, instance.Types.AvatarImage.Wrap, instance.Types.AvatarImage.Unwrap
-local dprg_methods, dprg_meta, dprgwrap, dprgunwrap = instance.Types.DProgress.Methods, instance.Types.DProgress, instance.Types.DProgress.Wrap, instance.Types.DProgress.Unwrap
-local dtxe_methods, dtxe_meta, dtxewrap, dtxeunwrap = instance.Types.DTextEntry.Methods, instance.Types.DTextEntry, instance.Types.DTextEntry.Wrap, instance.Types.DTextEntry.Unwrap
-local dimg_methods, dimg_meta, dimgwrap, dimgunwrap = instance.Types.DImage.Methods, instance.Types.DImage, instance.Types.DImage.Wrap, instance.Types.DImage.Unwrap
-local dimgb_methods, dimgb_meta, dimgbwrap, dimgbunwrap = instance.Types.DImageButton.Methods, instance.Types.DImageButton, instance.Types.DImageButton.Wrap, instance.Types.DImageButton.Unwrap
-local dnms_methods, dnms_meta, dnmswrap, dnmsunwrap = instance.Types.DNumSlider.Methods, instance.Types.DNumSlider, instance.Types.DNumSlider.Wrap, instance.Types.DNumSlider.Unwrap
-local dcom_methods, dcom_meta, dcomwrap, dcomunwrap = instance.Types.DComboBox.Methods, instance.Types.DComboBox, instance.Types.DComboBox.Wrap, instance.Types.DComboBox.Unwrap
-local dclm_methods, dclm_meta, dclmwrap, dclmunwrap = instance.Types.DColorMixer.Methods, instance.Types.DColorMixer, instance.Types.DColorMixer.Wrap, instance.Types.DColorMixer.Unwrap
-local dmen_methods, dmen_meta, dmenwrap, dmenunwrap = instance.Types.DMenu.Methods, instance.Types.DMenu, instance.Types.DMenu.Wrap, instance.Types.DMenu.Unwrap
-local dmeno_methods, dmeno_meta, dmenowrap, dmenounwrap = instance.Types.DMenuOption.Methods, instance.Types.DMenuOption, instance.Types.DMenuOption.Wrap, instance.Types.DMenuOption.Unwrap
+local pnl_methods, pnl_meta, pnlwrap, pnlunwrap = instance.Types.UIPanelBase.Methods, instance.Types.UIPanelBase, instance.Types.UIPanelBase.Wrap, instance.Types.UIPanelBase.Unwrap
+local dpnl_methods, dpnl_meta, dpnlwrap, dpnlunwrap = instance.Types.UIPanel.Methods, instance.Types.UIPanel, instance.Types.UIPanel.Wrap, instance.Types.UIPanel.Unwrap
+local dfb_methods, dfb_meta, dfbwrap, dfbunwrap = instance.Types.UIFileBrowser.Methods, instance.Types.UIFileBrowser, instance.Types.UIFileBrowser.Wrap, instance.Types.UIFileBrowser.Unwrap
+local dfrm_methods, dfrm_meta, dfrmwrap, dfrmunwrap = instance.Types.UIFrame.Methods, instance.Types.UIFrame, instance.Types.UIFrame.Wrap, instance.Types.UIFrame.Unwrap
+local dscrl_methods, dscrl_meta, dscrlwrap, dscrlunwrap = instance.Types.UIScrollPanel.Methods, instance.Types.UIScrollPanel, instance.Types.UIScrollPanel.Wrap, instance.Types.UIScrollPanel.Unwrap
+local dlab_methods, dlab_meta, dlabwrap, dlabunwrap = instance.Types.UILabel.Methods, instance.Types.UILabel, instance.Types.UILabel.Wrap, instance.Types.UILabel.Unwrap
+local dbut_methods, dbut_meta, dbutwrap, dbutunwrap = instance.Types.UIButton.Methods, instance.Types.UIButton, instance.Types.UIButton.Wrap, instance.Types.UIButton.Unwrap
+local dchk_methods, dchk_meta, dchkwrap, dchkunwrap = instance.Types.UICheckBox.Methods, instance.Types.UICheckBox, instance.Types.UICheckBox.Wrap, instance.Types.UICheckBox.Unwrap
+local aimg_methods, aimg_meta, aimgwrap, aimgunwrap = instance.Types.UIAvatarImage.Methods, instance.Types.UIAvatarImage, instance.Types.UIAvatarImage.Wrap, instance.Types.UIAvatarImage.Unwrap
+local dprg_methods, dprg_meta, dprgwrap, dprgunwrap = instance.Types.UIProgress.Methods, instance.Types.UIProgress, instance.Types.UIProgress.Wrap, instance.Types.UIProgress.Unwrap
+local dtxe_methods, dtxe_meta, dtxewrap, dtxeunwrap = instance.Types.UITextEntry.Methods, instance.Types.UITextEntry, instance.Types.UITextEntry.Wrap, instance.Types.UITextEntry.Unwrap
+local dimg_methods, dimg_meta, dimgwrap, dimgunwrap = instance.Types.UIImage.Methods, instance.Types.UIImage, instance.Types.UIImage.Wrap, instance.Types.UIImage.Unwrap
+local dimgb_methods, dimgb_meta, dimgbwrap, dimgbunwrap = instance.Types.UIImageButton.Methods, instance.Types.UIImageButton, instance.Types.UIImageButton.Wrap, instance.Types.UIImageButton.Unwrap
+local dnms_methods, dnms_meta, dnmswrap, dnmsunwrap = instance.Types.UINumSlider.Methods, instance.Types.UINumSlider, instance.Types.UINumSlider.Wrap, instance.Types.UINumSlider.Unwrap
+local dcom_methods, dcom_meta, dcomwrap, dcomunwrap = instance.Types.UIComboBox.Methods, instance.Types.UIComboBox, instance.Types.UIComboBox.Wrap, instance.Types.UIComboBox.Unwrap
+local dclm_methods, dclm_meta, dclmwrap, dclmunwrap = instance.Types.UIColorMixer.Methods, instance.Types.UIColorMixer, instance.Types.UIColorMixer.Wrap, instance.Types.UIColorMixer.Unwrap
+local dmen_methods, dmen_meta, dmenwrap, dmenunwrap = instance.Types.UIMenu.Methods, instance.Types.UIMenu, instance.Types.UIMenu.Wrap, instance.Types.UIMenu.Unwrap
+local dmeno_methods, dmeno_meta, dmenowrap, dmenounwrap = instance.Types.UIMenuOption.Methods, instance.Types.UIMenuOption, instance.Types.UIMenuOption.Wrap, instance.Types.UIMenuOption.Unwrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local plyunwrap = instance.Types.Player.Unwrap
 local vgui_library = instance.Libraries.vgui
 
 function pnl_meta:__tostring()
-	return "Panel"
+	return "UIPanelBase"
 end
 
 function dpnl_meta:__tostring()
-	return "DPanel"
+	return "UIPanel"
 end
 
 function dfrm_meta:__tostring()
-	return "DFrame"
+	return "UIFrame"
 end
 
 function dscrl_meta:__tostring()
-	return "DScrollPanel"
+	return "UIScrollPanel"
 end
 
 function dbut_meta:__tostring()
-	return "DButton"
+	return "UIButton"
 end
 
 function dlab_meta:__tostring()
-	return "DLabel"
+	return "UILabel"
 end
 
 function aimg_meta:__tostring()
-	return "AvatarImage"
+	return "UIAvatarImage"
 end
 
 function dprg_meta:__tostring()
-	return "DProgress"
+	return "UIProgress"
 end
 
 function dtxe_meta:__tostring()
-	return "DTextEntry"
+	return "UITextEntry"
 end
 
 function dimg_meta:__tostring()
-	return "DImage"
+	return "UIImage"
 end
 
 function dimgb_meta:__tostring()
-	return "DImageButton"
+	return "UIImageButton"
 end
 
 function dchk_meta:__tostring()
-	return "DCheckBox"
+	return "UICheckBox"
 end
 
 function dnms_meta:__tostring()
-	return "DNumSlider"
+	return "UINumSlider"
 end
 
 function dcom_meta:__tostring()
-	return "DComboBox"
+	return "UIComboBox"
 end
 
 function dclm_meta:__tostring()
-	return "DColorMixer"
+	return "UIColorMixer"
 end
 
 function dfb_meta:__tostring()
-	return "DFileBrowser"
+	return "UIFileBrowser"
 end
 
 function dmen_meta:__tostring()
-	return "DMenu"
+	return "UIMenu"
 end
 
 function dmeno_meta:__tostring()
-	return "DMenuOption"
+	return "UIMenuOption"
 end
 
 local function unwrap(pnl)
@@ -270,6 +270,19 @@ end
 function vgui_library.panelsLeft()
 	if not SF.Permissions.hasAccess(instance,  nil, "vgui.create") then return 0 end
 	return panelCount:check(instance.player)
+end
+
+--- Returns the panel the cursor is hovering above.
+--- This returns a cached value that is only updated after rendering and before the next VGUI Think/Layout pass.
+-- @return any The hovered panel.
+function vgui_library.getHoveredPanel()
+	return pnlwrap(vgui.GetHoveredPanel())
+end
+
+--- Returns the panel which is currently receiving keyboard input.
+-- @return any The panel with keyboard focus.
+function vgui_library.getKeyboardFocus()
+	return pnlwrap(vgui.GetKeyboardFocus())
 end
 
 --- Sets the position of the panel's top left corner.
@@ -767,7 +780,7 @@ function pnl_methods:setName(val)
 	uwp:SetName(val)
 end
 
---- Sets the enabled state of a disable-able panel object, such as a DButton or DTextEntry.
+--- Sets the enabled state of a disable-able panel object, such as a UIButton or UITextEntry.
 --- See Panel:isEnabled for a function that retrieves the "enabled" state of a panel.
 --@param boolean enabled Whether to enable or disable the panel object.
 function pnl_methods:setEnabled(enable)
@@ -936,11 +949,11 @@ function pnl_methods:paintManual()
 	uwp:PaintManual()
 end
 
---- Creates a DPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
+--- Creates a UIPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from UIPanelBase
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DPanel The new DPanel
-function vgui_library.createDPanel(parent, name)
+--@return UIPanel The new DPanel
+function vgui_library.createPanel(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1002,11 +1015,11 @@ function dpnl_methods:getDisabled()
 	return uwp:getDisabled()
 end
 
---- Creates a DFileBrowser. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from Panel
+--- Creates a UIFileBrowser. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from UIPanelBase
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DFileBrowser The new DFileBrowser
-function vgui_library.createDFileBrowser(parent, name)
+--@return UIFileBrowser The new UIFileBrowser
+function vgui_library.createFileBrowser(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 	
@@ -1076,7 +1089,7 @@ function dfb_methods:getFileTypes()
 end
 
 --- Enables or disables the model viewer mode. In this mode, files are displayed as SpawnIcons instead of a list.
---- This should only be used for .mdl files; the spawn icons will display error models for others. See DFileBrowser:setFileTypes
+--- This should only be used for .mdl files; the spawn icons will display error models for others. See UIFileBrowser:setFileTypes
 --@param boolean enable Whether or not to display files using SpawnIcons.
 function dfb_methods:setModels(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1094,7 +1107,7 @@ function dfb_methods:getModels()
 end
 
 --- Sets the name to use for the file tree.
---@param string treeName The name for the root of the file tree. Passing no value causes this to be the base folder name. See DFileBrowser:setBaseFolder.
+--@param string treeName The name for the root of the file tree. Passing no value causes this to be the base folder name. See UIFileBrowser:setBaseFolder.
 function dfb_methods:setName(name)
 	checkluatype(name, TYPE_STRING)
 	local uwp = dfbunwrap(self)
@@ -1136,7 +1149,7 @@ function dfb_methods:setPath(path)
 	uwp:SetPath(path)
 end
 
---- Returns the access path of the file tree. This is GAME unless changed with DFileBrowser:setPath.
+--- Returns the access path of the file tree. This is GAME unless changed with UIFileBrowser:setPath.
 --@return string The current access path i.e. "GAME", "LUA", "DATA" etc.
 function dfb_methods:getPath()
 	local uwp = dfbunwrap(self)
@@ -1162,7 +1175,7 @@ function dfb_methods:getSearch()
 end
 
 --- Sorts the file list.
---- This is only functional when not using the model viewer. See DFileBrowser:setModels
+--- This is only functional when not using the model viewer. See UIFileBrowser:setModels
 --@param boolean? descending The sort order. true for descending (z-a), false for ascending (a-z).
 function dfb_methods:sortFiles(desc)
 	local uwp = dfbunwrap(self)
@@ -1181,7 +1194,7 @@ function dfb_methods:onSelect(func)
 end
 
 --- Set a function to run when a file is right-clicked.
---- When not in model viewer mode, DFileBrowser:onSelect will also be called if the file is not already selected.
+--- When not in model viewer mode, UIFileBrowser:onSelect will also be called if the file is not already selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onRightClick(func)
 	local uwp = dfbunwrap(self)
@@ -1192,7 +1205,7 @@ function dfb_methods:onRightClick(func)
 end
 
 --- Set a function to run when a file is double-clicked.
---- Double-clicking a file or icon will trigger both this and DFileBrowser:onSelect.
+--- Double-clicking a file or icon will trigger both this and UIFileBrowser:onSelect.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onDoubleClick(func)
 	local uwp = dfbunwrap(self)
@@ -1202,11 +1215,11 @@ function dfb_methods:onDoubleClick(func)
 	end
 end
 
---- Creates a DFrame. The DFrame is the momma of basically all VGUI elements. 98% of the time you will parent your element to this.
+--- Creates a UIFrame. The UIFrame is the momma of basically all VGUI elements. 98% of the time you will parent your element to this.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DFrame The new DFrame
-function vgui_library.createDFrame(parent, name)
+--@return UIFrame The new UIFrame
+function vgui_library.createFrame(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1217,8 +1230,8 @@ function vgui_library.createDFrame(parent, name)
 	return dfrmwrap(new)
 end
 
---- Sets a callback function to run when the frame is closed. This applies when the close button in the DFrame's control box is clicked. 
---- This is not called when the DFrame is removed with Panel:remove, see PANEL:onRemove for that.
+--- Sets a callback function to run when the frame is closed. This applies when the close button in the UIFrame's control box is clicked. 
+--- This is not called when the UIFrame is removed with Panel:remove, see PANEL:onRemove for that.
 --@param function callback The function to run when the frame is closed.
 function dfrm_methods:onClose(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1234,7 +1247,7 @@ function dfrm_methods:center()
 	uwp:Center()
 end
 
---- Sets whether the frame should be draggable by the user. The DFrame can only be dragged from its title bar.
+--- Sets whether the frame should be draggable by the user. The UIFrame can only be dragged from its title bar.
 --@param boolean draggable Whether to be draggable or not.
 function dfrm_methods:setDraggable(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1276,9 +1289,9 @@ function dfrm_methods:isActive()
 	return uwp:IsActive()
 end
 
---- Sets whether or not the DFrame can be resized by the user.
+--- Sets whether or not the UIFrame can be resized by the user.
 --- This is achieved by clicking and dragging in the bottom right corner of the frame.
---- You can set the minimum size using DFrame:setMinWidth and DFrame:setMinHeight.
+--- You can set the minimum size using DFrame:setMinWidth and UIFrame:setMinHeight.
 --@param boolean sizable Whether the frame should be resizeable or not.
 function dfrm_methods:setSizable(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1287,15 +1300,15 @@ function dfrm_methods:setSizable(enable)
 	uwp:SetSizable(enable)
 end
 
---- Gets whether the DFrame can be resized by the user.
---@return boolean Whether the DFrame can be resized.
+--- Gets whether the UIFrame can be resized by the user.
+--@return boolean Whether the UIFrame can be resized.
 function dfrm_methods:getSizable()
 	local uwp = unwrap(self)
 	
 	return uwp:GetSizable()
 end
 
---- Sets the minimum width the DFrame can be resized to by the user.
+--- Sets the minimum width the UIFrame can be resized to by the user.
 --@param number minwidth The minimum width the user can resize the frame to.
 function dfrm_methods:setMinWidth(val)
 	checkluatype(val, TYPE_NUMBER)
@@ -1304,7 +1317,7 @@ function dfrm_methods:setMinWidth(val)
 	uwp:SetMinWidth(val)
 end
 
---- Gets the minimum width the DFrame can be resized to by the user.
+--- Gets the minimum width the UIFrame can be resized to by the user.
 --@return number The minimum width.
 function dfrm_methods:getMinWidth()
 	local uwp = unwrap(self)
@@ -1312,7 +1325,7 @@ function dfrm_methods:getMinWidth()
 	return uwp:GetMinWidth()
 end
 
---- Sets the minimum height the DFrame can be resized to by the user.
+--- Sets the minimum height the UIFrame can be resized to by the user.
 --@param number minheight The minimum height the user can resize the frame to.
 function dfrm_methods:setMinHeight(val)
 	checkluatype(val, TYPE_NUMBER)
@@ -1321,7 +1334,7 @@ function dfrm_methods:setMinHeight(val)
 	uwp:SetMinHeight(val)
 end
 
---- Gets the minimum height the DFrame can be resized to by the user.
+--- Gets the minimum height the UIFrame can be resized to by the user.
 --@return number The minimum height.
 function dfrm_methods:getMinHeight()
 	local uwp = unwrap(self)
@@ -1329,7 +1342,7 @@ function dfrm_methods:getMinHeight()
 	return uwp:GetMinHeight()
 end
 
---- Sets whether the DFrame is restricted to the boundaries of the screen resolution.
+--- Sets whether the UIFrame is restricted to the boundaries of the screen resolution.
 --@param boolean locked If true, the frame cannot be dragged outside of the screen bounds.
 function dfrm_methods:setScreenLock(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1338,7 +1351,7 @@ function dfrm_methods:setScreenLock(enable)
 	uwp:SetScreenLock(enable)
 end
 
---- Adds or removes an icon on the left of the DFrame's title.
+--- Adds or removes an icon on the left of the UIFrame's title.
 --@param string iconpath Set to nil to remove the icon. Otherwise, set to file path to create the icon.
 function dfrm_methods:setIcon(path)
 	checkluatype(path, TYPE_STRING)
@@ -1356,7 +1369,7 @@ function dfrm_methods:setBackgroundBlur(enable)
 	uwp:SetBackgroundBlur(enable)
 end
 
---- Returns whether the background is being blurred by DFrame:setBackGroundBlur.
+--- Returns whether the background is being blurred by UIFrame:setBackGroundBlur.
 --@return boolean Whether the background is blurred.
 function dfrm_methods:getBackgroundBlur()
 	local uwp = unwrap(self)
@@ -1364,7 +1377,7 @@ function dfrm_methods:getBackgroundBlur()
 	return uwp:GetBackgroundBlur()
 end
 
---- Determines whether the DFrame's control box (close, minimise and maximise buttons) is displayed.
+--- Determines whether the UIFrame's control box (close, minimise and maximise buttons) is displayed.
 --@param boolean show false hides the control box; this is true by default.
 function dfrm_methods:showCloseButton(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1373,7 +1386,7 @@ function dfrm_methods:showCloseButton(enable)
 	uwp:ShowCloseButton(enable)
 end
 
---- Gets whether or not the shadow effect bordering the DFrame is being drawn.
+--- Gets whether or not the shadow effect bordering the UIFrame is being drawn.
 --@return boolean Whether or not the shadow is being drawn.
 function dfrm_methods:getPaintShadow()
 	local uwp = unwrap(self)
@@ -1381,7 +1394,7 @@ function dfrm_methods:getPaintShadow()
 	return uwp:GetPaintShadow()
 end
 
---- Sets whether or not the shadow effect bordering the DFrame should be drawn.
+--- Sets whether or not the shadow effect bordering the UIFrame should be drawn.
 --@param boolean draw Whether or not to draw the shadow. This is true by default.
 function dfrm_methods:setPaintShadow(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1390,11 +1403,11 @@ function dfrm_methods:setPaintShadow(enable)
 	uwp:SetPaintShadow(enable)
 end
 
---- Creates a DScrollPanel. DScrollPanel is a VGUI Element similar to DPanel however it has a vertical scrollbar docked to the right which can be used to put more content in a smaller area.
+--- Creates a UIScrollPanel. UIScrollPanel is a VGUI Element similar to UIPanel however it has a vertical scrollbar docked to the right which can be used to put more content in a smaller area.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DScrollPanel The new DScrollPanel
-function vgui_library.createDScrollPanel(parent, name)
+--@return UIScrollPanel The new UIScrollPanel
+function vgui_library.createScrollPanel(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1405,7 +1418,7 @@ function vgui_library.createDScrollPanel(parent, name)
 	return dscrlwrap(new)
 end
 
---- Returns the canvas ( The panel all child panels are parented to ) of the DScrollPanel.
+--- Returns the canvas ( The panel all child panels are parented to ) of the UIScrollPanel.
 --@return Panel The canvas.
 function dscrl_methods:getCanvas()
 	local uwp = dscrlunwrap(self)
@@ -1413,18 +1426,18 @@ function dscrl_methods:getCanvas()
 	return pnlwrap(uwp:GetCanvas())
 end
 
---- Clears the DScrollPanel's canvas, removing all added items.
+--- Clears the UIScrollPanel's canvas, removing all added items.
 function dscrl_methods:clear()
 	local uwp = dscrlunwrap(self)
 	
 	uwp:Clear()
 end
 
---- Creates a DMenu. A simple menu with sub menu, icon and convar support. Inherits from DScrollPanel.
+--- Creates a UIMenu. A simple menu with sub menu, icon and convar support. Inherits from UIScrollPanel.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DMenu The new DMenu
-function vgui_library.createDMenu(parent, name)
+--@return UIMenu The new UIMenu
+function vgui_library.createMenu(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1435,10 +1448,10 @@ function vgui_library.createDMenu(parent, name)
 	return dmenwrap(new)
 end
 
---- Add an option to the DMenu
+--- Add an option to the UIMenu
 --@param string name Name of the option.
 --@param function func Function to execute when this option is clicked.
---@return DMenuOption Returns the created DMenuOption panel.
+--@return UIMenuOption Returns the created UIMenuOption panel.
 function dmen_methods:addOption(name, func)
 	checkluatype(name, TYPE_STRING)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1450,7 +1463,7 @@ function dmen_methods:addOption(name, func)
 	return dmenowrap(dmo)
 end
 
---- Adds a panel to the DMenu as if it were an option.
+--- Adds a panel to the UIMenu as if it were an option.
 --@param Panel pnl The panel that you want to add.
 function dmen_methods:addPanel(pnl)
 	local uwp = dmenunwrap(self)
@@ -1466,11 +1479,11 @@ function dmen_methods:addSpacer()
 	uwp:AddSpacer()
 end
 
---- Add a sub menu to the DMenu.
+--- Add a sub menu to the UIMenu.
 --@param string name Name of the sub menu.
 --@param function? func Function to execute when this sub menu is clicked.
---@return DMenu The created sub DMenu.
---@return DMenuOption Function to execute when this sub menu is clicked.
+--@return UIMenu The created sub DMenu.
+--@return UIMenuOption Function to execute when this sub menu is clicked.
 function dmen_methods:addSubMenu(name, func)
 	checkluatype(name, TYPE_STRING)
 	if func ~= nil then checkluatype(func, TYPE_FUNCTION) end
@@ -1484,7 +1497,7 @@ function dmen_methods:addSubMenu(name, func)
 	return dmenwrap(dm), dmenowrap(dm)
 end
 
---- Returns the number of child elements of the DMenu.
+--- Returns the number of child elements of the UIMenu.
 --@return number The number of child elements.
 function dmen_methods:getChildCount()
 	local uwp = dmenunwrap(self)
@@ -1492,7 +1505,7 @@ function dmen_methods:getChildCount()
 	return uwp:ChildCount()
 end
 
---- Sets the maximum height the DMenu can have. If the height of all menu items exceed this value, a scroll bar will be automatically added.
+--- Sets the maximum height the UIMenu can have. If the height of all menu items exceed this value, a scroll bar will be automatically added.
 --@param number maxHeight The maximum height of the DMenu to set, in pixels.
 function dmen_methods:setMaxHeight(mh)
 	checkluatype(mh, TYPE_NUMBER)
@@ -1501,7 +1514,7 @@ function dmen_methods:setMaxHeight(mh)
 	uwp:SetMaxHeight(mh)
 end
 
---- Returns the maximum height of the DMenu.
+--- Returns the maximum height of the UIMenu.
 --@return number The maximum height in pixels.
 function dmen_methods:getMaxHeight()
 	local uwp = dmenunwrap(self)
@@ -1509,8 +1522,8 @@ function dmen_methods:getMaxHeight()
 	return uwp:GetMaxHeight()
 end
 
---- Sets the minimum width of the DMenu. The menu will be stretched to match the given value.
---@param number minimumWidth The minimum width of the DMenu in pixels
+--- Sets the minimum width of the UIMenu. The menu will be stretched to match the given value.
+--@param number minimumWidth The minimum width of the UIMenu in pixels
 function dmen_methods:setMinimumWidth(mh)
 	checkluatype(mh, TYPE_NUMBER)
 	local uwp = dmenunwrap(self)
@@ -1518,15 +1531,15 @@ function dmen_methods:setMinimumWidth(mh)
 	uwp:SetMinimumWidth(mh)
 end
 
---- Returns the minimum width of the DMenu in pixels
---@return number The minimum width of the DMenu.
+--- Returns the minimum width of the UIMenu in pixels
+--@return number The minimum width of the UIMenu.
 function dmen_methods:getMinimumWidth()
 	local uwp = dmenunwrap(self)
 	
 	return uwp:GetMinimumWidth()
 end
 
---- Opens the DMenu at the specified position or cursor position if X and Y are not given.
+--- Opens the UIMenu at the specified position or cursor position if X and Y are not given.
 --@param number? x Position (X coordinate) to open the menu at.
 --@param number? y Position (Y coordinate) to open the menu at.
 function dmen_methods:open(x, y)
@@ -1535,15 +1548,15 @@ function dmen_methods:open(x, y)
 	uwp:Open(x, y)
 end
 
---- Creates a sub DMenu and returns it. Has no duplicate call protection.
---@return DMenu The created DMenu to add options to.
+--- Creates a sub UIMenu and returns it. Has no duplicate call protection.
+--@return DMenu The created UIMenu to add options to.
 function dmeno_methods:addSubMenu()
 	local uwp = dmenounwrap(self)
 	
 	return dmenwrap(uwp:AddSubMenu())
 end
 
---- Sets the checked state of the DMenuOption. Does not invoke DMenuOption:onChecked.
+--- Sets the checked state of the UIMenuOption. Does not invoke UIMenuOption:onChecked.
 --@param boolean checked New checked state.
 function dmeno_methods:setChecked(chk)
 	checkluatype(chk, TYPE_BOOL)
@@ -1552,7 +1565,7 @@ function dmeno_methods:setChecked(chk)
 	uwp:SetChecked(chk)
 end
 
---- Returns the checked state of DMenuOption.
+--- Returns the checked state of UIMenuOption.
 --@return boolean Are we checked or not.
 function dmeno_methods:getChecked()
 	local uwp = dmenounwrap(self)
@@ -1560,7 +1573,7 @@ function dmeno_methods:getChecked()
 	return uwp:GetChecked()
 end
 
---- Sets whether the DMenuOption is a checkbox option or a normal button option.
+--- Sets whether the UIMenuOption is a checkbox option or a normal button option.
 --@param boolean checkable Checkable?
 function dmeno_methods:setIsCheckable(chk)
 	checkluatype(chk, TYPE_BOOL)
@@ -1569,7 +1582,7 @@ function dmeno_methods:setIsCheckable(chk)
 	uwp:SetIsCheckable(chk)
 end
 
---- Returns whether the DMenuOption is a checkbox option or a normal button option.
+--- Returns whether the UIMenuOption is a checkbox option or a normal button option.
 --@return boolean Is checkable?
 function dmeno_methods:getIsCheckable()
 	local uwp = dmenounwrap(self)
@@ -1577,7 +1590,7 @@ function dmeno_methods:getIsCheckable()
 	return uwp:GetIsCheckable()
 end
 
---- Set a function to run when the DMenuOption's checked state changes.
+--- Set a function to run when the UIMenuOption's checked state changes.
 --@param function callback Function to run. Has one argument which is the new checked state.
 function dmeno_methods:onChecked(func)
 	local uwp = dmenunwrap(self)
@@ -1587,11 +1600,11 @@ function dmeno_methods:onChecked(func)
 	end
 end
 
---- Creates a DLabel. A standard Derma text label. A lot of this panels functionality is a base for button elements, such as DButton.
+--- Creates a UILabel. A standard Derma text label. A lot of this panels functionality is a base for button elements, such as UIButton.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DLabel The new DLabel.
-function vgui_library.createDLabel(parent, name)
+--@return UILabel The new UILabel.
+function vgui_library.createLabel(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1603,8 +1616,8 @@ function vgui_library.createDLabel(parent, name)
 end
 
 --- Called when the label is left clicked (on key release) by the player.
---- This will be called after DLabel:onDepressed and DLabel:onReleased.
---- This can be overridden; by default, it calls DLabel:toggle.
+--- This will be called after UILabel:onDepressed and UILabel:onReleased.
+--- This can be overridden; by default, it calls UILabel:toggle.
 --@param function callback The function to run when the label is pressed.
 function dlab_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1615,7 +1628,7 @@ end
 
 --- Called when the label is double clicked by the player with left clicks.
 --- DLabel:setDoubleClickingEnabled must be set to true for this hook to work, which it is by default.
---- This will be called after DLabel:onDepressed and DLabel:onReleased and DLabel:onClick.
+--- This will be called after UILabel:onDepressed and UILabel:onReleased and UILabel:onClick.
 --@param function callback The function to run when the label is double clicked.
 function dlab_methods:onDoubleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1624,7 +1637,7 @@ function dlab_methods:onDoubleClick(func)
 	function uwp:DoDoubleClick() instance:runFunction(func) end
 end
 
---- Sets whether or not double clicking should call DLabel:DoDoubleClick.
+--- Sets whether or not double clicking should call UILabel:DoDoubleClick.
 --- This is enabled by default.
 --@param boolean enabled True to enable, false to disable.
 function dlab_methods:setDoubleClickingEnabled(enable)
@@ -1634,7 +1647,7 @@ function dlab_methods:setDoubleClickingEnabled(enable)
 	uwp:SetDoubleClickingEnabled(enable)
 end
 
---- Returns whether or not double clicking will call DLabel:onDoubleClick.
+--- Returns whether or not double clicking will call UILabel:onDoubleClick.
 --@return boolean Whether double clicking functionality is enabled.
 function dlab_methods:getDoubleClickingEnabled()
 	local uwp = dlabunwrap(self)
@@ -1643,7 +1656,7 @@ function dlab_methods:getDoubleClickingEnabled()
 end
 
 --- Called when the label is right clicked (on key release) by the player.
---- This will be called after DLabel:onDepressed and DLabel:onReleased.
+--- This will be called after UILabel:onDepressed and UILabel:onReleased.
 --@param function callback The function to run when the label is right clicked.
 function dlab_methods:onRightClick(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1653,7 +1666,7 @@ function dlab_methods:onRightClick(func)
 end
 
 --- Called when the label is middle clicked (on key release) by the player.
---- This will be called after DLabel:onDepressed and DLabel:onReleased.
+--- This will be called after UILabel:onDepressed and UILabel:onReleased.
 --@param function callback The function to run when the label is middle clicked.
 function dlab_methods:onMiddleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1671,7 +1684,7 @@ function dlab_methods:onDepressed(func)
 	function uwp:OnDepressed() instance:runFunction(func) end
 end
 
---- Called when the player releases any mouse button on the label. This is always called after DLabel:onDepressed.
+--- Called when the player releases any mouse button on the label. This is always called after UILabel:onDepressed.
 --@param function callback The function to run when the label is released.
 function dlab_methods:onReleased(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1680,8 +1693,8 @@ function dlab_methods:onReleased(func)
 	function uwp:OnReleased() instance:runFunction(func) end
 end
 
---- Called when the toggle state of the label is changed by DLabel:Toggle.
---- In order to use toggle functionality, you must first call DLabel:setIsToggle with true, as it is disabled by default.
+--- Called when the toggle state of the label is changed by UILabel:Toggle.
+--- In order to use toggle functionality, you must first call UILabel:setIsToggle with true, as it is disabled by default.
 --@param function callback The function to run when the label is toggled. Has one argument which is the new toggle state.
 function dlab_methods:onToggled(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1690,8 +1703,8 @@ function dlab_methods:onToggled(func)
 	function uwp:OnToggled(toggleState) instance:runFunction(func, toggleState) end
 end
 
---- Enables or disables toggle functionality for a label. Retrieved with DLabel:getIsToggle.
---- You must call this before using DLabel:setToggle, DLabel:getToggle or DLabel:toggle.
+--- Enables or disables toggle functionality for a label. Retrieved with UILabel:getIsToggle.
+--- You must call this before using UILabel:setToggle, UILabel:getToggle or UILabel:toggle.
 --@param boolean enable Whether or not to enable toggle functionality.
 function dlab_methods:setIsToggle(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1700,7 +1713,7 @@ function dlab_methods:setIsToggle(enable)
 	uwp:SetIsToggle(enable)
 end
 
---- Returns whether the toggle functionality is enabled for a label. Set with DLabel:setIsToggle.
+--- Returns whether the toggle functionality is enabled for a label. Set with UILabel:setIsToggle.
 --@return boolean Whether toggle functionality is enabled.
 function dlab_methods:getIsToggle()
 	local uwp = dlabunwrap(self)
@@ -1708,16 +1721,16 @@ function dlab_methods:getIsToggle()
 	return uwp:GetIsToggle()
 end
 
---- Toggles the label's state. This can be set and retrieved with DLabel:SetToggle and DLabel:GetToggle.
----In order to use toggle functionality, you must first call DLabel:setIsToggle with true, as it is disabled by default.
+--- Toggles the label's state. This can be set and retrieved with UILabel:SetToggle and DLabel:GetToggle.
+---In order to use toggle functionality, you must first call UILabel:setIsToggle with true, as it is disabled by default.
 function dlab_methods:toggle()
 	local uwp = dlabunwrap()
 
 	uwp:Toggle()
 end
 
---- Sets the toggle state of the label. This can be retrieved with DLabel:getToggle and toggled with DLabel:toggle.
---- In order to use toggle functionality, you must first call DLabel:setIsToggle with true, as it is disabled by default.
+--- Sets the toggle state of the label. This can be retrieved with UILabel:getToggle and toggled with UILabel:toggle.
+--- In order to use toggle functionality, you must first call UILabel:setIsToggle with true, as it is disabled by default.
 --@param boolean newState The new state of the toggle.
 function dlab_methods:setToggle(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1726,8 +1739,8 @@ function dlab_methods:setToggle(enable)
 	uwp:SetToggle(enable)
 end
 
---- Returns the current toggle state of the label. This can be set with DLabel:setToggle and toggled with DLabel:toggle.
---- In order to use toggle functionality, you must first call DLabel:setIsToggle with true, as it is disabled by default.
+--- Returns the current toggle state of the label. This can be set with UILabel:setToggle and toggled with UILabel:toggle.
+--- In order to use toggle functionality, you must first call UILabel:setIsToggle with true, as it is disabled by default.
 --@return boolean The state of the toggleable label.
 function dlab_methods:getToggle()
 	local uwp = dlabunwrap(self)
@@ -1735,7 +1748,7 @@ function dlab_methods:getToggle()
 	return uwp:GetToggle()
 end
 
---- Sets the font in the DLabel.
+--- Sets the font in the UILabel.
 --@param string fontName The name of the font. Check render.setFont for a list of default fonts.
 function dlab_methods:setFont(fontName)
 	checkluatype(fontName, TYPE_STRING)
@@ -1744,7 +1757,7 @@ function dlab_methods:setFont(fontName)
 	uwp:SetFont(fontName)
 end
 
---- Gets the font in the DLabel.
+--- Gets the font in the UILabel.
 --@return string The font name.
 function dlab_methods:getFont()
 	local uwp = dlabunwrap(self)
@@ -1752,7 +1765,7 @@ function dlab_methods:getFont()
 	return uwp:GetFont()
 end
 
---- Sets the text color of the DLabel.
+--- Sets the text color of the UILabel.
 --@param Color textColor The text color.
 function dlab_methods:setTextColor(clr)
 	local uwp = dlabunwrap(self)
@@ -1760,7 +1773,7 @@ function dlab_methods:setTextColor(clr)
 	uwp:SetTextColor(cunwrap(clr))
 end
 
---- Returns the "override" text color, set by DLabel:setTextColor.
+--- Returns the "override" text color, set by UILabel:setTextColor.
 --@return Color The color of the text, or nil.
 function dlab_methods:getTextColor()
 	local uwp = dlabunwrap(self)
@@ -1785,11 +1798,11 @@ function dlab_methods:getAutoStretchVertical()
 	return uwp:GetAutoStretchVertical()
 end
 
---- Creates a DButton. Inherits functions from DLabel.
+--- Creates a DButton. Inherits functions from UILabel.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DButton The new DButton.
-function vgui_library.createDButton(parent, name)
+--@return UIButton The new UIButton.
+function vgui_library.createButton(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1800,7 +1813,7 @@ function vgui_library.createDButton(parent, name)
 	return dbutwrap(new)
 end
 
---- Called when the button is left clicked (on key release) by the player. This will be called after DButton:isDown.
+--- Called when the button is left clicked (on key release) by the player. This will be called after UIButton:isDown.
 --@param function callback The function to run when the button is pressed.
 function dbut_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -1818,7 +1831,7 @@ function dbut_methods:setImage(image)
 	uwp:SetImage(image)
 end
 
---- Returns true if the DButton is currently depressed (a user is clicking on it).
+--- Returns true if the UIButton is currently depressed (a user is clicking on it).
 --@return boolean Whether or not the button is depressed.
 function dbut_methods:isDown()
 	local uwp = dbutunwrap(self)
@@ -1826,10 +1839,10 @@ function dbut_methods:isDown()
 	return uwp:IsDown()
 end
 
---- Creates an AvatarImage. Inherits functions from Panel.
+--- Creates an UIAvatarImage. Inherits functions from Panel.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return AvatarImage The new AvatarImage.
+--@return UIAvatarImage The new UIAvatarImage.
 function vgui_library.createAvatarImage(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
@@ -1863,11 +1876,11 @@ function aimg_methods:setSteamID(steamid, size)
 	uwp:SetSteamID(steamid, size)
 end
 
---- Creates a DProgress. A progressbar, works with a fraction between 0 and 1 where 0 is 0% and 1 is 100%. Inherits functions from Panel.
+--- Creates a UIProgress. A progressbar, works with a fraction between 0 and 1 where 0 is 0% and 1 is 100%. Inherits functions from Panel.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DProgress The new DProgress.
-function vgui_library.createDProgress(parent, name)
+--@return DProgress The new UIProgress.
+function vgui_library.createProgress(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1895,11 +1908,11 @@ function dprg_methods:getFraction()
 	return uwp:GetFraction()
 end
 
---- Creates a DTextEntry. A form which may be used to display text the player is meant to select and copy or alternately allow them to enter some text of their own. Inherits functions from Panel.
+--- Creates a UITextEntry. A form which may be used to display text the player is meant to select and copy or alternately allow them to enter some text of their own. Inherits functions from Panel.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DTextEntry The new DTextEntry.
-function vgui_library.createDTextEntry(parent, name)
+--@return UITextEntry The new UITextEntry.
+function vgui_library.createTextEntry(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -1919,7 +1932,7 @@ function dtxe_methods:setPlaceholderText(text)
 	uwp:SetPlaceholderText(text)
 end
 
---- Gets the DTextEntry's placeholder text.
+--- Gets the UITextEntry's placeholder text.
 --@return string The placeholder text.
 function dtxe_methods:getPlaceholderText()
 	local uwp = dtxeunwrap(self)
@@ -1953,15 +1966,15 @@ function dtxe_methods:setNumeric(enable)
 	uwp:SetNumeric(enable)
 end
 
---- Returns whether only numeric characters (123456789.-) can be entered into the DTextEntry.
---@return boolean Whether the DTextEntry is numeric or not.
+--- Returns whether only numeric characters (123456789.-) can be entered into the UITextEntry.
+--@return boolean Whether the UITextEntry is numeric or not.
 function dtxe_methods:getNumeric()
 	local uwp = dtxeunwrap(self)
 
 	return uwp:GetNumeric()
 end
 
---- Sets whether we should fire DTextEntry:onValueChange every time we type or delete a character or only when Enter is pressed.
+--- Sets whether we should fire UITextEntry:onValueChange every time we type or delete a character or only when Enter is pressed.
 --@param boolean enable Fire onValueChange every time the entry is modified?
 function dtxe_methods:setUpdateOnType(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -1970,7 +1983,7 @@ function dtxe_methods:setUpdateOnType(enable)
 	uwp:SetUpdateOnType(enable)
 end
 
---- Gets whether the DTextEntry fires onValueChange every time it is modified.
+--- Gets whether the UITextEntry fires onValueChange every time it is modified.
 --@return boolean Fire onValueChange on every update?
 function dtxe_methods:getUpdateOnType()
 	local uwp = dtxeunwrap(self)
@@ -1978,7 +1991,7 @@ function dtxe_methods:getUpdateOnType()
 	return uwp:GetUpdateOnType()
 end
 
---- Sets the text of the DTextEntry and calls DTextEntry:onValueChange.
+--- Sets the text of the UITextEntry and calls UITextEntry:onValueChange.
 --@param string value The value to set.
 function dtxe_methods:setValue(text)
 	checkluatype(text, TYPE_STRING)
@@ -1987,8 +2000,8 @@ function dtxe_methods:setValue(text)
 	uwp:SetValue(text)
 end
 
---- Disables Input on a DTextEntry. This differs from Panel:SetDisabled - SetEditable will not affect the appearance of the textbox.
---@param boolean enabled Whether the DTextEntry should be editable.
+--- Disables Input on a UITextEntry. This differs from Panel:SetDisabled - SetEditable will not affect the appearance of the textbox.
+--@param boolean enabled Whether the UITextEntry should be editable.
 function dtxe_methods:setEditable(enable)
 	checkluatype(enable, TYPE_BOOL)
 	local uwp = dtxeunwrap(self)
@@ -1996,23 +2009,23 @@ function dtxe_methods:setEditable(enable)
 	uwp:SetEditable(enable)
 end
 
---- Returns the contents of the DTextEntry as a number.
---@return number Text of the DTextEntry as a float, or nil if it cannot be converted to a number using tonumber.
+--- Returns the contents of the UITextEntry as a number.
+--@return number Text of the UITextEntry as a float, or nil if it cannot be converted to a number using tonumber.
 function dtxe_methods:getFloat()
 	local uwp = dtxeunwrap(self)
 
 	return uwp:GetFloat()
 end
 
---- Same as DTextEntry:GetFloat(), but rounds value to nearest integer.
---@return number Text of the DTextEntry as an int, or nil if it cannot be converted to a number.
+--- Same as UITextEntry:GetFloat(), but rounds value to nearest integer.
+--@return number Text of the UITextEntry as an int, or nil if it cannot be converted to a number.
 function dtxe_methods:getInt()
 	local uwp = dtxeunwrap(self)
 
 	return uwp:GetInt()
 end
 
---- Sets the cursor's color in DTextEntry (the blinking line).
+--- Sets the cursor's color in UITextEntry (the blinking line).
 --@param Color cursorColor The color to set the cursor to.
 function dtxe_methods:setCursorColor(clr)
 	local uwp = dtxeunwrap(self)
@@ -2020,7 +2033,7 @@ function dtxe_methods:setCursorColor(clr)
 	uwp:SetCursorColor(cunwrap(clr))
 end
 
---- Returns the cursor color of a DTextEntry.
+--- Returns the cursor color of a UITextEntry.
 --@param Color The color of the cursor as a Color.
 function dtxe_methods:getCursorColor()
 	local uwp = dtxeunwrap(self)
@@ -2028,7 +2041,7 @@ function dtxe_methods:getCursorColor()
 	return cwrap(uwp:GetCursorColor())
 end
 
---- Changes the font of the DTextEntry.
+--- Changes the font of the UITextEntry.
 --@param string fontName The name of the font. Check render.setFont for a list of default fonts.
 function dtxe_methods:setFont(fontName)
 	checkluatype(fontName, TYPE_STRING)
@@ -2037,7 +2050,7 @@ function dtxe_methods:setFont(fontName)
 	uwp:SetFont(fontName)
 end
 
---- Sets whether or not to paint/draw the DTextEntry's background.
+--- Sets whether or not to paint/draw the UITextEntry's background.
 --@param boolean paint True to show the entry's background, false to hide it.
 function dtxe_methods:setPaintBackground(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -2054,8 +2067,8 @@ function dtxe_methods:getPaintBackground()
 	return uwp:getPaintBackground()
 end
 
---- Called internally by DTextEntry:OnTextChanged when the user modifies the text in the DTextEntry.
---- You should override this function to define custom behavior when the DTextEntry text changes.
+--- Called internally by UITextEntry:OnTextChanged when the user modifies the text in the UITextEntry.
+--- You should override this function to define custom behavior when the UITextEntry text changes.
 --@param function callback The function to run when the user modifies the text.
 function dtxe_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -2064,13 +2077,13 @@ function dtxe_methods:onChange(func)
 	function uwp:OnChange() instance:runFunction(func) end
 end
 
---- Called internally when the text changes of the DTextEntry are applied.
---- See also DTextEntry:onChange for a function that is called on every text change.
+--- Called internally when the text changes of the UITextEntry are applied.
+--- See also UITextEntry:onChange for a function that is called on every text change.
 --- You should override this function to define custom behavior when the text changes.
 --- This method is called:
 --- 	When Enter is pressed after typing
---- 	When DTextEntry:setValue is used
---- 	For every key typed - only if DTextEntry:setUpdateOnType was set to true (default is false)
+--- 	When UITextEntry:setValue is used
+--- 	For every key typed - only if UITextEntry:setUpdateOnType was set to true (default is false)
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -2079,7 +2092,7 @@ function dtxe_methods:onValueChange(func)
 	function uwp:OnValueChange(value) instance:runFunction(func, value) end
 end
 
---- Called whenever enter is pressed on a DTextEntry.
+--- Called whenever enter is pressed on a UITextEntry.
 --- DTextEntry:isEditing will still return true in this callbacknot 
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onEnter(func)
@@ -2089,15 +2102,15 @@ function dtxe_methods:onEnter(func)
 	function uwp:OnEnter(value) instance:runFunction(func, value) end
 end
 
---- Returns whether this DTextEntry is being edited or not. (i.e. has focus)
---@return boolean Whether this DTextEntry is being edited or not.
+--- Returns whether this UITextEntry is being edited or not. (i.e. has focus)
+--@return boolean Whether this UITextEntry is being edited or not.
 function dtxe_methods:isEditing()
 	local uwp = dtxeunwrap(self)
 
 	return uwp:IsEditing()
 end
 
---- Called whenever the DTextEntry gains focus.
+--- Called whenever the UITextEntry gains focus.
 --@param function callback The function to run when entry gains focus.
 function dtxe_methods:onGetFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -2106,7 +2119,7 @@ function dtxe_methods:onGetFocus(func)
 	function uwp:OnGetFocus() instance:runFunction(func) end
 end
 
---- Called whenever the DTextEntry loses focus.
+--- Called whenever the UITextEntry loses focus.
 --@param function callback The function to run when the entry loses focus.
 function dtxe_methods:onLoseFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -2115,7 +2128,7 @@ function dtxe_methods:onLoseFocus(func)
 	function uwp:OnLoseFocus() instance:runFunction(func) end
 end
 
---- Sets the text color of the DTextEntry.
+--- Sets the text color of the UITextEntry.
 --@param Color textColor The text color.
 function dtxe_methods:setTextColor(clr)
 	local uwp = dtxeunwrap(self)
@@ -2123,7 +2136,7 @@ function dtxe_methods:setTextColor(clr)
 	uwp:SetTextColor(cunwrap(clr))
 end
 
---- Returns the "override" text color, set by DTextEntry:setTextColor.
+--- Returns the "override" text color, set by UITextEntry:setTextColor.
 --@return Color The color of the text, or nil.
 function dtxe_methods:getTextColor()
 	local uwp = dtxeunwrap(self)
@@ -2131,11 +2144,11 @@ function dtxe_methods:getTextColor()
 	return cwrap(uwp:GetTextColor())
 end
 
---- Creates a DImage. A panel which displays an image. Inherits functions from DPanel.
+--- Creates a UIImage. A panel which displays an image. Inherits functions from UIPanel.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DImage The new DImage.
-function vgui_library.createDImage(parent, name)
+--@return UIImage The new UIImage.
+function vgui_library.createImage(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -2181,7 +2194,7 @@ function dimg_methods:getImageColor()
 	return cwrap(uwp:GetImageColor())
 end
 
---- Sets whether the DImage should keep the aspect ratio of its image when being resized.
+--- Sets whether the UIImage should keep the aspect ratio of its image when being resized.
 --- Note that this will not try to fit the image inside the button, but instead it will fill the button with the image.
 --@param boolean keep True to keep the aspect ratio, false not to.
 function dimg_methods:setKeepAspect(enable)
@@ -2191,19 +2204,19 @@ function dimg_methods:setKeepAspect(enable)
 	uwp:SetKeepAspect(enable)
 end
 
---- Returns whether the DImage should keep the aspect ratio of its image when being resized.
---@return boolean Whether the DImage should keep the aspect ratio of its image when being resized.
+--- Returns whether the UIImage should keep the aspect ratio of its image when being resized.
+--@return boolean Whether the UIImage should keep the aspect ratio of its image when being resized.
 function dimg_methods:getKeepAspect()
 	local uwp = dimgunwrap(self)
 
 	return uwp:GetKeepAspect()
 end
 
---- Creates a DImageButton. An image button. This panel inherits all methods of DButton, such as DLabel:onClick.
+--- Creates a UIImageButton. An image button. This panel inherits all methods of DButton, such as UILabel:onClick.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DImageButton The new DImageButton.
-function vgui_library.createDImageButton(parent, name)
+--@return UIImageButton The new UIImageButton.
+function vgui_library.createImageButton(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -2232,7 +2245,7 @@ function dimgb_methods:getImage()
 	return uwp:GetImage()
 end
 
---- Sets whether the DImageButton should keep the aspect ratio of its image when being resized.
+--- Sets whether the UIImageButton should keep the aspect ratio of its image when being resized.
 --- Note that this will not try to fit the image inside the button, but instead it will fill the button with the image.
 --@param boolean keep True to keep the aspect ratio, false not to.
 function dimgb_methods:setKeepAspect(enable)
@@ -2251,7 +2264,7 @@ function dimgb_methods:setImageColor(clr)
 	uwp:SetColor(uwc)
 end
 
---- Sets whether the image inside the DImageButton should be stretched to fill the entire size of the button, without preserving aspect ratio. If set to false, the image will not be resized at all.
+--- Sets whether the image inside the UIImageButton should be stretched to fill the entire size of the button, without preserving aspect ratio. If set to false, the image will not be resized at all.
 --@param boolean stretch True to stretch, false to not to stretch.
 function dimgb_methods:setStretchToFit(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -2268,11 +2281,11 @@ function dimgb_methods:getStretchToFit()
 	return uwp:GetStretchToFit()
 end
 
---- Creates a DCheckBox. The DCheckBox is a checkbox. It allows you to get a boolean value from the user. Inherits functions from DButton.
+--- Creates a UICheckBox. The UICheckBox is a checkbox. It allows you to get a boolean value from the user. Inherits functions from DButton.
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DCheckBox The new DCheckBox.
-function vgui_library.createDCheckBox(parent, name)
+--@return UICheckBox The new UICheckBox.
+function vgui_library.createCheckBox(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -2283,7 +2296,7 @@ function vgui_library.createDCheckBox(parent, name)
 	return dchkwrap(new)
 end
 
---- Sets the checked state of the checkbox, and calls the checkbox's DCheckBox:onChange method.
+--- Sets the checked state of the checkbox, and calls the checkbox's UICheckBox:onChange method.
 --@param boolean checked Whether the box should be checked or not.
 function dchk_methods:setValue(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -2292,7 +2305,7 @@ function dchk_methods:setValue(enable)
 	uwp:SetValue(enable)
 end
 
---- Sets the checked state of the checkbox. Does not call the checkbox's DCheckBox:onChange method, unlike DCheckBox:setValue.
+--- Sets the checked state of the checkbox. Does not call the checkbox's UICheckBox:onChange method, unlike UICheckBox:setValue.
 --@param boolean checked Whether the box should be checked or not.
 function dchk_methods:setChecked(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -2301,7 +2314,7 @@ function dchk_methods:setChecked(enable)
 	uwp:SetChecked(enable)
 end
 
---- Toggles the checked state of the checkbox, and calls the checkbox's DCheckBox:onChange method. This is called by DCheckBox:onClick.
+--- Toggles the checked state of the checkbox, and calls the checkbox's UICheckBox:onChange method. This is called by UICheckBox:onClick.
 function dchk_methods:toggle()
 	local uwp = dchkunwrap(self)
 	
@@ -2333,11 +2346,11 @@ function dchk_methods:onChange(func)
 	function uwp:OnChange(bval) instance:runFunction(func, bval) end
 end
 
---- Creates a DNumSlider. The DNumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
+--- Creates a UINumSlider. The UINumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
 --@param any? parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DCheckBox The new DCheckBox.
-function vgui_library.createDNumSlider(parent, name)
+--@return UINumSlider The new UINumSlider.
+function vgui_library.createNumSlider(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -2349,7 +2362,7 @@ function vgui_library.createDNumSlider(parent, name)
 end
 
 --- Returns the label to the left of the slider.
--- @return DLabel
+-- @return UILabel
 function dnms_methods:getLabel()
 	local uwp = dnmsunwrap(self)
 	return dlabwrap(uwp.Label)
@@ -2406,8 +2419,8 @@ function dnms_methods:getDecimals()
 	return uwp:GetDecimals()
 end
 
---- Returns the DTextEntry component of the slider.
---@return DTextEntry The DTextEntry.
+--- Returns the UITextEntry component of the slider.
+--@return UITextEntry The UITextEntry.
 function dnms_methods:getTextArea()
 	local uwp = dnmsunwrap(self)
 	
@@ -2425,7 +2438,7 @@ function dnms_methods:setMinMax(min, max)
 	uwp:SetMinMax(min, max)
 end
 
---- Sets the default value of the slider, to be used by DNumSlider:resetToDefaultValue or by middle mouse clicking the draggable knob of the slider.
+--- Sets the default value of the slider, to be used by UINumSlider:resetToDefaultValue or by middle mouse clicking the draggable knob of the slider.
 --@param number default The new default value of the slider to set.
 function dnms_methods:setDefaultValue(val)
 	checkluatype(val, TYPE_NUMBER)
@@ -2434,7 +2447,7 @@ function dnms_methods:setDefaultValue(val)
 	uwp:SetDefaultValue(val)
 end
 
---- Returns the default value of the slider, if one was set by DNumSlider:setDefaultValue
+--- Returns the default value of the slider, if one was set by UINumSlider:setDefaultValue
 --@return number The default value of the slider
 function dnms_methods:getDefaultValue()
 	local uwp = dnmsunwrap(self)
@@ -2442,7 +2455,7 @@ function dnms_methods:getDefaultValue()
 	return uwp:GetDefaultValue()
 end
 
---- Sets the value of the DNumSlider. Calls the slider's onValueChange method.
+--- Sets the value of the UINumSlider. Calls the slider's onValueChange method.
 --@param number value The value to set.
 function dnms_methods:setValue(val)
 	checkluatype(val, TYPE_NUMBER)
@@ -2451,7 +2464,7 @@ function dnms_methods:setValue(val)
 	uwp:SetValue(val)
 end
 
---- Returns the value of the DNumSlider.
+--- Returns the value of the UINumSlider.
 --@return number The value of the slider.
 function dnms_methods:getValue()
 	local uwp = dnmsunwrap(self)
@@ -2459,16 +2472,16 @@ function dnms_methods:getValue()
 	return uwp:GetValue()
 end
 
---- Returns true if either the DTextEntry, the DSlider or the DNumberScratch are being edited.
---@return boolean Whether or not the DNumSlider is being edited by the player.
+--- Returns true if either the UITextEntry, the UISlider or the UINumberScratch are being edited.
+--@return boolean Whether or not the UINumSlider is being edited by the player.
 function dnms_methods:isEditing()
 	local uwp = dnmsunwrap(self)
 	
 	return uwp:IsEditing()
 end
 
---- Resets the slider to the default value, if one was set by DNumSlider:setDefaultValue.
---- This function is called by the DNumSlider when user middle mouse clicks on the draggable knob of the slider.
+--- Resets the slider to the default value, if one was set by UINumSlider:setDefaultValue.
+--- This function is called by the UINumSlider when user middle mouse clicks on the draggable knob of the slider.
 function dnms_methods:resetToDefaultValue()
 	local uwp = dnmsunwrap(self)
 	
@@ -2492,11 +2505,11 @@ function dnms_methods:onValueChange(func)
 	function uwp:OnValueChanged(val) instance:runFunction(func, val) end
 end
 
---- Creates a DComboBox. A field with multiple selectable values. Inherits functions from DButton.
+--- Creates a UIComboBox. A field with multiple selectable values. Inherits functions from DButton.
 --@param any? parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DComboBox The new DComboBox.
-function vgui_library.createDComboBox(parent, name)
+--@return UIComboBox The new UIComboBox.
+function vgui_library.createComboBox(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -2508,7 +2521,7 @@ function vgui_library.createDComboBox(parent, name)
 	return dcomwrap(new)
 end
 
---- Sets DComboBox's font for the selected choice.
+--- Sets UIComboBox's font for the selected choice.
 -- @param string fontname The name of the font.
 function dcom_methods:setFont(name)
 	checkluatype(name, TYPE_STRING)
@@ -2532,14 +2545,14 @@ function dcom_methods:addChoice(name, val, def, icon)
 	return uwp:AddChoice(name, val, def, icon)
 end
 
---- Adds a spacer below the currently last item in the drop down. Recommended to use with DComboBox:setSortItems set to false.
+--- Adds a spacer below the currently last item in the drop down. Recommended to use with UIComboBox:setSortItems set to false.
 function dcom_methods:addSpacer()
 	local uwp = dcomunwrap(self)
 	
 	uwp:AddSpacer()
 end
 
---- Sets whether or not the items should be sorted alphabetically in the dropdown menu of the DComboBox. If set to false, items will appear in the order they were added by DComboBox:addChoice calls. Enabled by default.
+--- Sets whether or not the items should be sorted alphabetically in the dropdown menu of the UIComboBox. If set to false, items will appear in the order they were added by UIComboBox:addChoice calls. Enabled by default.
 --@param boolean sort true to enable, false to disable.
 function dcom_methods:setSortItems(enable)
 	checkluatype(enable, TYPE_BOOL)
@@ -2563,7 +2576,7 @@ function dcom_methods:closeMenu()
 end
 
 --- Sets the text shown in the combo box when the menu is not collapsed.
---@param string txt The text in the DComboBox.
+--@param string txt The text in the UIComboBox.
 function dcom_methods:setValue(txt)
 	checkluatype(txt, TYPE_STRING)
 	local uwp = dcomunwrap(self)
@@ -2662,11 +2675,11 @@ function dcom_methods:onSelect(func)
 	function uwp:OnSelect(id, val, data) instance:runFunction(func, id, val, data) end
 end
 
---- Creates a DColorMixer. A standard Derma color mixer. Inherits functions from DPanel.
+--- Creates a UIColorMixer. A standard Derma color mixer. Inherits functions from UIPanel.
 --@param any? parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
---@return DColorMixer The new DColorMixer.
-function vgui_library.createDColorMixer(parent, name)
+--@return UIColorMixer The new UIColorMixer.
+function vgui_library.createColorMixer(parent, name)
 	if not canCreate(instance) then return end
 	if parent then parent = unwrap(parent) end
 
@@ -2677,7 +2690,7 @@ function vgui_library.createDColorMixer(parent, name)
 	return dclmwrap(new)
 end
 
---- Called when the player changes the color of the DColorMixer.
+--- Called when the player changes the color of the UIColorMixer.
 --@param function callback The function to run when the color is changed. Has one argument which is the new color as a table.
 function dclm_methods:valueChanged(func)
 	checkluatype(func, TYPE_FUNCTION)
@@ -2688,7 +2701,7 @@ function dclm_methods:valueChanged(func)
 	end
 end
 
---- Show / Hide the colors indicators in DColorMixer.
+--- Show / Hide the colors indicators in UIColorMixer.
 --@param boolean show Show / Hide the colors indicators.
 function dclm_methods:setWangs(show)
 	checkluatype(show, TYPE_BOOL)
@@ -2749,7 +2762,7 @@ function dclm_methods:setLabel(txt)
 	uwp:SetLabel(txt)
 end
 
---- Sets the color of the DColorMixer.
+--- Sets the color of the UIColorMixer.
 --@param Color clr The color to set.
 function dclm_methods:setColor(clr)
 	clr = cunwrap(clr)
