@@ -135,7 +135,7 @@ SF.RegisterType("UIImageButton", false, true, debug.getregistry().DImageButton, 
 -- @libtbl vgui_library
 SF.RegisterLibrary("vgui")
 
-registerprivilege("vgui.create", "Create VGUI Panels", "Allows the user to create VGUI panels.", { client = {} })
+registerprivilege("vgui.create", "Create VGUI Panels", "Allows the user to create VGUI panels.", { client = {default = 1} })
 registerprivilege("vgui.cancontrol", "Hijack player input", "Allows the user to hijack player's input for clickable panels or text fields.", { client = {default = 1} })
 
 local function canCreate(inst)
