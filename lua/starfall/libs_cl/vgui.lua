@@ -2,9 +2,6 @@
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
 haspermission = SF.Permissions.hasAccess
-local function checkoptional(val, chk)
-	if val then checkluatype(val, chk) end
-end
 
 --- Panel type
 -- @name Panel
@@ -291,27 +288,21 @@ end
 function pnl_methods:setPos(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetPos(x, y)
+	unwrap(self):SetPos(x, y)
 end
 
 --- Returns the position of the panel relative to its Panel:getParent.
 --@return number X coordinate, relative to this panels parents top left corner.
 --@return number Y coordinate, relative to this panels parents top left corner.
 function pnl_methods:getPos()
-	local uwp = unwrap(self)
-	
-	return uwp:GetPos()
+	return unwrap(self):GetPos()
 end
 
 --- Returns the value the panel holds.
 --- In engine is only implemented for CheckButton, Label and TextEntry as a string.
 --@param any The value the panel holds.
 function pnl_methods:getValue()
-	local uwp = unwrap(self)
-
-	return uwp:GetValue()
+	return unwrap(self):GetValue()
 end
 
 --- Sets the size of the panel.
@@ -320,93 +311,70 @@ end
 function pnl_methods:setSize(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetSize(x, y)
+	unwrap(self):SetSize(x, y)
 end
 
 --- Returns the size of the panel.
 --@return number width
 --@return number height
 function pnl_methods:getSize()
-	local uwp = unwrap(self)
-	
-	return uwp:GetSize()
+	return unwrap(self):GetSize()
 end
 
 --- Sets the height of the panel.
 --@param number newHeight The height to be set.
 function pnl_methods:setHeight(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = unwrap(self)
-
-	uwp:SetHeight(val)
+	unwrap(self):SetHeight(val)
 end
 
 --- Gets the height of the panel.
 --@return number The height of the panel.
 function pnl_methods:getHeight()
-	local uwp = unwrap(self)
-
-	return uwp:GetTall()
+	return unwrap(self):GetTall()
 end
 
 --- Sets the width of the panel.
 --@param number newWidth The width to be set.
 function pnl_methods:setWidth(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = unwrap(self)
-
-	uwp:SetWidth(val)
+	unwrap(self):SetWidth(val)
 end
 
 --- Gets the width of the panel.
 --@return number The width of the panel.
 function pnl_methods:getWidth()
-	local uwp = unwrap(self)
-
-	return uwp:GetWide()
+	return unwrap(self):GetWide()
 end
 
 --- Sets the text value of a panel object containing text, such as DLabel, DTextEntry or DButton.
 --@param string text The text value to set.
 function pnl_methods:setText(text)
 	checkluatype(text, TYPE_STRING)
-	local uwp = unwrap(self)
-	
-	uwp:SetText(text)
+	unwrap(self):SetText(text)
 end
 
 --- Sets the tooltip to be displayed when a player hovers over the panel object with their cursor.
 --@param string text The text to be displayed in the tooltip.
 function pnl_methods:setTooltip(text)
 	checkluatype(text, TYPE_STRING)
-	local uwp = unwrap(self)
-
-	uwp:SetTooltip(text)
+	unwrap(self):SetTooltip(text)
 end
 
 --- Removes the tooltip on the panel set with Panel:setTooltip
 function pnl_methods:unsetTooltip()
-	local uwp = unwrap(self)
-
-	uwp:SetTooltip(false)
+	unwrap(self):SetTooltip(false)
 end
 
 --- Sets the panel to be displayed as contents of a DTooltip when a player hovers over the panel object with their cursor.
---@param Panel The panel to use as the tooltip.
+--@param Panel The panel to use as the tooltip. Nil to remove.
 function pnl_methods:setTooltipPanel(setPnl)
-	local uwp = unwrap(self)
-	local uwsp = pnlunwrap(setPnl)
+	if not setPnl then
+		unwrap(self):SetTooltipPanel(nil)
+		return
+	end
 
-	uwp:SetTooltipPanel(uwsp)
-end
-
---- Removes the tooltip panel set on this panel with Panel:setTooltipPanel
-function pnl_methods:unsetTooltipPanel()
-	local uwp = unwrap(self)
-
-	uwp:SetTooltipPanel(nil)
+	unwrap(self):SetTooltipPanel(pnlunwrap(setPnl))
 end
 
 --- Sets whether text wrapping should be enabled or disabled on Label and DLabel panels. 
@@ -414,32 +382,24 @@ end
 --@param boolean wrap True to enable text wrapping, false otherwise.
 function pnl_methods:setWrap(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-
-	uwp:SetWrap(enable)
+	unwrap(self):SetWrap(enable)
 end
 
 --- Marks all of the panel's children for deletion.
 function pnl_methods:clear()
-	local uwp = unwrap(self)
-	
-	uwp:Clear()
+	unwrap(self):Clear()
 end
 
 --- Returns a table with all the child panels of the panel.
 --@return table Children
 function pnl_methods:getChildren()
-	local uwp = unwrap(self)
-	
-	return instance.Sanitize(uwp:GetChildren())
+	return instance.Sanitize(unwrap(self):GetChildren())
 end
 
 --- Returns the amount of children of the of panel.
 --@return number The amount of children the panel has.
 function pnl_methods:getChildCount()
-	local uwp = unwrap(self)
-	
-	return uwp:ChildCount()
+	return unwrap(self):ChildCount()
 end
 
 --- Places the panel above the passed panel with the specified offset.
@@ -447,10 +407,7 @@ end
 --@param number? offset The align offset.
 function pnl_methods:moveAbove(pnl, off)
 	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
-	local uwp = unwrap(self)
-	pnl = unwrap(pnl)
-	
-	uwp:MoveAbove(pnl, off)
+	unwrap(self):MoveAbove(unwrap(pnl), off)
 end
 
 --- Places the panel below the passed panel with the specified offset.
@@ -458,10 +415,7 @@ end
 --@param number? offset The align offset.
 function pnl_methods:moveBelow(pnl, off)
 	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
-	local uwp = unwrap(self)
-	pnl = unwrap(pnl)
-	
-	uwp:MoveBelow(pnl, off)
+	unwrap(self):MoveBelow(unwrap(pnl), off)
 end
 
 --- Places the panel left to the passed panel with the specified offset.
@@ -469,10 +423,7 @@ end
 --@param number? offset The align offset.
 function pnl_methods:moveLeftOf(pnl, off)
 	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
-	local uwp = unwrap(self)
-	pnl = unwrap(pnl)
-	
-	uwp:MoveLeftOf(pnl, off)
+	unwrap(self):MoveLeftOf(unwrap(pnl), off)
 end
 
 --- Places the panel right to the passed panel with the specified offset.
@@ -480,30 +431,21 @@ end
 --@param number? offset The align offset.
 function pnl_methods:moveRightOf(pnl, off)
 	if off ~= nil then checkluatype(off, TYPE_NUMBER) end
-	local uwp = unwrap(self)
-	pnl = unwrap(pnl)
-	
-	uwp:MoveRightOf(pnl, off)
+	unwrap(self):MoveRightOf(unwrap(pnl), off)
 end
 
 --- Moves this panel object in front of the specified sibling (child of the same parent) in the render order, and shuffles up the Z-positions of siblings now behind.
 --@param Panel sibling The panel to move this one in front of. Must be a child of the same parent panel.
 --@return boolean false if the passed panel is not a sibling, otherwise nil.
 function pnl_methods:moveToAfter(pnl)
-	local uwp = unwrap(self)
-	pnl = unwrap(pnl)
-	
-	return uwp:MoveToAfter(pnl)
+	return unwrap(self):MoveToAfter(pnl)
 end
 
 --- Moves this panel object behind the specified sibling (child of the same parent) in the render order, and shuffles up the Panel:setZPos of siblings now in front.
 --@param Panel sibling The panel to move this one behind. Must be a child of the same parent panel.
 --@return boolean false if the passed panel is not a sibling, otherwise nil.
 function pnl_methods:moveToBefore(pnl)
-	local uwp = unwrap(self)
-	pnl = unwrap(pnl)
-	
-	return uwp:MoveToBefore(pnl)
+	return unwrap(self):MoveToBefore(pnl)
 end
 
 --- Sets the panels z position which determines the rendering order.
@@ -512,23 +454,17 @@ end
 --@param number zindex The z position of the panel. Can't be lower than -32768 or higher than 32767.
 function pnl_methods:setZPos(pos)
 	checkluatype(pos, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetZPos(pos)
+	unwrap(self):SetZPos(pos)
 end
 
 --- Moves the panel object behind all other panels on screen. If the panel has been made a pop-up with Panel:MakePopup, it will still draw in front of any panels that haven't.
 function pnl_methods:moveToBack()
-	local uwp = unwrap(self)
-	
-	uwp:MoveToBack()
+	unwrap(self):MoveToBack()
 end
 
 --- Moves the panel in front of all other panels on screen. Unless the panel has been made a pop-up using Panel:makePopup, it will still draw behind any that have.
 function pnl_methods:moveToFront()
-	local uwp = unwrap(self)
-	
-	uwp:MoveToFront()
+	unwrap(self):MoveToFront()
 end
 
 --- Resizes the panel object's width so that its right edge is aligned with the left of the passed panel. 
@@ -536,11 +472,10 @@ end
 --@param Panel targetPanel The panel to align the bottom of this one with.
 --@param number offset The gap to leave between this and the passed panel. Negative values will cause the panel's height to increase, forming an overlap.
 function pnl_methods:stretchRightTo(target, off)
-	local uwp = unwrap(self)
+	
 	local uwtp = unwrap(target)
 	checkluatype(off, TYPE_NUMBER)
-
-	uwp:StretchRightTo(uwtp, off)
+	unwrap(self):StretchRightTo(uwtp, off)
 end
 
 --- Resizes the panel object's height so that its bottom is aligned with the top of the passed panel. 
@@ -548,125 +483,106 @@ end
 --@param Panel targetPanel The panel to align the bottom of this one with.
 --@param number offset The gap to leave between this and the passed panel. Negative values will cause the panel's height to increase, forming an overlap.
 function pnl_methods:stretchBottomTo(target, off)
-	local uwp = unwrap(self)
+	
 	local uwtp = unwrap(target)
 	checkluatype(off, TYPE_NUMBER)
-
-	uwp:StretchBottomTo(uwtp, off)
+	unwrap(self):StretchBottomTo(uwtp, off)
 end
 
 --- Focuses the panel and enables it to receive input.
 function pnl_methods:makePopup()
 	if not canControl(instance) then return end
-	local uwp = unwrap(self)
-	
-	uwp:MakePopup()
+	unwrap(self):MakePopup()
 end
 
 --- Parents the panel to the HUD. Makes it invisible on the escape-menu and disables controls.
 function pnl_methods:parentToHUD()
-	local uwp = unwrap(self)
-	
-	uwp:ParentToHUD()
+	unwrap(self):ParentToHUD()
 end
 
 --- Parents the panel to the Context Menu.
 --- Panels parented to the context menu will not be clickable unless Panel:setMouseInputEnabled and Panel:setKeyboardInputEnabled are both true or Panel:makePopup has been called. 
 --- If you want the panel to have mouse input but you do not want to prevent players from moving, set Panel:setKeyboardInputEnabled to false immediately after calling Panel:makePopup.
 function pnl_methods:parentToContextMenu()
-	local uwp = unwrap(self)
-	
-	uwp:SetParent(g_ContextMenu)
+	unwrap(self):SetParent(g_ContextMenu)
 end
 
 --- Causes the panel to re-layout in the next frame. Avoid calling this every frame.
 -- @param boolean? instant If true the panel will re-layout instantly and not wait for the next frame.
 function pnl_methods:invalidateLayout(now)
-	local uwp = unwrap(self)
 	if now then checkluatype(now, TYPE_BOOL) end
-	
-	uwp:InvalidateLayout(now)
+	unwrap(self):InvalidateLayout(now)
 end
 
 --- Sets the alignment of the contents. Check https://wiki.facepunch.com/gmod/Panel:SetContentAlignment for directions.
 --@param number align The direction of the content, based on the number pad.
 function pnl_methods:setContentAlignment(align)
 	checkluatype(align, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetContentAlignment(align)
+	unwrap(self):SetContentAlignment(align)
 end
 
 --- Sets whenever all the default border of the panel should be drawn or not.
 --param boolean paint Whenever to draw the border or not.
 function pnl_methods:setPaintBorderEnabled(paint)
 	checkluatype(paint, TYPE_BOOL)
-	local uwp = unwrap(self)
 	
-	uwp:SetPaintBorderEnabled(paint)
+	
+	unwrap(self):SetPaintBorderEnabled(paint)
 end
 
 --- Centers the panel.
 function pnl_methods:center()
-	local uwp = unwrap(self)
 	
-	uwp:Center()
+	
+	unwrap(self):Center()
 end
 
 --- Centers the panel horizontally with specified fraction.
 --@param number frac The center fraction.
 function pnl_methods:centerHorizontal(frac)
 	checkluatype(frac, TYPE_NUMBER)
-	local uwp = unwrap(self)
 	
-	uwp:CenterHorizontal(frac)
+	
+	unwrap(self):CenterHorizontal(frac)
 end
 
 --- Centers the panel vertically with specified fraction.
 --@param number frac The center fraction.
 function pnl_methods:centerVertical(frac)
 	checkluatype(frac, TYPE_NUMBER)
-	local uwp = unwrap(self)
 	
-	uwp:CenterVertical(frac)
+	
+	unwrap(self):CenterVertical(frac)
 end
 
 --- Sets the appearance of the cursor. You can find a list of all available cursors with image previews at https://wiki.facepunch.com/gmod/Cursors.
 --@param string type The cursor to be set. Check the page in the description for valid types.
 function pnl_methods:setCursor(str)
 	checkluatype(str, TYPE_STRING)
-	local uwp = unwrap(self)
 	
-	uwp:SetCursor(str)
+	
+	unwrap(self):SetCursor(str)
 end
 
 --- Removes the panel and all its children.
 function pnl_methods:remove()
-	local uwp = unwrap(self)
-	
 	panels[uwp] = nil
-
-	panelCount:free(instance.player, 1 + (uwp:ChildCount() or 0))
-
-	uwp:Remove()
+	panelCount:free(instance.player, 1 + (unwrap(self):ChildCount() or 0))
+	unwrap(self):Remove()
 end
 
 --- Sets the alpha multiplier for the panel
 --@param number alpha The alpha value in the range of 0-255.
 function pnl_methods:setAlpha(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetAlpha(val)
+	unwrap(self):SetAlpha(val)
 end
 
 --- Sets the dock type for the panel, making the panel "dock" in a certain direction, modifying it's position and size.
 --@param number Dock type using https://wiki.facepunch.com/gmod/Enums/DOCK.
 function pnl_methods:dock(enum)
 	checkluatype(enum, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:Dock(enum)
+	unwrap(self):Dock(enum)
 end
 
 --- Sets the dock margin of the panel.
@@ -680,9 +596,7 @@ function pnl_methods:dockMargin(left, top , right, bottom)
 	checkluatype(right, TYPE_NUMBER)
 	checkluatype(top, TYPE_NUMBER)
 	checkluatype(bottom, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:DockMargin(left, top, right, bottom)
+	unwrap(self):DockMargin(left, top, right, bottom)
 end
 
 --- Sets the dock padding of the panel.
@@ -696,45 +610,35 @@ function pnl_methods:dockPadding(left, top , right, bottom)
 	checkluatype(right, TYPE_NUMBER)
 	checkluatype(top, TYPE_NUMBER)
 	checkluatype(bottom, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:DockPadding(left, top, right, bottom)
+	unwrap(self):DockPadding(left, top, right, bottom)
 end
 
 --- Aligns the panel on the top of its parent with the specified offset.
 --@param number offset The align offset.
 function pnl_methods:alignTop(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:AlignTop(off)
+	unwrap(self):AlignTop(off)
 end
 
 --- Aligns the panel on the left of its parent with the specified offset.
 --@param number offset The align offset.
 function pnl_methods:alignLeft(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:AlignLeft(off)
+	unwrap(self):AlignLeft(off)
 end
 
 --- Aligns the panel on the right of its parent with the specified offset.
 --@param number offset The align offset.
 function pnl_methods:alignRight(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:AlignRight(off)
+	unwrap(self):AlignRight(off)
 end
 
 --- Aligns the panel on the bottom of its parent with the specified offset.
 --@param number offset The align offset.
 function pnl_methods:alignBottom(off)
 	checkluatype(off, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:AlignBottom(off)
+	unwrap(self):AlignBottom(off)
 end
 
 --- Translates global screen coordinate to coordinates relative to the panel.
@@ -745,9 +649,7 @@ end
 function pnl_methods:screenToLocal(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	return uwp:ScreenToLocal(x, y)
+	return unwrap(self):ScreenToLocal(x, y)
 end
 
 --- Gets the absolute screen position of the position specified relative to the panel.
@@ -758,26 +660,20 @@ end
 function pnl_methods:localToScreen(x, y)
 	checkluatype(x, TYPE_NUMBER)
 	checkluatype(y, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	return uwp:LocalToScreen(x, y)
+	return unwrap(self):LocalToScreen(x, y)
 end
 
 --- Returns the internal name of the panel. Can be set via Panel:setName.
 --@return string The internal name of the panel.
 function pnl_methods:getName()
-	local uwp = unwrap(self)
-
-	return uwp:GetName()
+	return unwrap(self):GetName()
 end
 
 --- Sets the internal name of the panel. Can be retrieved with Panel:getName.
 --@param string newname New internal name for the panel.
 function pnl_methods:setName(val)
 	checkluatype(val, TYPE_STRING)
-	local uwp = unwrap(self)
-
-	uwp:SetName(val)
+	unwrap(self):SetName(val)
 end
 
 --- Sets the enabled state of a disable-able panel object, such as a UIButton or UITextEntry.
@@ -785,18 +681,14 @@ end
 --@param boolean enabled Whether to enable or disable the panel object.
 function pnl_methods:setEnabled(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-
-	uwp:SetEnabled(enable)
+	unwrap(self):SetEnabled(enable)
 end
 
 --- Returns whether the the panel is enabled or disabled.
 --- See Panel:setEnabled for a function that makes the panel enabled or disabled.
 --@return boolean Whether the panel is enabled or disabled.
 function pnl_methods:isEnabled()
-	local uwp = unwrap(self)
-
-	return uwp:IsEnabled()
+	return unwrap(self):IsEnabled()
 end
 
 --- Resizes the panel to fit the bounds of its children.
@@ -806,18 +698,14 @@ end
 function pnl_methods:sizeToChildren(w, h)
 	checkluatype(w, TYPE_BOOL)
 	checkluatype(h, TYPE_BOOL)	
-	local uwp = unwrap(self)
-
-	uwp:SizeToChildren(w, h)
-	uwp:InvalidateLayout()
+	unwrap(self):SizeToChildren(w, h)
+	unwrap(self):InvalidateLayout()
 end
 
 --- Resizes the panel so that its width and height fit all of the content inside.
 --- Only works on Label derived panels such as DLabel by default, and on any panel that manually implemented the Panel:SizeToContents method, such as DNumberWang and DImage.
 function pnl_methods:sizeToContents()
-	local uwp = unwrap(self)
-
-	uwp:SizeToContents()
+	unwrap(self):SizeToContents()
 end
 
 --- Resizes the panel object's width to accommodate all child objects/contents.
@@ -826,9 +714,7 @@ end
 --@param number addValue The number of extra pixels to add to the width. Can be a negative number, to reduce the width.
 function pnl_methods:sizeToContentsX(addVal)
 	checkluatype(addVal, TYPE_NUMBER)
-	local uwp = unwrap(self)
-
-	uwp:SizeToContentsX(addVal)
+	unwrap(self):SizeToContentsX(addVal)
 end
 
 --- Resizes the panel object's height to accommodate all child objects/contents.
@@ -837,9 +723,7 @@ end
 --@param number addValue The number of extra pixels to add to the height. Can be a negative number, to reduce the height.
 function pnl_methods:sizeToContentsY(addVal)
 	checkluatype(addVal, TYPE_NUMBER)
-	local uwp = unwrap(self)
-
-	uwp:SizeToContentsY(addVal)
+	unwrap(self):SizeToContentsY(addVal)
 end
 
 --- Enables or disables the mouse input for the panel.
@@ -847,17 +731,13 @@ end
 function pnl_methods:setMouseInputEnabled(enable)
 	if not canControl(instance) then return end
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetMouseInputEnabled(enable)
+	unwrap(self):SetMouseInputEnabled(enable)
 end
 
 --- Returns true if the panel can receive mouse input.
 --return boolean mouseInputEnabled
 function pnl_methods:getMouseInputEnabled()
-	local uwp = unwrap(self)
-	
-	return uwp:IsMouseInputEnabled()
+	return unwrap(self):IsMouseInputEnabled()
 end
 
 --- Enables or disables the keyboard input for the panel.
@@ -865,23 +745,20 @@ end
 function pnl_methods:setKeyboardInputEnabled(enable)
 	if not canControl(instance) then return end
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetKeyboardInputEnabled(enable)
+	unwrap(self):SetKeyboardInputEnabled(enable)
 end
 
 --- Returns true if the panel can receive keyboard input.
 --return boolean keyboardInputEnabled
 function pnl_methods:getKeyboardInputEnabled()
-	local uwp = unwrap(self)
-	
-	return uwp:IsKeyboardInputEnabled()
+	return unwrap(self):IsKeyboardInputEnabled()
 end
 
 --- Set a function to run when the panel's size changes
 --@param function callback The function to run when the size changes. Has 2 arguments, which are the new width and height.
 function pnl_methods:setOnSizeChanged(func)
 	local uwp = unwrap(self)
+	
 	checkluatype(func, TYPE_FUNCTION)
 	if not uwp.scf then
 		local oldsc
@@ -905,6 +782,7 @@ end
 --@param function callback The function to run when the panel is pressed. Has 1 argument which is the keycode of the mouse button pressed. Check the MOUSE enums.
 function pnl_methods:setOnMousePressed(func)
 	local uwp = unwrap(self)
+
 	checkluatype(func, TYPE_FUNCTION)
 	if not uwp.mcf then
 		local oldmc = uwp.OnMousePressed
@@ -921,6 +799,7 @@ end
 --@param function callback The function to run when the mouse is released. Has 1 argument which is the keycode of the mouse button pressed. Check the MOUSE enums.
 function pnl_methods:setOnMouseReleased(func)
 	local uwp = unwrap(self)
+
 	checkluatype(func, TYPE_FUNCTION)
 	if not uwp.mrf then
 		local oldmr = uwp.OnMouseReleased
@@ -937,16 +816,12 @@ end
 --@param boolean enable True if the panel should be painted manually.
 function pnl_methods:setPaintedManually(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetPaintedManually(enable)
+	unwrap(self):SetPaintedManually(enable)
 end
 
 --- Paints the panel at its current position. To use this you must call Panel:setPaintedManually(true).
 function pnl_methods:paintManual()
-	local uwp = unwrap(self)
-	
-	uwp:PaintManual()
+	unwrap(self):PaintManual()
 end
 
 --- Creates a UIPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from UIPanelBase
@@ -967,52 +842,39 @@ end
 --- Sets the background color of the panel.
 --@param Color bgcolor The background color.
 function dpnl_methods:setBackgroundColor(clr)
-	local uwp = dpnlunwrap(self)
-	local uwc = cunwrap(clr)
-
-	uwp:SetBackgroundColor(uwc)
+	unwrap(self):SetBackgroundColor(cunwrap(clr))
 end
 
 --- Gets the background color of the panel.
 --@return Color Background color of the panel.
 function dpnl_methods:getBackgroundColor()
-	local uwp = dpnlunwrap(self)
-
-	return cwrap(uwp:GetBackgroundColor())
+	return cwrap(unwrap(self):GetBackgroundColor())
 end
 
 --- Sets whether or not to paint/draw the panel background.
 --@param boolean paint True to show the panel's background, false to hide it.
 function dpnl_methods:setPaintBackground(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dpnlunwrap(self)
-
-	uwp:SetPaintBackground(enable)
+	unwrap(self):SetPaintBackground(enable)
 end
 
 --- Returns whether or not the panel background is being drawn.
 --@return boolean True if the panel background is drawn, false otherwise.
 function dpnl_methods:getPaintBackground()
-	local uwp = dpnlunwrap(self)
-
-	return uwp:getPaintBackground()
+	return unwrap(self):getPaintBackground()
 end
 
 --- Sets whether or not to disable the panel.
 --@param boolean disable True to disable the panel (mouse input disabled and background alpha set to 75), false to enable it (mouse input enabled and background alpha set to 255).
 function dpnl_methods:setDisabled(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dpnlunwrap(self)
-
-	uwp:SetDisabled(enable)
+	unwrap(self):SetDisabled(enable)
 end
 
 --- Returns whether or not the panel is disabled.
 --@return boolean True if the panel is disabled (mouse input disabled and background alpha set to 75), false if its enabled (mouse input enabled and background alpha set to 255).
 function dpnl_methods:getDisabled()
-	local uwp = dpnlunwrap(self)
-
-	return uwp:getDisabled()
+	return unwrap(self):getDisabled()
 end
 
 --- Creates a UIFileBrowser. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from UIPanelBase
@@ -1032,60 +894,46 @@ end
 
 --- Clears the file tree and list, and resets all values.
 function dfb_methods:clear()
-	local uwp = dfbunwrap(self)
-	
-	uwp:Clear()
+	unwrap(self):Clear()
 end
 
 --- Sets the root directory/folder of the file tree. This needs to be set for the file tree to be displayed.
 --@param string baseDir The path to the folder to use as the root.
 function dfb_methods:setBaseFolder(dir)
 	checkluatype(dir, TYPE_STRING)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetBaseFolder(dir)
+	unwrap(self):SetBaseFolder(dir)
 end
 
 --- Returns the root directory/folder of the file tree.
 --@return string The path to the root folder.
 function dfb_methods:getBaseFolder()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetBaseFolder()
+	return unwrap(self):GetBaseFolder()
 end
 
 --- Sets the directory/folder from which to display the file list.
 --@param string currentDir The directory to display files from.
 function dfb_methods:setCurrentFolder(dir)
 	checkluatype(dir, TYPE_STRING)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetCurrentFolder(dir)
+	unwrap(self):SetCurrentFolder(dir)
 end
 
 --- Returns the current directory/folder being displayed.
 --@return string The directory the file list is currently displaying.
 function dfb_methods:getCurrentFolder()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetCurrentFolder()
+	return unwrap(self):GetCurrentFolder()
 end
 
 --- Sets the file type filter for the file list. This accepts the same file extension wildcards as file.find.
 --@param string fileTypes A list of file types to display, separated by spaces e.g. "*.lua *.txt *.mdl"
 function dfb_methods:setFileTypes(fTypes)
 	checkluatype(fTypes, TYPE_STRING)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetFileTypes(fTypes)
+	unwrap(self):SetFileTypes(fTypes)
 end
 
 --- Returns the current file type filter on the file list.
 --@return string The current filter applied to the file list.
 function dfb_methods:getFileTypes()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetFileTypes()
+	return unwrap(self):GetFileTypes()
 end
 
 --- Enables or disables the model viewer mode. In this mode, files are displayed as SpawnIcons instead of a list.
@@ -1093,102 +941,78 @@ end
 --@param boolean enable Whether or not to display files using SpawnIcons.
 function dfb_methods:setModels(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetModels(enable)
+	unwrap(self):SetModels(enable)
 end
 
 --- Returns whether or not the model viewer mode is enabled. In this mode, files are displayed as SpawnIcons instead of a list.
 --@return boolean Whether or not files will be displayed using SpawnIcons.
 function dfb_methods:getModels()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetModels()
+	return unwrap(self):GetModels()
 end
 
 --- Sets the name to use for the file tree.
 --@param string treeName The name for the root of the file tree. Passing no value causes this to be the base folder name. See UIFileBrowser:setBaseFolder.
 function dfb_methods:setName(name)
 	checkluatype(name, TYPE_STRING)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetName(name)
+	unwrap(self):SetName(name)
 end
 
 --- Returns the name being used for the file tree.
 --@return string The name used for the root of the file tree.
 function dfb_methods:getName()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:SetName()
+	return unwrap(self):SetName()
 end
 
 --- Opens or closes the file tree.
 --@param boolean? open true to open the tree, false to close it.
 --@param boolean? useAnim If true, the DTree's open/close animation is used.
 function dfb_methods:setOpen(open, useAnim)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetOpen(open, useAnim)
+	unwrap(self):SetOpen(open, useAnim)
 end
 
 --- Returns whether or not the file tree is open.
 --@return boolean Whether or not the file tree is open.
 function dfb_methods:getOpen()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetOpen()
+	return unwrap(self):GetOpen()
 end
 
 --- Sets the access path for the file tree. This is set to GAME by default.
 --@param string path The access path i.e. "GAME", "LUA", "DATA" etc.
 function dfb_methods:setPath(path)
 	checkluatype(path, TYPE_STRING)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetPath(path)
+	unwrap(self):SetPath(path)
 end
 
 --- Returns the access path of the file tree. This is GAME unless changed with UIFileBrowser:setPath.
 --@return string The current access path i.e. "GAME", "LUA", "DATA" etc.
 function dfb_methods:getPath()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetPath()
+	return unwrap(self):GetPath()
 end
 
 --- Sets the search filter for the file tree. This accepts the same wildcards as file.find.
 --@param string filter The filter to use on the file tree.
 function dfb_methods:setSearch(filter)
 	checkluatype(filter, TYPE_STRING)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SetSearch(filter)
+	unwrap(self):SetSearch(filter)
 end
 
 --- Returns the current search filter on the file tree.
 --@return string The filter in use on the file tree.
 function dfb_methods:getSearch()
-	local uwp = dfbunwrap(self)
-	
-	return uwp:GetSearch()
+	return unwrap(self):GetSearch()
 end
 
 --- Sorts the file list.
 --- This is only functional when not using the model viewer. See UIFileBrowser:setModels
 --@param boolean? descending The sort order. true for descending (z-a), false for ascending (a-z).
 function dfb_methods:sortFiles(desc)
-	local uwp = dfbunwrap(self)
-	
-	uwp:SortFiles(desc)
+	unwrap(self):SortFiles(desc)
 end
 
 --- Set a function to run when a file is selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onSelect(func)
-	local uwp = dfbunwrap(self)
-	
-	function uwp:OnSelect(filepath, selpnl)
+	function unwrap(self):OnSelect(filepath, selpnl)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1197,9 +1021,7 @@ end
 --- When not in model viewer mode, UIFileBrowser:onSelect will also be called if the file is not already selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onRightClick(func)
-	local uwp = dfbunwrap(self)
-	
-	function uwp:OnRightClick(filepath)
+	function unwrap(self):OnRightClick(filepath)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1208,9 +1030,7 @@ end
 --- Double-clicking a file or icon will trigger both this and UIFileBrowser:onSelect.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onDoubleClick(func)
-	local uwp = dfbunwrap(self)
-	
-	function uwp:OnDoubleClick(filepath)
+	function unwrap(self):OnDoubleClick(filepath)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1235,58 +1055,44 @@ end
 --@param function callback The function to run when the frame is closed.
 function dfrm_methods:onClose(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dfrmunwrap(self)
-	
-	function uwp:OnClose() instance:runFunction(func) end
+	function unwrap(self):OnClose() instance:runFunction(func) end
 end
 
 --- Centers the frame relative to the whole screen and invalidates its layout.
 function dfrm_methods:center()
-	local uwp = dfrmunwrap(self)
-	
-	uwp:Center()
+	unwrap(self):Center()
 end
 
 --- Sets whether the frame should be draggable by the user. The UIFrame can only be dragged from its title bar.
 --@param boolean draggable Whether to be draggable or not.
 function dfrm_methods:setDraggable(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetDraggable(enable)
+	unwrap(self):SetDraggable(enable)
 end
 
 --- Gets whether the frame can be dragged by the user.
 --@return boolean Whether the frame is draggable.
 function dfrm_methods:getDraggable()
-	local uwp = unwrap(self)
-	
-	return uwp:GetDraggable()
+	return unwrap(self):GetDraggable()
 end
 
 --- Sets the title of the frame.
 --@param string title New title of the frame.
 function dfrm_methods:setTitle(val)
 	checkluatype(val, TYPE_STRING)
-	local uwp = unwrap(self)
-	
-	uwp:SetTitle(val)
+	unwrap(self):SetTitle(val)
 end
 
 --- Gets the title of the frame.
 --@return string The title of the frame.
 function dfrm_methods:getTitle()
-	local uwp = unwrap(self)
-	
-	return uwp:GetTitle(val)
+	return unwrap(self):GetTitle(val)
 end
 
 --- Determines if the frame or one of its children has the screen focus.
 --@return boolean Whether or not the frame has focus.
 function dfrm_methods:isActive()
-	local uwp = unwrap(self)
-	
-	return uwp:IsActive()
+	return unwrap(self):IsActive()
 end
 
 --- Sets whether or not the UIFrame can be resized by the user.
@@ -1295,112 +1101,86 @@ end
 --@param boolean sizable Whether the frame should be resizeable or not.
 function dfrm_methods:setSizable(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetSizable(enable)
+	unwrap(self):SetSizable(enable)
 end
 
 --- Gets whether the UIFrame can be resized by the user.
 --@return boolean Whether the UIFrame can be resized.
 function dfrm_methods:getSizable()
-	local uwp = unwrap(self)
-	
-	return uwp:GetSizable()
+	return unwrap(self):GetSizable()
 end
 
 --- Sets the minimum width the UIFrame can be resized to by the user.
 --@param number minwidth The minimum width the user can resize the frame to.
 function dfrm_methods:setMinWidth(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetMinWidth(val)
+	unwrap(self):SetMinWidth(val)
 end
 
 --- Gets the minimum width the UIFrame can be resized to by the user.
 --@return number The minimum width.
 function dfrm_methods:getMinWidth()
-	local uwp = unwrap(self)
-	
-	return uwp:GetMinWidth()
+	return unwrap(self):GetMinWidth()
 end
 
 --- Sets the minimum height the UIFrame can be resized to by the user.
 --@param number minheight The minimum height the user can resize the frame to.
 function dfrm_methods:setMinHeight(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	
-	uwp:SetMinHeight(val)
+	unwrap(self):SetMinHeight(val)
 end
 
 --- Gets the minimum height the UIFrame can be resized to by the user.
 --@return number The minimum height.
 function dfrm_methods:getMinHeight()
-	local uwp = unwrap(self)
-	
-	return uwp:GetMinHeight()
+	return unwrap(self):GetMinHeight()
 end
 
 --- Sets whether the UIFrame is restricted to the boundaries of the screen resolution.
 --@param boolean locked If true, the frame cannot be dragged outside of the screen bounds.
 function dfrm_methods:setScreenLock(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetScreenLock(enable)
+	unwrap(self):SetScreenLock(enable)
 end
 
 --- Adds or removes an icon on the left of the UIFrame's title.
 --@param string iconpath Set to nil to remove the icon. Otherwise, set to file path to create the icon.
 function dfrm_methods:setIcon(path)
 	checkluatype(path, TYPE_STRING)
-	local uwp = unwrap(self)
-	
-	uwp:SetIcon(path)
+	unwrap(self):SetIcon(path)
 end
 
 --- Blurs background behind the frame.
 --@param boolean blur Whether or not to create background blur or not.
 function dfrm_methods:setBackgroundBlur(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetBackgroundBlur(enable)
+	unwrap(self):SetBackgroundBlur(enable)
 end
 
 --- Returns whether the background is being blurred by UIFrame:setBackGroundBlur.
 --@return boolean Whether the background is blurred.
 function dfrm_methods:getBackgroundBlur()
-	local uwp = unwrap(self)
-	
-	return uwp:GetBackgroundBlur()
+	return unwrap(self):GetBackgroundBlur()
 end
 
 --- Determines whether the UIFrame's control box (close, minimise and maximise buttons) is displayed.
 --@param boolean show false hides the control box; this is true by default.
 function dfrm_methods:showCloseButton(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:ShowCloseButton(enable)
+	unwrap(self):ShowCloseButton(enable)
 end
 
 --- Gets whether or not the shadow effect bordering the UIFrame is being drawn.
 --@return boolean Whether or not the shadow is being drawn.
 function dfrm_methods:getPaintShadow()
-	local uwp = unwrap(self)
-	
-	return uwp:GetPaintShadow()
+	return unwrap(self):GetPaintShadow()
 end
 
 --- Sets whether or not the shadow effect bordering the UIFrame should be drawn.
 --@param boolean draw Whether or not to draw the shadow. This is true by default.
 function dfrm_methods:setPaintShadow(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = unwrap(self)
-	
-	uwp:SetPaintShadow(enable)
+	unwrap(self):SetPaintShadow(enable)
 end
 
 --- Creates a UIScrollPanel. UIScrollPanel is a VGUI Element similar to UIPanel however it has a vertical scrollbar docked to the right which can be used to put more content in a smaller area.
@@ -1421,16 +1201,12 @@ end
 --- Returns the canvas ( The panel all child panels are parented to ) of the UIScrollPanel.
 --@return Panel The canvas.
 function dscrl_methods:getCanvas()
-	local uwp = dscrlunwrap(self)
-	
-	return pnlwrap(uwp:GetCanvas())
+	return pnlwrap(unwrap(self):GetCanvas())
 end
 
 --- Clears the UIScrollPanel's canvas, removing all added items.
 function dscrl_methods:clear()
-	local uwp = dscrlunwrap(self)
-	
-	uwp:Clear()
+	unwrap(self):Clear()
 end
 
 --- Creates a UIMenu. A simple menu with sub menu, icon and convar support. Inherits from UIScrollPanel.
@@ -1455,9 +1231,8 @@ end
 function dmen_methods:addOption(name, func)
 	checkluatype(name, TYPE_STRING)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dmenunwrap(self)
 	
-	local dmo = uwp:AddOption(name, function()
+	local dmo = unwrap(self):AddOption(name, function()
 		instance:runFunction(func)
 	end)
 	return dmenowrap(dmo)
@@ -1466,17 +1241,12 @@ end
 --- Adds a panel to the UIMenu as if it were an option.
 --@param Panel pnl The panel that you want to add.
 function dmen_methods:addPanel(pnl)
-	local uwp = dmenunwrap(self)
-	local uwp2 = unwrap(pnl)
-	
-	uwp:AddPanel(uwp2)
+	unwrap(self):AddPanel(unwrap(pnl))
 end
 
 --- Adds a horizontal line spacer.
 function dmen_methods:addSpacer()
-	local uwp = dmenunwrap(self)
-	
-	uwp:AddSpacer()
+	unwrap(self):AddSpacer()
 end
 
 --- Add a sub menu to the UIMenu.
@@ -1487,9 +1257,8 @@ end
 function dmen_methods:addSubMenu(name, func)
 	checkluatype(name, TYPE_STRING)
 	if func ~= nil then checkluatype(func, TYPE_FUNCTION) end
-	local uwp = dmenunwrap(self)
 	
-	local dm, dmo = uwp:AddSubMenu(name, function()
+	local dm, dmo = unwrap(self):AddSubMenu(name, function()
 		if func then
 			instance:runFunction(func)
 		end
@@ -1500,102 +1269,78 @@ end
 --- Returns the number of child elements of the UIMenu.
 --@return number The number of child elements.
 function dmen_methods:getChildCount()
-	local uwp = dmenunwrap(self)
-	
-	return uwp:ChildCount()
+	return unwrap(self):ChildCount()
 end
 
 --- Sets the maximum height the UIMenu can have. If the height of all menu items exceed this value, a scroll bar will be automatically added.
 --@param number maxHeight The maximum height of the DMenu to set, in pixels.
 function dmen_methods:setMaxHeight(mh)
 	checkluatype(mh, TYPE_NUMBER)
-	local uwp = dmenunwrap(self)
-	
-	uwp:SetMaxHeight(mh)
+	unwrap(self):SetMaxHeight(mh)
 end
 
 --- Returns the maximum height of the UIMenu.
 --@return number The maximum height in pixels.
 function dmen_methods:getMaxHeight()
-	local uwp = dmenunwrap(self)
-	
-	return uwp:GetMaxHeight()
+	return unwrap(self):GetMaxHeight()
 end
 
 --- Sets the minimum width of the UIMenu. The menu will be stretched to match the given value.
 --@param number minimumWidth The minimum width of the UIMenu in pixels
 function dmen_methods:setMinimumWidth(mh)
 	checkluatype(mh, TYPE_NUMBER)
-	local uwp = dmenunwrap(self)
-	
-	uwp:SetMinimumWidth(mh)
+	unwrap(self):SetMinimumWidth(mh)
 end
 
 --- Returns the minimum width of the UIMenu in pixels
 --@return number The minimum width of the UIMenu.
 function dmen_methods:getMinimumWidth()
-	local uwp = dmenunwrap(self)
-	
-	return uwp:GetMinimumWidth()
+	return unwrap(self):GetMinimumWidth()
 end
 
 --- Opens the UIMenu at the specified position or cursor position if X and Y are not given.
 --@param number? x Position (X coordinate) to open the menu at.
 --@param number? y Position (Y coordinate) to open the menu at.
 function dmen_methods:open(x, y)
-	local uwp = dmenunwrap(self)
-	
-	uwp:Open(x, y)
+	unwrap(self):Open(x, y)
 end
 
 --- Creates a sub UIMenu and returns it. Has no duplicate call protection.
 --@return DMenu The created UIMenu to add options to.
 function dmeno_methods:addSubMenu()
-	local uwp = dmenounwrap(self)
-	
-	return dmenwrap(uwp:AddSubMenu())
+	return dmenwrap(unwrap(self):AddSubMenu())
 end
 
 --- Sets the checked state of the UIMenuOption. Does not invoke UIMenuOption:onChecked.
 --@param boolean checked New checked state.
 function dmeno_methods:setChecked(chk)
 	checkluatype(chk, TYPE_BOOL)
-	local uwp = dmenounwrap(self)
-	
-	uwp:SetChecked(chk)
+	unwrap(self):SetChecked(chk)
 end
 
 --- Returns the checked state of UIMenuOption.
 --@return boolean Are we checked or not.
 function dmeno_methods:getChecked()
-	local uwp = dmenounwrap(self)
-	
-	return uwp:GetChecked()
+	return unwrap(self):GetChecked()
 end
 
 --- Sets whether the UIMenuOption is a checkbox option or a normal button option.
 --@param boolean checkable Checkable?
 function dmeno_methods:setIsCheckable(chk)
 	checkluatype(chk, TYPE_BOOL)
-	local uwp = dmenounwrap(self)
-	
-	uwp:SetIsCheckable(chk)
+	unwrap(self):SetIsCheckable(chk)
 end
 
 --- Returns whether the UIMenuOption is a checkbox option or a normal button option.
 --@return boolean Is checkable?
 function dmeno_methods:getIsCheckable()
-	local uwp = dmenounwrap(self)
-	
-	return uwp:GetIsCheckable()
+	return unwrap(self):GetIsCheckable()
 end
 
 --- Set a function to run when the UIMenuOption's checked state changes.
 --@param function callback Function to run. Has one argument which is the new checked state.
 function dmeno_methods:onChecked(func)
-	local uwp = dmenunwrap(self)
-	
-	function uwp:OnChecked(new)
+	function unwrap(self):OnChecked(new)
 		instance:runFunction(func, new)
 	end
 end
@@ -1621,9 +1366,7 @@ end
 --@param function callback The function to run when the label is pressed.
 function dlab_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-	
-	function uwp:DoClick() instance:runFunction(func) end
+	function unwrap(self):DoClick() instance:runFunction(func) end
 end
 
 --- Called when the label is double clicked by the player with left clicks.
@@ -1632,9 +1375,7 @@ end
 --@param function callback The function to run when the label is double clicked.
 function dlab_methods:onDoubleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-
-	function uwp:DoDoubleClick() instance:runFunction(func) end
+	function unwrap(self):DoDoubleClick() instance:runFunction(func) end
 end
 
 --- Sets whether or not double clicking should call UILabel:DoDoubleClick.
@@ -1642,17 +1383,13 @@ end
 --@param boolean enabled True to enable, false to disable.
 function dlab_methods:setDoubleClickingEnabled(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dlabunwrap(self)
-
-	uwp:SetDoubleClickingEnabled(enable)
+	unwrap(self):SetDoubleClickingEnabled(enable)
 end
 
 --- Returns whether or not double clicking will call UILabel:onDoubleClick.
 --@return boolean Whether double clicking functionality is enabled.
 function dlab_methods:getDoubleClickingEnabled()
-	local uwp = dlabunwrap(self)
-
-	return uwp:GetDoubleClickingEnabled()
+	return unwrap(self):GetDoubleClickingEnabled()
 end
 
 --- Called when the label is right clicked (on key release) by the player.
@@ -1660,9 +1397,7 @@ end
 --@param function callback The function to run when the label is right clicked.
 function dlab_methods:onRightClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-
-	function uwp:DoRightClick() instance:runFunction(func) end
+	function unwrap(self):DoRightClick() instance:runFunction(func) end
 end
 
 --- Called when the label is middle clicked (on key release) by the player.
@@ -1670,27 +1405,21 @@ end
 --@param function callback The function to run when the label is middle clicked.
 function dlab_methods:onMiddleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-
-	function uwp:DoMiddleClick() instance:runFunction(func) end
+	function unwrap(self):DoMiddleClick() instance:runFunction(func) end
 end
 
 --- Called when the player presses the label with any mouse button.
 --@param function callback The function to run when the label is pressed.
 function dlab_methods:onDepressed(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-
-	function uwp:OnDepressed() instance:runFunction(func) end
+	function unwrap(self):OnDepressed() instance:runFunction(func) end
 end
 
 --- Called when the player releases any mouse button on the label. This is always called after UILabel:onDepressed.
 --@param function callback The function to run when the label is released.
 function dlab_methods:onReleased(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-
-	function uwp:OnReleased() instance:runFunction(func) end
+	function unwrap(self):OnReleased() instance:runFunction(func) end
 end
 
 --- Called when the toggle state of the label is changed by UILabel:Toggle.
@@ -1698,9 +1427,7 @@ end
 --@param function callback The function to run when the label is toggled. Has one argument which is the new toggle state.
 function dlab_methods:onToggled(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dlabunwrap(self)
-
-	function uwp:OnToggled(toggleState) instance:runFunction(func, toggleState) end
+	function unwrap(self):OnToggled(toggleState) instance:runFunction(func, toggleState) end
 end
 
 --- Enables or disables toggle functionality for a label. Retrieved with UILabel:getIsToggle.
@@ -1708,25 +1435,19 @@ end
 --@param boolean enable Whether or not to enable toggle functionality.
 function dlab_methods:setIsToggle(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dlabunwrap(self)
-
-	uwp:SetIsToggle(enable)
+	unwrap(self):SetIsToggle(enable)
 end
 
 --- Returns whether the toggle functionality is enabled for a label. Set with UILabel:setIsToggle.
 --@return boolean Whether toggle functionality is enabled.
 function dlab_methods:getIsToggle()
-	local uwp = dlabunwrap(self)
-
-	return uwp:GetIsToggle()
+	return unwrap(self):GetIsToggle()
 end
 
 --- Toggles the label's state. This can be set and retrieved with UILabel:SetToggle and DLabel:GetToggle.
 ---In order to use toggle functionality, you must first call UILabel:setIsToggle with true, as it is disabled by default.
 function dlab_methods:toggle()
-	local uwp = dlabunwrap()
-
-	uwp:Toggle()
+	unwrap(self):Toggle()
 end
 
 --- Sets the toggle state of the label. This can be retrieved with UILabel:getToggle and toggled with UILabel:toggle.
@@ -1734,68 +1455,52 @@ end
 --@param boolean newState The new state of the toggle.
 function dlab_methods:setToggle(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dlabunwrap(self)
-
-	uwp:SetToggle(enable)
+	unwrap(self):SetToggle(enable)
 end
 
 --- Returns the current toggle state of the label. This can be set with UILabel:setToggle and toggled with UILabel:toggle.
 --- In order to use toggle functionality, you must first call UILabel:setIsToggle with true, as it is disabled by default.
 --@return boolean The state of the toggleable label.
 function dlab_methods:getToggle()
-	local uwp = dlabunwrap(self)
-
-	return uwp:GetToggle()
+	return unwrap(self):GetToggle()
 end
 
 --- Sets the font in the UILabel.
 --@param string fontName The name of the font. Check render.setFont for a list of default fonts.
 function dlab_methods:setFont(fontName)
 	checkluatype(fontName, TYPE_STRING)
-	local uwp = dlabunwrap(self)
-
-	uwp:SetFont(fontName)
+	unwrap(self):SetFont(fontName)
 end
 
 --- Gets the font in the UILabel.
 --@return string The font name.
 function dlab_methods:getFont()
-	local uwp = dlabunwrap(self)
-
-	return uwp:GetFont()
+	return unwrap(self):GetFont()
 end
 
 --- Sets the text color of the UILabel.
 --@param Color textColor The text color.
 function dlab_methods:setTextColor(clr)
-	local uwp = dlabunwrap(self)
-
-	uwp:SetTextColor(cunwrap(clr))
+	unwrap(self):SetTextColor(cunwrap(clr))
 end
 
 --- Returns the "override" text color, set by UILabel:setTextColor.
 --@return Color The color of the text, or nil.
 function dlab_methods:getTextColor()
-	local uwp = dlabunwrap(self)
-
-	return cwrap(uwp:GetTextColor())
+	return cwrap(unwrap(self):GetTextColor())
 end
 
 --- Automatically adjusts the height of the label dependent of the height of the text inside of it.
 --@param boolean stretch Whether to stretch the label vertically or not.
 function dlab_methods:setAutoStretchVertical(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dlabunwrap(self)
-
-	uwp:SetAutoStretchVertical(enable)
+	unwrap(self):SetAutoStretchVertical(enable)
 end
 
 --- Gets whether the label will automatically adjust its height based on the height of the text inside of it.
 --@return boolean Whether the label stretches vertically or not.
 function dlab_methods:getAutoStretchVertical()
-	local uwp = dlabunwrap(self)
-
-	return uwp:GetAutoStretchVertical()
+	return unwrap(self):GetAutoStretchVertical()
 end
 
 --- Creates a DButton. Inherits functions from UILabel.
@@ -1817,26 +1522,20 @@ end
 --@param function callback The function to run when the button is pressed.
 function dbut_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dbutunwrap(self)
-	
-	function uwp:DoClick() instance:runFunction(func) end
+	function unwrap(self):DoClick() instance:runFunction(func) end
 end
 
 --- Sets an image to be displayed as the button's background.
 --@param string imagePath The image file to use, relative to /materials. If this is nil, the image background is removed.
 function dbut_methods:setImage(image)
 	checkluatype(image, TYPE_STRING)
-	local uwp = dbutunwrap(self)
-
-	uwp:SetImage(image)
+	unwrap(self):SetImage(image)
 end
 
 --- Returns true if the UIButton is currently depressed (a user is clicking on it).
 --@return boolean Whether or not the button is depressed.
 function dbut_methods:isDown()
-	local uwp = dbutunwrap(self)
-
-	return uwp:IsDown()
+	return unwrap(self):IsDown()
 end
 
 --- Creates an UIAvatarImage. Inherits functions from Panel.
@@ -1859,10 +1558,7 @@ end
 --@param number size The resolution size of the avatar to use. Acceptable sizes are 32, 64, 184.
 function aimg_methods:setPlayer(ply, size)
 	checkluatype(size, TYPE_NUMBER)
-	local uwp = unwrap(self)
-	local uwply = plyunwrap(ply)
-
-	uwp:SetPlayer(uwply, size)
+	unwrap(self):SetPlayer(uwply, size)
 end
 
 --- Sets the image to the specified user's avatar using 64-bit SteamID.
@@ -1871,9 +1567,7 @@ end
 function aimg_methods:setSteamID(steamid, size)
 	checkluatype(size, TYPE_NUMBER)
 	checkluatype(steamid, TYPE_STRING)
-	local uwp = unwrap(self)
-
-	uwp:SetSteamID(steamid, size)
+	unwrap(self):SetSteamID(steamid, size)
 end
 
 --- Creates a UIProgress. A progressbar, works with a fraction between 0 and 1 where 0 is 0% and 1 is 100%. Inherits functions from Panel.
@@ -1895,17 +1589,13 @@ end
 --@param number fraction Fraction of the progress bar. Range is 0 to 1 (0% to 100%).
 function dprg_methods:setFraction(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = dprgunwrap(self)
-
-	uwp:SetFraction(val)
+	unwrap(self):SetFraction(val)
 end
 
 --- Returns the progress bar's fraction. 0 is 0% and 1 is 100%.
 --@return number Current fraction of the progress bar.
 function dprg_methods:getFraction()
-	local uwp = dprgunwrap(self)
-
-	return uwp:GetFraction()
+	return unwrap(self):GetFraction()
 end
 
 --- Creates a UITextEntry. A form which may be used to display text the player is meant to select and copy or alternately allow them to enter some text of their own. Inherits functions from Panel.
@@ -1927,33 +1617,25 @@ end
 --@param string placeholder The placeholder text.
 function dtxe_methods:setPlaceholderText(text)
 	checkluatype(text, TYPE_STRING)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetPlaceholderText(text)
+	unwrap(self):SetPlaceholderText(text)
 end
 
 --- Gets the UITextEntry's placeholder text.
 --@return string The placeholder text.
 function dtxe_methods:getPlaceholderText()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:GetPlaceholderText()
+	return unwrap(self):GetPlaceholderText()
 end
 
 --- Allow you to set placeholder color.
 --@param Color placeholderColor The color of the placeholder.
 function dtxe_methods:setPlaceholderColor(clr)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetPlaceholderColor(cunwrap(clr))
+	unwrap(self):SetPlaceholderColor(cunwrap(clr))
 end
 
 --- Returns the placeholder color.
 --@return Color The placeholder color.
 function dtxe_methods:getPlaceholderColor()
-	local uwp = dtxeunwrap(self)
-
-	return cwrap(uwp:GetPlaceholderColor())
+	return cwrap(unwrap(self):GetPlaceholderColor())
 end
 
 --- Sets whether or not to decline non-numeric characters as input.
@@ -1961,110 +1643,84 @@ end
 --@param boolean numericOnly Whether to accept only numeric characters.
 function dtxe_methods:setNumeric(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetNumeric(enable)
+	unwrap(self):SetNumeric(enable)
 end
 
 --- Returns whether only numeric characters (123456789.-) can be entered into the UITextEntry.
 --@return boolean Whether the UITextEntry is numeric or not.
 function dtxe_methods:getNumeric()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:GetNumeric()
+	return unwrap(self):GetNumeric()
 end
 
 --- Sets whether we should fire UITextEntry:onValueChange every time we type or delete a character or only when Enter is pressed.
 --@param boolean enable Fire onValueChange every time the entry is modified?
 function dtxe_methods:setUpdateOnType(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetUpdateOnType(enable)
+	unwrap(self):SetUpdateOnType(enable)
 end
 
 --- Gets whether the UITextEntry fires onValueChange every time it is modified.
 --@return boolean Fire onValueChange on every update?
 function dtxe_methods:getUpdateOnType()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:GetUpdateOnType()
+	return unwrap(self):GetUpdateOnType()
 end
 
 --- Sets the text of the UITextEntry and calls UITextEntry:onValueChange.
 --@param string value The value to set.
 function dtxe_methods:setValue(text)
 	checkluatype(text, TYPE_STRING)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetValue(text)
+	unwrap(self):SetValue(text)
 end
 
 --- Disables Input on a UITextEntry. This differs from Panel:SetDisabled - SetEditable will not affect the appearance of the textbox.
 --@param boolean enabled Whether the UITextEntry should be editable.
 function dtxe_methods:setEditable(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetEditable(enable)
+	unwrap(self):SetEditable(enable)
 end
 
 --- Returns the contents of the UITextEntry as a number.
 --@return number Text of the UITextEntry as a float, or nil if it cannot be converted to a number using tonumber.
 function dtxe_methods:getFloat()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:GetFloat()
+	return unwrap(self):GetFloat()
 end
 
 --- Same as UITextEntry:GetFloat(), but rounds value to nearest integer.
 --@return number Text of the UITextEntry as an int, or nil if it cannot be converted to a number.
 function dtxe_methods:getInt()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:GetInt()
+	return unwrap(self):GetInt()
 end
 
 --- Sets the cursor's color in UITextEntry (the blinking line).
 --@param Color cursorColor The color to set the cursor to.
 function dtxe_methods:setCursorColor(clr)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetCursorColor(cunwrap(clr))
+	unwrap(self):SetCursorColor(cunwrap(clr))
 end
 
 --- Returns the cursor color of a UITextEntry.
 --@param Color The color of the cursor as a Color.
 function dtxe_methods:getCursorColor()
-	local uwp = dtxeunwrap(self)
-
-	return cwrap(uwp:GetCursorColor())
+	return cwrap(unwrap(self):GetCursorColor())
 end
 
 --- Changes the font of the UITextEntry.
 --@param string fontName The name of the font. Check render.setFont for a list of default fonts.
 function dtxe_methods:setFont(fontName)
 	checkluatype(fontName, TYPE_STRING)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetFont(fontName)
+	unwrap(self):SetFont(fontName)
 end
 
 --- Sets whether or not to paint/draw the UITextEntry's background.
 --@param boolean paint True to show the entry's background, false to hide it.
 function dtxe_methods:setPaintBackground(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetPaintBackground(enable)
+	unwrap(self):SetPaintBackground(enable)
 end
 
 --- Returns whether or not the entry background is being drawn.
 --@return boolean True if the entry background is drawn, false otherwise.
 function dtxe_methods:getPaintBackground()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:getPaintBackground()
+	return unwrap(self):getPaintBackground()
 end
 
 --- Called internally by UITextEntry:OnTextChanged when the user modifies the text in the UITextEntry.
@@ -2072,9 +1728,7 @@ end
 --@param function callback The function to run when the user modifies the text.
 function dtxe_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dtxeunwrap(self)
-
-	function uwp:OnChange() instance:runFunction(func) end
+	function unwrap(self):OnChange() instance:runFunction(func) end
 end
 
 --- Called internally when the text changes of the UITextEntry are applied.
@@ -2087,9 +1741,7 @@ end
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dtxeunwrap(self)
-
-	function uwp:OnValueChange(value) instance:runFunction(func, value) end
+	function unwrap(self):OnValueChange(value) instance:runFunction(func, value) end
 end
 
 --- Called whenever enter is pressed on a UITextEntry.
@@ -2097,51 +1749,39 @@ end
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onEnter(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dtxeunwrap(self)
-
-	function uwp:OnEnter(value) instance:runFunction(func, value) end
+	function unwrap(self):OnEnter(value) instance:runFunction(func, value) end
 end
 
 --- Returns whether this UITextEntry is being edited or not. (i.e. has focus)
 --@return boolean Whether this UITextEntry is being edited or not.
 function dtxe_methods:isEditing()
-	local uwp = dtxeunwrap(self)
-
-	return uwp:IsEditing()
+	return unwrap(self):IsEditing()
 end
 
 --- Called whenever the UITextEntry gains focus.
 --@param function callback The function to run when entry gains focus.
 function dtxe_methods:onGetFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dtxeunwrap(self)
-
-	function uwp:OnGetFocus() instance:runFunction(func) end
+	function unwrap(self):OnGetFocus() instance:runFunction(func) end
 end
 
 --- Called whenever the UITextEntry loses focus.
 --@param function callback The function to run when the entry loses focus.
 function dtxe_methods:onLoseFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dtxeunwrap(self)
-
-	function uwp:OnLoseFocus() instance:runFunction(func) end
+	function unwrap(self):OnLoseFocus() instance:runFunction(func) end
 end
 
 --- Sets the text color of the UITextEntry.
 --@param Color textColor The text color.
 function dtxe_methods:setTextColor(clr)
-	local uwp = dtxeunwrap(self)
-
-	uwp:SetTextColor(cunwrap(clr))
+	unwrap(self):SetTextColor(cunwrap(clr))
 end
 
 --- Returns the "override" text color, set by UITextEntry:setTextColor.
 --@return Color The color of the text, or nil.
 function dtxe_methods:getTextColor()
-	local uwp = dtxeunwrap(self)
-
-	return cwrap(uwp:GetTextColor())
+	return cwrap(unwrap(self):GetTextColor())
 end
 
 --- Creates a UIImage. A panel which displays an image. Inherits functions from UIPanel.
@@ -2164,34 +1804,25 @@ end
 --@param string? backup The path of the backup image.
 function dimg_methods:setImage(imagePath, backup)
 	checkluatype(imagePath, TYPE_STRING)
-	local uwp = dimgunwrap(self)
-
-	uwp:SetImage(imagePath, backup)
+	unwrap(self):SetImage(imagePath, backup)
 end
 
 --- Returns the image loaded in the image panel.
 --@return string The path to the image that is loaded.
 function dimg_methods:getImage()
-	local uwp = dimgunwrap(self)
-
-	return uwp:GetImage()
+	return unwrap(self):GetImage()
 end
 
 --- Sets the image's color override.
 --@param Color imgColor The color override of the image. Uses the Color.
 function dimg_methods:setImageColor(clr)
-	local uwp = dimgunwrap(self)
-	local uwc = cunwrap(clr)
-
-	uwp:SetImageColor(uwc)
+	unwrap(self):SetImageColor(cunwrap(clr))
 end
 
 --- Gets the image's color override.
 --@return Color The color override of the image.
 function dimg_methods:getImageColor()
-	local uwp = dimgunwrap(self)
-
-	return cwrap(uwp:GetImageColor())
+	return cwrap(unwrap(self):GetImageColor())
 end
 
 --- Sets whether the UIImage should keep the aspect ratio of its image when being resized.
@@ -2199,17 +1830,13 @@ end
 --@param boolean keep True to keep the aspect ratio, false not to.
 function dimg_methods:setKeepAspect(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dimgunwrap(self)
-
-	uwp:SetKeepAspect(enable)
+	unwrap(self):SetKeepAspect(enable)
 end
 
 --- Returns whether the UIImage should keep the aspect ratio of its image when being resized.
 --@return boolean Whether the UIImage should keep the aspect ratio of its image when being resized.
 function dimg_methods:getKeepAspect()
-	local uwp = dimgunwrap(self)
-
-	return uwp:GetKeepAspect()
+	return unwrap(self):GetKeepAspect()
 end
 
 --- Creates a UIImageButton. An image button. This panel inherits all methods of DButton, such as UILabel:onClick.
@@ -2232,17 +1859,13 @@ end
 --@param string? backup The path of the backup image.
 function dimgb_methods:setImage(imagePath, backup)
 	checkluatype(imagePath, TYPE_STRING)
-	local uwp = dimgbunwrap(self)
-
-	uwp:SetImage(imagePath, backup)
+	unwrap(self):SetImage(imagePath, backup)
 end
 
 --- Returns the image loaded in the image panel.
 --@return string The path to the image that is loaded.
 function dimgb_methods:getImage()
-	local uwp = dimgbunwrap(self)
-
-	return uwp:GetImage()
+	return unwrap(self):GetImage()
 end
 
 --- Sets whether the UIImageButton should keep the aspect ratio of its image when being resized.
@@ -2250,35 +1873,26 @@ end
 --@param boolean keep True to keep the aspect ratio, false not to.
 function dimgb_methods:setKeepAspect(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dimgbunwrap(self)
-
-	uwp:SetKeepAspect(enable)
+	unwrap(self):SetKeepAspect(enable)
 end
 
 --- Sets the image's color override.
 --@param Color imgColor The color override of the image. Uses the Color.
 function dimgb_methods:setImageColor(clr)
-	local uwp = dimgbunwrap(self)
-	local uwc = cunwrap(clr)
-
-	uwp:SetColor(uwc)
+	unwrap(self):SetColor(cunwrap(clr))
 end
 
 --- Sets whether the image inside the UIImageButton should be stretched to fill the entire size of the button, without preserving aspect ratio. If set to false, the image will not be resized at all.
 --@param boolean stretch True to stretch, false to not to stretch.
 function dimgb_methods:setStretchToFit(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dimgbunwrap(self)
-	
-	uwp:SetStretchToFit(enable)
+	unwrap(self):SetStretchToFit(enable)
 end
 
 --- Returns whether the image inside the button should be stretched to fit it or not.
 --@return boolean Stretch?
 function dimgb_methods:getStretchToFit()
-	local uwp = dimgbunwrap(self)
-	
-	return uwp:GetStretchToFit()
+	return unwrap(self):GetStretchToFit()
 end
 
 --- Creates a UICheckBox. The UICheckBox is a checkbox. It allows you to get a boolean value from the user. Inherits functions from DButton.
@@ -2300,50 +1914,38 @@ end
 --@param boolean checked Whether the box should be checked or not.
 function dchk_methods:setValue(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dchkunwrap(self)
-
-	uwp:SetValue(enable)
+	unwrap(self):SetValue(enable)
 end
 
 --- Sets the checked state of the checkbox. Does not call the checkbox's UICheckBox:onChange method, unlike UICheckBox:setValue.
 --@param boolean checked Whether the box should be checked or not.
 function dchk_methods:setChecked(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dchkunwrap(self)
-
-	uwp:SetChecked(enable)
+	unwrap(self):SetChecked(enable)
 end
 
 --- Toggles the checked state of the checkbox, and calls the checkbox's UICheckBox:onChange method. This is called by UICheckBox:onClick.
 function dchk_methods:toggle()
-	local uwp = dchkunwrap(self)
-	
-	uwp:Toggle()
+	unwrap(self):Toggle()
 end
 
 --- Gets the checked state of the checkbox.
 --@return boolean Whether the box is checked or not.
 function dchk_methods:getChecked()
-	local uwp = dchkunwrap(self)
-	
-	return uwp:GetChecked()
+	return unwrap(self):GetChecked()
 end
 
 --- Returns whether the state of the checkbox is being edited. This means whether the user is currently clicking (mouse-down) on the checkbox, and applies to both the left and right mouse buttons.
 --@return boolean Whether the checkbox is being clicked.
 function dchk_methods:isEditing()
-	local uwp = dchkunwrap(self)
-	
-	return uwp:IsEditing()
+	return unwrap(self):IsEditing()
 end
 
 --- Called when the "checked" state is changed.
 --@param function callback The function to run when the checked state is changed. Has one argument which is the new checked value of the checkbox.
 function dchk_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dchkunwrap(self)
-	
-	function uwp:OnChange(bval) instance:runFunction(func, bval) end
+	function unwrap(self):OnChange(bval) instance:runFunction(func, bval) end
 end
 
 --- Creates a UINumSlider. The UINumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
@@ -2364,7 +1966,6 @@ end
 --- Returns the label to the left of the slider.
 -- @return UILabel
 function dnms_methods:getLabel()
-	local uwp = dnmsunwrap(self)
 	return dlabwrap(uwp.Label)
 end
 
@@ -2372,59 +1973,45 @@ end
 --@param number min The value to set as minimum for the slider.
 function dnms_methods:setMin(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = dnmsunwrap(self)
-	
-	uwp:SetMin(val)
+	unwrap(self):SetMin(val)
 end
 
 --- Returns the minimum value of the slider.
 --@return number The minimum value of the slider
 function dnms_methods:getMin()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:GetMin()
+	return unwrap(self):GetMin()
 end
 
 --- Sets the maximum value for the slider.
 --@param number max The value to set as maximum for the slider.
 function dnms_methods:setMax(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = dnmsunwrap(self)
-	
-	uwp:SetMax(val)
+	unwrap(self):SetMax(val)
 end
 
 --- Returns the maximum value of the slider.
 --@return number The maximum value of the slider
 function dnms_methods:getMax()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:GetMax()
+	return unwrap(self):GetMax()
 end
 
 --- Sets the desired amount of numbers after the decimal point.
 --@param number decimals 0 for whole numbers only, 1 for one number after the decimal point, etc.
 function dnms_methods:setDecimals(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = dnmsunwrap(self)
-	
-	uwp:SetDecimals(val)
+	unwrap(self):SetDecimals(val)
 end
 
 --- Returns the amount of numbers after the decimal point.
 --@return number 0 for whole numbers only, 1 for one number after the decimal point, etc.
 function dnms_methods:getDecimals()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:GetDecimals()
+	return unwrap(self):GetDecimals()
 end
 
 --- Returns the UITextEntry component of the slider.
 --@return UITextEntry The UITextEntry.
 function dnms_methods:getTextArea()
-	local uwp = dnmsunwrap(self)
-	
-	return dtxewrap(uwp:GetTextArea())
+	return dtxewrap(unwrap(self):GetTextArea())
 end
 
 --- Sets the minimum and the maximum value of the slider.
@@ -2433,76 +2020,58 @@ end
 function dnms_methods:setMinMax(min, max)
 	checkluatype(min, TYPE_NUMBER)
 	checkluatype(max, TYPE_NUMBER)
-	local uwp = dnmsunwrap(self)
-	
-	uwp:SetMinMax(min, max)
+	unwrap(self):SetMinMax(min, max)
 end
 
 --- Sets the default value of the slider, to be used by UINumSlider:resetToDefaultValue or by middle mouse clicking the draggable knob of the slider.
 --@param number default The new default value of the slider to set.
 function dnms_methods:setDefaultValue(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = dnmsunwrap(self)
-	
-	uwp:SetDefaultValue(val)
+	unwrap(self):SetDefaultValue(val)
 end
 
 --- Returns the default value of the slider, if one was set by UINumSlider:setDefaultValue
 --@return number The default value of the slider
 function dnms_methods:getDefaultValue()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:GetDefaultValue()
+	return unwrap(self):GetDefaultValue()
 end
 
 --- Sets the value of the UINumSlider. Calls the slider's onValueChange method.
 --@param number value The value to set.
 function dnms_methods:setValue(val)
 	checkluatype(val, TYPE_NUMBER)
-	local uwp = dnmsunwrap(self)
-	
-	uwp:SetValue(val)
+	unwrap(self):SetValue(val)
 end
 
 --- Returns the value of the UINumSlider.
 --@return number The value of the slider.
 function dnms_methods:getValue()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:GetValue()
+	return unwrap(self):GetValue()
 end
 
 --- Returns true if either the UITextEntry, the UISlider or the UINumberScratch are being edited.
 --@return boolean Whether or not the UINumSlider is being edited by the player.
 function dnms_methods:isEditing()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:IsEditing()
+	return unwrap(self):IsEditing()
 end
 
 --- Resets the slider to the default value, if one was set by UINumSlider:setDefaultValue.
 --- This function is called by the UINumSlider when user middle mouse clicks on the draggable knob of the slider.
 function dnms_methods:resetToDefaultValue()
-	local uwp = dnmsunwrap(self)
-	
-	uwp:ResetToDefaultValue()
+	unwrap(self):ResetToDefaultValue()
 end
 
 --- Returns the range of the slider, basically maximum value - minimum value.
 --@return number The range of the slider.
 function dnms_methods:getRange()
-	local uwp = dnmsunwrap(self)
-	
-	return uwp:GetRange()
+	return unwrap(self):GetRange()
 end
 
 --- Called when the value of the slider is changed, through code or changing the slider.
 --@param function callback The function to run when the value is changed. Has one argument which is the new value that was set.
 function dnms_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dnmsunwrap(self)
-	
-	function uwp:OnValueChanged(val) instance:runFunction(func, val) end
+	function unwrap(self):OnValueChanged(val) instance:runFunction(func, val) end
 end
 
 --- Creates a UIComboBox. A field with multiple selectable values. Inherits functions from DButton.
@@ -2525,9 +2094,7 @@ end
 -- @param string fontname The name of the font.
 function dcom_methods:setFont(name)
 	checkluatype(name, TYPE_STRING)
-
-	local uwp = dcomunwrap(self)
-	uwp:SetFont(name)
+	unwrap(self):SetFont(name)
 end
 
 --- Adds a choice to the combo box.
@@ -2538,75 +2105,55 @@ end
 --@return number The index of the new option.
 function dcom_methods:addChoice(name, val, def, icon)
 	checkluatype(name, TYPE_STRING)
-	checkoptional(def, TYPE_BOOL)
-	checkoptional(icon, TYPE_STRING)
-	local uwp = dcomunwrap(self)
-	
-	return uwp:AddChoice(name, val, def, icon)
+	return unwrap(self):AddChoice(name, val, def, icon)
 end
 
 --- Adds a spacer below the currently last item in the drop down. Recommended to use with UIComboBox:setSortItems set to false.
 function dcom_methods:addSpacer()
-	local uwp = dcomunwrap(self)
-	
-	uwp:AddSpacer()
+	unwrap(self):AddSpacer()
 end
 
 --- Sets whether or not the items should be sorted alphabetically in the dropdown menu of the UIComboBox. If set to false, items will appear in the order they were added by UIComboBox:addChoice calls. Enabled by default.
 --@param boolean sort true to enable, false to disable.
 function dcom_methods:setSortItems(enable)
 	checkluatype(enable, TYPE_BOOL)
-	local uwp = dcomunwrap(self)
-	
-	uwp:SetSortItems(enable)
+	unwrap(self):SetSortItems(enable)
 end
 
 --- Opens the combo box drop down menu. Called when the combo box is clicked.
 function dcom_methods:openMenu()
-	local uwp = dcomunwrap(self)
-	
-	uwp:OpenMenu()
+	unwrap(self):OpenMenu()
 end
 
 --- Closes the combo box menu. Called when the combo box is clicked while open.
 function dcom_methods:closeMenu()
-	local uwp = dcomunwrap(self)
-	
-	uwp:CloseMenu()
+	unwrap(self):CloseMenu()
 end
 
 --- Sets the text shown in the combo box when the menu is not collapsed.
 --@param string txt The text in the UIComboBox.
 function dcom_methods:setValue(txt)
 	checkluatype(txt, TYPE_STRING)
-	local uwp = dcomunwrap(self)
-	
-	uwp:SetValue(txt)
+	unwrap(self):SetValue(txt)
 end
 
 --- Returns whether or not the combo box's menu is opened.
 --@return boolean True if the menu is open, false otherwise.
 function dcom_methods:isMenuOpen()
-	local uwp = dcomunwrap(self)
-	
-	return uwp:IsMenuOpen()
+	return unwrap(self):IsMenuOpen()
 end
 
 --- Returns the currently selected option's text and data
 --@return string The option's text value.
 --@return any The option's stored data.
 function dcom_methods:getSelected()
-	local uwp = dcomunwrap(self)
-	
-	return uwp:GetSelected()
+	return unwrap(self):GetSelected()
 end
 
 --- Returns the index (ID) of the currently selected option.
 --@return number The ID of the currently selected option.
 function dcom_methods:getSelectedID()
-	local uwp = dcomunwrap(self)
-	
-	return uwp:GetSelectedID()
+	return unwrap(self):GetSelectedID()
 end
 
 --- Returns an option's text based on the given index.
@@ -2614,9 +2161,7 @@ end
 --@return string The option's text value.
 function dcom_methods:getOptionText(id)
 	checkluatype(id, TYPE_NUMBER)
-	local uwp = dcomunwrap(self)
-	
-	return uwp:GetOptionText(id)
+	return unwrap(self):GetOptionText(id)
 end
 
 --- Returns an option's text based on the given data.
@@ -2624,9 +2169,7 @@ end
 --@return string The option's text value. If no matching data was found, the data itself will be returned. If multiple identical data entries exist, the first instance will be returned.
 function dcom_methods:getOptionTextByData(data)
 	checkluatype(data, TYPE_STRING)
-	local uwp = dcomunwrap(self)
-	
-	return uwp:GetOptionTextByData(data)
+	return unwrap(self):GetOptionTextByData(data)
 end
 
 --- Returns an option's data based on the given index.
@@ -2634,16 +2177,12 @@ end
 --@return any The option's data value.
 function dcom_methods:getOptionData(id)
 	checkluatype(id, TYPE_NUMBER)
-	local uwp = dcomunwrap(self)
-	
-	return uwp:GetOptionData(id)
+	return unwrap(self):GetOptionData(id)
 end
 
 --- Clears the combo box's text value, choices, and data values.
 function dcom_methods:clear()
-	local uwp = dcomunwrap(self)
-	
-	uwp:Clear()
+	unwrap(self):Clear()
 end
 
 --- Selects a combo box option by its index and changes the text displayed at the top of the combo box.
@@ -2652,27 +2191,21 @@ end
 function dcom_methods:chooseOption(val, index)
 	checkluatype(val, TYPE_STRING)
 	checkluatype(index, TYPE_NUMBER)
-	local uwp = dcomunwrap(self)
-	
-	uwp:ChooseOption(val, index)
+	unwrap(self):ChooseOption(val, index)
 end
 
 --- Selects an option within a combo box based on its table index.
 --@param number index Selects the option with given index.
 function dcom_methods:chooseOptionID(index)
 	checkluatype(index, TYPE_NUMBER)
-	local uwp = dcomunwrap(self)
-	
-	uwp:ChooseOptionID(index)
+	unwrap(self):ChooseOptionID(index)
 end
 
 --- Called when an option in the combo box is selected.
 --@param function callback The function to run when an option is selected. Has three arguments: (The index of the option, the name of the option, the data assigned to the option)
 function dcom_methods:onSelect(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dcomunwrap(self)
-
-	function uwp:OnSelect(id, val, data) instance:runFunction(func, id, val, data) end
+	function unwrap(self):OnSelect(id, val, data) instance:runFunction(func, id, val, data) end
 end
 
 --- Creates a UIColorMixer. A standard Derma color mixer. Inherits functions from UIPanel.
@@ -2694,9 +2227,7 @@ end
 --@param function callback The function to run when the color is changed. Has one argument which is the new color as a table.
 function dclm_methods:valueChanged(func)
 	checkluatype(func, TYPE_FUNCTION)
-	local uwp = dclmunwrap(self)
-
-	function uwp:ValueChanged(clr)
+	function unwrap(self):ValueChanged(clr)
 		instance:runFunction(func, {r = clr.r, g = clr.g, b = clr.b, a = clr.a}) 
 	end
 end
@@ -2705,17 +2236,13 @@ end
 --@param boolean show Show / Hide the colors indicators.
 function dclm_methods:setWangs(show)
 	checkluatype(show, TYPE_BOOL)
-	local uwp = dclmunwrap(self)
-	
-	uwp:SetWangs(show)
+	unwrap(self):SetWangs(show)
 end
 
 --- Returns whether the wangs are hidden.
 --@return boolean Are wangs hidden?
 function dclm_methods:getWangs()
-	local uwp = dclmunwrap(self)
-	
-	return uwp:GetWangs()
+	return unwrap(self):GetWangs()
 end
 
 
@@ -2723,60 +2250,46 @@ end
 --@param boolean show Show or hide the palette panel?
 function dclm_methods:setPalette(show)
 	checkluatype(show, TYPE_BOOL)
-	local uwp = dclmunwrap(self)
-	
-	uwp:SetPalette(show)
+	unwrap(self):SetPalette(show)
 end
 
 --- Returns whether the palette panel is hidden.
 --@return boolean Is palette panel hidden?
 function dclm_methods:getPalette()
-	local uwp = dclmunwrap(self)
-	
-	return uwp:GetPalette()
+	return unwrap(self):GetPalette()
 end
 
 --- Returns whether the alpha bar is hidden.
 --@param boolean show Show or hide the alpha bar?
 function dclm_methods:setAlphaBar(show)
 	checkluatype(show, TYPE_BOOL)
-	local uwp = dclmunwrap(self)
-	
-	uwp:SetAlphaBar(show)
+	unwrap(self):SetAlphaBar(show)
 end
 
 --- Show or hide the alpha bar.
 --@return boolean Is alpha bar hidden?
 function dclm_methods:getAlphaBar()
-	local uwp = dclmunwrap(self)
-	
-	return uwp:GetAlphaBar()
+	return unwrap(self):GetAlphaBar()
 end
 
 --- Sets the label's text to show.
 --@param string text Set to non empty string to show the label and its text. Give it an empty string or nothing and the label will be hidden.
 function dclm_methods:setLabel(txt)
 	checkluatype(txt, TYPE_STRING)
-	local uwp = dclmunwrap(self)
-	
-	uwp:SetLabel(txt)
+	unwrap(self):SetLabel(txt)
 end
 
 --- Sets the color of the UIColorMixer.
 --@param Color clr The color to set.
 function dclm_methods:setColor(clr)
 	clr = cunwrap(clr)
-	local uwp = dclmunwrap(self)
-	
-	uwp:SetColor(clr)
+	unwrap(self):SetColor(clr)
 end
 
 --- Returns the current selected color.
 --@return Color The current selected color.
 function dclm_methods:getColor()
-	local uwp = dclmunwrap(self)
-	
-	return cwrap(uwp:GetColor())
+	return cwrap(unwrap(self):GetColor())
 end
 
 end

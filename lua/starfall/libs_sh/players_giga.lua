@@ -504,6 +504,26 @@ function ents_methods:hasSpawnFlags(val)
 	return eunwrap(self):HasSpawnFlags(val)
 end
 
+--- Returns the delta movement and angles of a sequence of the entity's model.
+--@param number seqid The sequence index. See Entity:lookupSequence.
+--@param number startcyc The sequence start cycle. 0 is the start of the animation, 1 is the end.
+--@param number endcyc The sequence end cycle. 0 is the start of the animation, 1 is the end. Values like 2, etc are allowed.
+--@return boolean Whether the operation was successful.
+--@return Vector The delta vector of the animation, how much the model's origin point moved.
+--@return Angle The delta angle of the animation.
+function ents_methods:getSequenceMovement(seq, startcyc, endcyc)
+	local ent = eunwrap(self)
+
+	local success, deltaVec, deltaAng = ent:GetSequenceMovement(seq, startcyc, endcyc)
+	return success, vwrap(deltaVec), awrap(deltaAng)
+end
+
+--- Returns the frame of the currently played sequence. This will be a number between 0 and 1 as a representation of sequence progress.
+--@return The frame of the currently played sequence.
+function ents_methods:getCycle()
+	return eunwrap(self):GetCycle()
+end
+
 --- Adds keys to the move data, as if player pressed them.
 -- @shared
 -- @param number keys Key(s) to add, check builtin IN_KEY enums.
