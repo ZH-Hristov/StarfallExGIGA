@@ -255,11 +255,29 @@ function dmeno_meta:__tostring()
 	return "UIMenuOption"
 end
 
+local unwrappableTypes = {
+	UIPanelBase = instance.Types['UIPanelBase'].Unwrap,
+	UIPanel = instance.Types['UIPanel'].Unwrap,
+	UIFrame = instance.Types['UIFrame'].Unwrap,
+	UIScrollPanel = instance.Types['UIScrollPanel'].Unwrap,
+	UIButton = instance.Types['UIButton'].Unwrap,
+	UILabel = instance.Types['UILabel'].Unwrap,
+	UIAvatarImage = instance.Types['UIAvatarImage'].Unwrap,
+	UIProgress = instance.Types['UIProgress'].Unwrap,
+	UITextEntry = instance.Types['UITextEntry'].Unwrap,
+	UIImage = instance.Types['UIImage'].Unwrap,
+	UIImageButton = instance.Types['UIImageButton'].Unwrap,
+	UICheckBox = instance.Types['UICheckBox'].Unwrap,
+	UINumSlider = instance.Types['UINumSlider'].Unwrap,
+	UIComboBox = instance.Types['UIComboBox'].Unwrap,
+	UIColorMixer = instance.Types['UIColorMixer'].Unwrap,
+	UIFileBrowser = instance.Types['UIFileBrowser'].Unwrap,
+	UIMenu = instance.Types['UIMenu'].Unwrap,
+	UIMenuOption = instance.Types['UIMenuOption'].Unwrap
+}
+
 local function unwrap(pnl)
-	local pnc = tostring(pnl)
-	local unwrapFunc = instance.Types[pnc].Unwrap
-	
-	return unwrapFunc(pnl)
+	return unwrappableTypes[tostring(pnl)](pnl)
 end
 
 --- Returns how many more VGUI panels the chip can create.
@@ -1012,7 +1030,7 @@ end
 --- Set a function to run when a file is selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onSelect(func)
-	function unwrap(self):OnSelect(filepath, selpnl)
+	unwrap(self).OnSelect = function(filepath, selpnl)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1021,7 +1039,7 @@ end
 --- When not in model viewer mode, UIFileBrowser:onSelect will also be called if the file is not already selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onRightClick(func)
-	function unwrap(self):OnRightClick(filepath)
+	unwrap(self).OnRightClick = function(filepath)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1030,7 +1048,7 @@ end
 --- Double-clicking a file or icon will trigger both this and UIFileBrowser:onSelect.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onDoubleClick(func)
-	function unwrap(self):OnDoubleClick(filepath)
+	unwrap(self).OnDoubleClick = function(filepath)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1055,7 +1073,7 @@ end
 --@param function callback The function to run when the frame is closed.
 function dfrm_methods:onClose(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnClose() instance:runFunction(func) end
+	unwrap(self).OnClose = function() instance:runFunction(func) end
 end
 
 --- Centers the frame relative to the whole screen and invalidates its layout.
@@ -1340,7 +1358,7 @@ end
 --- Set a function to run when the UIMenuOption's checked state changes.
 --@param function callback Function to run. Has one argument which is the new checked state.
 function dmeno_methods:onChecked(func)
-	function unwrap(self):OnChecked(new)
+	unwrap(self).OnChecked = function(new)
 		instance:runFunction(func, new)
 	end
 end
@@ -1366,7 +1384,7 @@ end
 --@param function callback The function to run when the label is pressed.
 function dlab_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):DoClick() instance:runFunction(func) end
+	unwrap(self).DoClick = function() instance:runFunction(func) end
 end
 
 --- Called when the label is double clicked by the player with left clicks.
@@ -1375,7 +1393,7 @@ end
 --@param function callback The function to run when the label is double clicked.
 function dlab_methods:onDoubleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):DoDoubleClick() instance:runFunction(func) end
+	unwrap(self).DoDoubleClick = function() instance:runFunction(func) end
 end
 
 --- Sets whether or not double clicking should call UILabel:DoDoubleClick.
@@ -1397,7 +1415,7 @@ end
 --@param function callback The function to run when the label is right clicked.
 function dlab_methods:onRightClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):DoRightClick() instance:runFunction(func) end
+	unwrap(self).DoRightClick = function() instance:runFunction(func) end
 end
 
 --- Called when the label is middle clicked (on key release) by the player.
@@ -1405,21 +1423,21 @@ end
 --@param function callback The function to run when the label is middle clicked.
 function dlab_methods:onMiddleClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):DoMiddleClick() instance:runFunction(func) end
+	unwrap(self).DoMiddleClick = function() instance:runFunction(func) end
 end
 
 --- Called when the player presses the label with any mouse button.
 --@param function callback The function to run when the label is pressed.
 function dlab_methods:onDepressed(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnDepressed() instance:runFunction(func) end
+	unwrap(self).OnDepressed = function() instance:runFunction(func) end
 end
 
 --- Called when the player releases any mouse button on the label. This is always called after UILabel:onDepressed.
 --@param function callback The function to run when the label is released.
 function dlab_methods:onReleased(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnReleased() instance:runFunction(func) end
+	unwrap(self).OnReleased = function() instance:runFunction(func) end
 end
 
 --- Called when the toggle state of the label is changed by UILabel:Toggle.
@@ -1427,7 +1445,7 @@ end
 --@param function callback The function to run when the label is toggled. Has one argument which is the new toggle state.
 function dlab_methods:onToggled(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnToggled(toggleState) instance:runFunction(func, toggleState) end
+	unwrap(self).OnToggled = function(toggleState) instance:runFunction(func, toggleState) end
 end
 
 --- Enables or disables toggle functionality for a label. Retrieved with UILabel:getIsToggle.
@@ -1522,7 +1540,7 @@ end
 --@param function callback The function to run when the button is pressed.
 function dbut_methods:onClick(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):DoClick() instance:runFunction(func) end
+	unwrap(self).DoClick = function() instance:runFunction(func) end
 end
 
 --- Sets an image to be displayed as the button's background.
@@ -1728,7 +1746,7 @@ end
 --@param function callback The function to run when the user modifies the text.
 function dtxe_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnChange() instance:runFunction(func) end
+	unwrap(self).OnChange = function() instance:runFunction(func) end
 end
 
 --- Called internally when the text changes of the UITextEntry are applied.
@@ -1741,7 +1759,7 @@ end
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnValueChange(value) instance:runFunction(func, value) end
+	unwrap(self).OnValueChange = function(value) instance:runFunction(func, value) end
 end
 
 --- Called whenever enter is pressed on a UITextEntry.
@@ -1749,7 +1767,7 @@ end
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onEnter(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnEnter(value) instance:runFunction(func, value) end
+	unwrap(self).OnEnter = function(value) instance:runFunction(func, value) end
 end
 
 --- Returns whether this UITextEntry is being edited or not. (i.e. has focus)
@@ -1762,14 +1780,14 @@ end
 --@param function callback The function to run when entry gains focus.
 function dtxe_methods:onGetFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnGetFocus() instance:runFunction(func) end
+	unwrap(self).OnGetFocus = function() instance:runFunction(func) end
 end
 
 --- Called whenever the UITextEntry loses focus.
 --@param function callback The function to run when the entry loses focus.
 function dtxe_methods:onLoseFocus(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnLoseFocus() instance:runFunction(func) end
+	unwrap(self).OnLoseFocus = function() instance:runFunction(func) end
 end
 
 --- Sets the text color of the UITextEntry.
@@ -1945,7 +1963,7 @@ end
 --@param function callback The function to run when the checked state is changed. Has one argument which is the new checked value of the checkbox.
 function dchk_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnChange(bval) instance:runFunction(func, bval) end
+	unwrap(self).OnChange = function(bval) instance:runFunction(func, bval) end
 end
 
 --- Creates a UINumSlider. The UINumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
@@ -2071,7 +2089,7 @@ end
 --@param function callback The function to run when the value is changed. Has one argument which is the new value that was set.
 function dnms_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnValueChanged(val) instance:runFunction(func, val) end
+	unwrap(self).OnValueChanged = function(val) instance:runFunction(func, val) end
 end
 
 --- Creates a UIComboBox. A field with multiple selectable values. Inherits functions from DButton.
@@ -2205,7 +2223,7 @@ end
 --@param function callback The function to run when an option is selected. Has three arguments: (The index of the option, the name of the option, the data assigned to the option)
 function dcom_methods:onSelect(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):OnSelect(id, val, data) instance:runFunction(func, id, val, data) end
+	unwrap(self).OnSelect = function(id, val, data) instance:runFunction(func, id, val, data) end
 end
 
 --- Creates a UIColorMixer. A standard Derma color mixer. Inherits functions from UIPanel.
@@ -2227,7 +2245,7 @@ end
 --@param function callback The function to run when the color is changed. Has one argument which is the new color as a table.
 function dclm_methods:valueChanged(func)
 	checkluatype(func, TYPE_FUNCTION)
-	function unwrap(self):ValueChanged(clr)
+	unwrap(self).ValueChanged = function(clr)
 		instance:runFunction(func, {r = clr.r, g = clr.g, b = clr.b, a = clr.a}) 
 	end
 end
