@@ -139,6 +139,14 @@ SF.StructWrapper = {
 			end,
 			__metatable = name,
 			__tostring = function() return name end,
+			__printtable = function()
+				for k, v in pairs(data) do
+					if not cache[k] then
+						cache[k] = instance.WrapObject(v)
+					end
+				end
+				return cache
+			end,
 		})
 	end
 }
@@ -147,14 +155,18 @@ setmetatable(SF.StructWrapper, SF.StructWrapper)
 --- Returns a class that can manage burst objects
 SF.BurstObject = {
 	__index = {
+		calc = function(self, obj)
+			local ret = math.min(obj.val + (CurTime() - obj.lasttick) * self.rate, self.max)
+			obj.lasttick = CurTime()
+			return ret
+		end,
 		use = function(self, ply, amount)
 			if ply:IsValid() or ply==SF.Superuser then
 				local obj = self:get(ply)
-				local new = math.min(obj.val + (CurTime() - obj.lasttick) * self.rate, self.max) - amount
+				local new = self:calc(obj) - amount
 				if new < 0 and ply~=SF.Superuser then
 					SF.Throw("The ".. self.name .." burst limit has been exceeded.", 3)
 				end
-				obj.lasttick = CurTime()
 				obj.val = new
 			else
 				SF.Throw("Invalid starfall user", 3)
@@ -163,8 +175,7 @@ SF.BurstObject = {
 		check = function(self, ply)
 			if ply:IsValid() or ply==SF.Superuser then
 				local obj = self:get(ply)
-				obj.val = math.min(obj.val + (CurTime() - obj.lasttick) * self.rate, self.max)
-				obj.lasttick = CurTime()
+				obj.val = self:calc(obj)
 				return obj.val
 			else
 				SF.Throw("Invalid starfall user", 3)
@@ -365,7 +376,7 @@ SF.BlockedList = {
 			self.list[steamid] = true
 
 			if self.filename then
-				local f = file.Open("sf_blockedusers.txt","a","DATA")
+				local f = file.Open(self.filename,"a","DATA")
 				f:Write(steamid.."\n")
 				f:Close()
 			end
@@ -1302,22 +1313,24 @@ function SF.GetExecutingPath()
 	return curdir
 end
 
---- Returns True if parent chain length is going to exceed 16
+--- Returns True if parent chain length is going to exceed 16. Also check for cyclic parenting
 function SF.ParentChainTooLong(parent, child)
 	local index = parent
 	local parentLength = 0
 	while index:IsValid() do
+		if index == child then return true end
 		parentLength = parentLength + 1
 		index = index:GetParent()
 	end
 
 	local function getChildLength(curchild, count)
 		if count > 16 then return count end
-		local max = 0
+		local max = count
 		for k, v in pairs(curchild:GetChildren()) do
+			if v == parent then return 17 end
 			max = math.max(max, getChildLength(v, count + 1))
 		end
-		return math.max(max, count)
+		return max
 	end
 	local childLength = getChildLength(child, 1)
 

@@ -150,9 +150,10 @@ simple [[puu.sh]]
 ---  http://images.akamai.steamusercontent.com/ugc/367407720941694853/74457889F41A19BD66800C71663E9077FA440664/
 ---  https://steamuserimages-a.akamaihd.net/ugc/1475443067859980096/685F2468519E31C5C214959EC3AA0B0757B01E1B/
 ---  https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/4000/dca12980667e32ab072d79f5dbe91884056a03a2.jpg
-simple [[images.akamai.steamusercontent.com]]
 simple [[steamuserimages-a.akamaihd.net]]
 simple [[steamcdn-a.akamaihd.net]]
+pattern [[images%.[%w-_]+%.steamusercontent%.com/(.+)]]
+pattern [[avatars%.[%w-_]+%.steamstatic%.com/(.+)]]
 blacklist [[steamcommunity.com/linkfilter]]
 
 
@@ -175,10 +176,12 @@ blacklist [[steamcommunity.com/linkfilter]]
 -- Discord
 --- Examples:
 ---  https://cdn.discordapp.com/attachments/269175189382758400/421572398689550338/unknown.png
----  https://images-ext-2.discordapp.net/external/UVPTeOLUWSiDXGwwtZ68cofxU1uaA2vMb2ZCjRY8XXU/https/i.imgur.com/j0QGfKN.jpg?width=1202&height=677
+---  https://images-ext-2.discordapp.net/external/UVPTeOLUWSiDXGwwtZ68cofxU1uaA2vMb2ZCjRY8XXU/https/i.imgur.com/j0QGfKN.jpg?width=1202&height=67
+---  https://media.discordapp.net/attachments/695591357158391879/1096409191792508958/image.png?width=1432&height=88
 
 pattern [[cdn[%w-_]*.discordapp%.com/(.+)]]
 pattern [[images-([%w%-]+)%.discordapp%.net/external/(.+)]]
+pattern [[media%.discordapp%.net/attachments/(.+)]]
 
 -- Reddit
 --- Examples:

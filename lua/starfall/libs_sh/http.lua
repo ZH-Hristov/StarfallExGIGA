@@ -2,15 +2,11 @@
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
 
-
-local http_interval = CreateConVar("sf_http_interval", "0.5", { FCVAR_ARCHIVE, FCVAR_REPLICATED }, "Interval in seconds in which one http request can be made")
-local http_max_active = CreateConVar("sf_http_max_active", "3", { FCVAR_ARCHIVE, FCVAR_REPLICATED }, "The maximum amount of active http requests at the same time")
-
 local permission_level = SERVER and 1 or 3
 registerprivilege("http.get", "HTTP Get method", "Allows the user to request html data", { client = {}, urlwhitelist = { default = permission_level } })
 registerprivilege("http.post", "HTTP Post method", "Allows the user to post html data", { client = { default = 1 }, urlwhitelist = { default = permission_level } })
 
-local requests = SF.EntityTable("playerHTTPRequests")
+local requests = SF.LimitObject("http_requests", "http request", 3, "The number of concurrent http requests via Starfall")
 
 --- Http library. Requests content from urls.
 -- @name http
@@ -26,16 +22,29 @@ local http_library = instance.Libraries.http
 -- Runs the appropriate callback after a http request
 local function runCallback(callback)
 	return function(...)
+		requests:free(instance.player, 1)
 		if callback then
 			instance:runFunction(callback, ...)
 		end
-		requests[instance.player] = nil
 	end
 end
 
 --- Checks if a new http request can be started
+-- @return boolean If an HTTP get/post request can be made
 function http_library.canRequest()
-	return not requests[instance.player]
+	return requests:check(instance.player) > 0
+end
+
+--- Gets how many get/post operations are currently in progress
+-- @return number The current amount of active HTTP get/post requests
+function http_library.getActiveRequests()
+	return requests.max-requests:check(instance.player)
+end
+
+--- Gets how many get/post operations can be in progress at the same time
+-- @return number Maximum amount of concurrent active HTTP get/post requests 
+function http_library.getMaximumRequests()
+	return requests.max
 end
 
 --- Runs a new http GET request
@@ -58,8 +67,7 @@ function http_library.get(url, callbackSuccess, callbackFail, headers)
 		end
 	end
 
-	if requests[instance.player] then SF.Throw("You can't run a new http request yet", 2) end
-	requests[instance.player] = true
+	requests:use(instance.player, 1)
 
 	if CLIENT then SF.HTTPNotify(instance.player, url) end
 	http.Fetch(url, runCallback(callbackSuccess), runCallback(callbackFail), headers)
@@ -100,7 +108,7 @@ function http_library.post(url, payload, callbackSuccess, callbackFail, headers)
 
 	if headers~=nil then
 		checkluatype(headers, TYPE_TABLE)
-		
+
 		for k, v in pairs(headers) do
 			if not isstring(k) or not isstring(v) then
 				SF.Throw("Headers can only contain string keys and string values", 2)
@@ -110,7 +118,7 @@ function http_library.post(url, payload, callbackSuccess, callbackFail, headers)
 				request.type = v
 			end
 		end
-		
+
 		request.headers = headers
 	end
 
@@ -123,8 +131,7 @@ function http_library.post(url, payload, callbackSuccess, callbackFail, headers)
 	end
 	request.failed = runCallback(callbackFail)
 
-	if requests[instance.player] then SF.Throw("You can't run a new http request yet", 2) end
-	requests[instance.player] = true
+	requests:use(instance.player, 1)
 
 	if CLIENT then SF.HTTPNotify(instance.player, url) end
 	HTTP(request)
