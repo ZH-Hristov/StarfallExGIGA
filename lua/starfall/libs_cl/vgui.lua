@@ -584,7 +584,7 @@ end
 
 --- Removes the panel and all its children.
 function pnl_methods:remove()
-	panels[uwp] = nil
+	panels[unwrap(self)] = nil
 	panelCount:free(instance.player, 1 + (unwrap(self):ChildCount() or 0))
 	unwrap(self):Remove()
 end

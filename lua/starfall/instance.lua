@@ -128,20 +128,18 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 		end
 	end
 
-	local serverorclientpp = instance.ppdata.serverorclient or {}
+	local serverorclientpp, owneronlypp = instance.ppdata.serverorclient or {}, instance.ppdata.owneronly or {}
 	for filename, source in pairs(code) do
 		if doNotRun[filename] then continue end -- Don't compile data files
+		if CLIENT and owneronlypp[filename] and LocalPlayer() ~= player then continue end -- Don't compile owner-only files if not owner
 		local serverorclient = serverorclientpp[filename]
-		if (serverorclient == "server" and CLIENT) or (serverorclient == "client" and SERVER) then
-			instance.scripts[filename] = function() end
-		else
-			local func = SF.CompileString(source, "SF:"..filename, false)
-			if isstring(func) then
-				return false, { message = func, traceback = "" }
-			end
-			debug.setfenv(func, instance.env)
-			instance.scripts[filename] = func
+		if (serverorclient == "server" and CLIENT) or (serverorclient == "client" and SERVER) then continue end -- Don't compile files for other realm
+		local func = SF.CompileString(source, "SF:"..filename, false)
+		if isstring(func) then
+			return false, { message = func, traceback = "" }
 		end
+		debug.setfenv(func, instance.env)
+		instance.scripts[filename] = func
 	end
 
 	instance.startram = collectgarbage("count")
@@ -601,10 +599,12 @@ function SF.Instance:initialize()
 	self:RunHook("initialize")
 
 	local func = self.scripts[self.mainfile]
-	local tbl = self:run(func)
-	if not tbl[1] then
-		self:Error(tbl[2])
-		return false, tbl[2]
+	if func then
+		local tbl = self:run(func)
+		if not tbl[1] then
+			self:Error(tbl[2])
+			return false, tbl[2]
+		end
 	end
 
 	return true

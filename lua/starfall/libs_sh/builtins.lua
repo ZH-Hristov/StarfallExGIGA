@@ -2,7 +2,7 @@
 local checkluatype = SF.CheckLuaType
 local dgetmeta = debug.getmetatable
 
-SF.Permissions.registerPrivilege("console.command", "Console command", "Allows the starfall to run console commands", { client = { default = 4 } })
+SF.Permissions.registerPrivilege("console.command", "Console command", "Allows the starfall to run console commands")
 
 local userdataLimit, printBurst, concmdBurst
 if SERVER then
@@ -660,7 +660,7 @@ else
 
 	function builtins_library.concmd(cmd)
 		checkluatype(cmd, TYPE_STRING)
-		checkpermission(instance, nil, "console.command")
+		if instance.player ~= LocalPlayer() then SF.Throw("Can't run concmd on other players!", 2) end
 		LocalPlayer():ConCommand(cmd)
 	end
 
@@ -1245,4 +1245,8 @@ end
 
 --- Lets the chip run with no restrictions and the chip owner becomes SF.Superuser. Can only be used in the main file. --@superuser
 -- @name superuser
+-- @class directive
+
+--- Set the current file to only be sent to the owner. --@owneronly
+-- @name owneronly
 -- @class directive
