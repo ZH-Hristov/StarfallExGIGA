@@ -1621,6 +1621,20 @@ else
 			eunwrap(self):Remove()
 		end
 	end
+
+	--- Sets up clientside anim event handling.
+	-- @client
+	-- @param function callback The callback function to run when an anim event happens. Has 4 args (pos, ang, event number, name string).
+	-- @param boolean suppress Suppress the event?
+	function ents_methods:setupAnimEventHandler(callback, suppress)
+		local eu = eunwrap(self)
+		suppress = suppress or false
+
+		function eu:FireAnimationEvent(pos, ang, evnum, str)
+			instance:runFunction(callback, pos, ang, evnum, str)
+			return suppress
+		end
+	end
 	
 end
 
