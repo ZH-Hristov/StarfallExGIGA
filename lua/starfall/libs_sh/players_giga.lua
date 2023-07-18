@@ -1103,6 +1103,24 @@ if SERVER then
 			eunwrap(self):RestartGesture(act)
 		end
 	end
+
+	--- Adds a gesture animation to the entity and plays it.
+	-- @param number seqId The sequence ID to play as the gesture. See Entity:lookupSequence,
+	-- @return number The layer id of the added gesture.
+	function ents_methods:addGestureSequence(seq)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			return eunwrap(self):AddGestureSequence(seq)
+		end
+	end
+
+	--- Adds a gesture animation to the entity and plays it.
+	-- @param number seqIdThe sequence ID to play as the gesture. See Entity:lookupSequence.
+	-- @return number The layer id of the added gesture.
+	function ents_methods:addLayeredSequence(seq, priority)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			return eunwrap(self):AddLayeredSequence(seq, priority)
+		end
+	end
 	
 	--- Sets a networked integer (whole number) value on the entity. The value can then be accessed with Entity:getNWInt both from client and server.
 	-- @param string key The key to associate the value with.
