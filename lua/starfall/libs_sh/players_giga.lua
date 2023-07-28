@@ -483,6 +483,118 @@ instance:AddHook("deinitialize", function()
 	end
 end)
 
+--- Sets the specified integer on the entity's datatable.
+--@param number key Goes from 0 to 31.
+--@param number int The integer to write on the entity's datatable. This will be cast to a 32-bit signed integer internally.
+function ents_methods:setDTInt(key, int)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):setDTInt(key, int)
+	end
+end
+
+--- Sets the specified float on the entity's datatable.
+--@param number key Goes from 0 to 31.
+--@param number float The float to write on the entity's datatable.
+function ents_methods:setDTFloat(key, float)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetDTFloat(key, float)
+	end
+end
+
+--- Sets the specified vector on the entity's datatable.
+--@param number key Goes from 0 to 31.
+--@param Vector vec The vector to write on the entity's datatable.
+function ents_methods:setDTVector(key, vec)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetDTVector(key, vwrap(vec))
+	end
+end
+
+--- Sets the specified angle on the entity's datatable.
+--@param number key Goes from 0 to 31.
+--@param Angle vec The angle to write on the entity's datatable.
+function ents_methods:setDTAngle(key, ang)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetDTAngle(key, awrap(ang))
+	end
+end
+
+--- Sets the specified string on the entity's datatable.
+--@param number key Goes from 0 to 3.
+--@param string str The string to write on the entity's datatable, can't be more than 512 characters per string.
+function ents_methods:setDTString(key, str)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetDTString(key, str)
+	end
+end
+
+--- Sets the specified bool on the entity's datatable.
+--@param number key Goes from 0 to 31.
+--@param boolean bool The boolean to write on the entity's metatable.
+function ents_methods:setDTBool(key, bool)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetDTBool(key, bool)
+	end
+end
+
+--- Sets the specified entity on the entity's datatable.
+--@param number key Goes from 0 to 31.
+--@param Entity ent The entity to write on this entity's datatable.
+function ents_methods:setDTEntity(key, ent)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetDTEntity(key, ewrap(ent))
+	end
+end
+
+--- Get an int stored in the datatable of the entity.
+--@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
+--@return number 32-bit signed integer
+function ents_methods:getDTInt(key)
+	return eunwrap(self):GetDT(key)
+end
+
+--- Get a float stored in the datatable of the entity.
+--@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
+--@return number Requested float.
+function ents_methods:getDTFloat(key)
+	return eunwrap(self):GetDTFloat(key)
+end
+
+--- Get a vector stored in the datatable of the entity.
+--@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
+--@return Vector Requested vector.
+function ents_methods:getDTVector(key)
+	return vwrap(eunwrap(self):GetDTVector(key))
+end
+
+--- Get an angle stored in the datatable of the entity.
+--@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
+--@return Angle Requested angle.
+function ents_methods:getDTAngle(key)
+	return awrap(eunwrap(self):GetDTAngle(key))
+end
+
+--- Get a string stored in the datatable of the entity.
+--@param number key Goes from 0 to 3. Specifies what key to grab from datatable.
+--@return string Requested string.
+function ents_methods:getDTString(key)
+	return eunwrap(self):GetDTString(key)
+end
+
+--- Get a bool stored in the datatable of the entity.
+--@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
+--@return boolean Requested bool.
+function ents_methods:getDTBool(key)
+	return eunwrap(self):GetDTBool(key)
+end
+
+--- Get an entity stored in the datatable of the entity.
+--@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
+--@return Entity Requested entity.
+function ents_methods:getDTEntity(key)
+	return ewrap(eunwrap(self):GetDTEntity(key))
+end
+
 --- Marks the entity to call GM:ShouldCollide.
 -- @param boolean enable Enable or disable the custom collision check.
 function ents_methods:setCustomCollisionCheck(new)

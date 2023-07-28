@@ -45,6 +45,7 @@ if SERVER then
 end
 
 registerprivilege("input", "Input", "Allows the user to see what buttons you're pressing.", { client = {} })
+registerprivilege("input.chat", "Input", "Allows the user to see your chat keypresses.", { client = { default = 1 } })
 registerprivilege("input.bindings", "Input", "Allows the user to see your bindings.", { client = { default = 1 } })
 registerprivilege("input.emulate", "Input", "Allows starfall to emulate user input.", { client = { default = 1 } })
 
@@ -85,12 +86,21 @@ net.Receive("starfall_lock_control", function()
 	end
 end)
 
+local isChatOpen = false
+hook.Add("StartChat","SF_StartChat",function() isChatOpen=true end)
+hook.Add("FinishChat","SF_StartChat",function() isChatOpen=false end)
+
 
 local function CheckButtonPerms(instance, ply, button)
-	if (IsFirstTimePredicted() or game.SinglePlayer()) and haspermission(instance, nil, "input") then
-		return true, { button }
+	if not IsFirstTimePredicted() and not game.SinglePlayer() then return false end
+	if not haspermission(instance, nil, "input") then return false end
+	if isChatOpen and not haspermission(instance, nil, "input.chat") then
+		local notMouseButton = button < MOUSE_FIRST and button > MOUSE_LAST
+		local notJoystick = button < JOYSTICK_FIRST and button > JOYSTICK_LAST
+		if notMouseButton and notJoystick then return false end -- Mouse and joystick are allowed, they don't put text into the chat
 	end
-	return false
+
+	return true, { button }
 end
 
 --- Called when a button is pressed
@@ -224,6 +234,7 @@ function input_library.isKeyDown(key)
 	checkluatype(key, TYPE_NUMBER)
 
 	checkpermission(instance, nil, "input")
+	if isChatOpen and not haspermission(instance, nil, "input.chat") then return false end
 
 	return input.IsKeyDown(key)
 end
