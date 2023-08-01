@@ -488,7 +488,7 @@ end)
 --@param number int The integer to write on the entity's datatable. This will be cast to a 32-bit signed integer internally.
 function ents_methods:setDTInt(key, int)
 	if superOrAdmin(instance) or instance.player==SF.Superuser then
-		eunwrap(self):setDTInt(key, int)
+		eunwrap(self):SetDTInt(key, int)
 	end
 end
 
@@ -550,7 +550,7 @@ end
 --@param number key Goes from 0 to 31. Specifies what key to grab from datatable.
 --@return number 32-bit signed integer
 function ents_methods:getDTInt(key)
-	return eunwrap(self):GetDT(key)
+	return eunwrap(self):GetDTInt(key)
 end
 
 --- Get a float stored in the datatable of the entity.
