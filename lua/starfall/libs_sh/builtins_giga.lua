@@ -246,7 +246,7 @@ else
 	function render_library.drawColorModify(modparams)
 		DrawColorModify(modparams)
 	end
-	
+
 	--- Draws the bloom shader, which creates a glowing effect from bright objects. Must be in drawscreenspace hook.
 	-- @client
 	-- @param number darken Determines how much to darken the effect. A lower number will make the glow come from lower light levels. A value of 1 will make the bloom effect unnoticeable. Negative values will make even pitch black areas glow.

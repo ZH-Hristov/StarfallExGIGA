@@ -471,6 +471,7 @@ function instance:cleanupRender()
 	render.SetLightingMode(0)
 	render.ResetModelLighting(1, 1, 1)
 	render.DepthRange(0, 1)
+	render.SuppressEngineLighting(false)
 	pp.colour:SetTexture("$fbtexture", tex_screenEffect)
 	pp.downsample:SetTexture("$fbtexture", tex_screenEffect)
 	for i = #matrix_stack, 1, -1 do
@@ -541,6 +542,14 @@ end
 function render_library.clearStencil()
 	if renderdata.noStencil and not renderdata.usingRT then SF.Throw("Stencil operations must be used inside RenderTarget or HUD") end
 	render.ClearStencil()
+end
+
+--- Suppresses or enables any engine lighting for any upcoming render operation.
+-- @param boolean suppress True to suppress false to enable.
+function render_library.suppressEngineLighting(enable)
+	enable = (enable == true)
+	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
+	render.SuppressEngineLighting(enable)
 end
 
 --- Sets up the ambient lighting for any upcoming render operation. Ambient lighting can be seen as a cube enclosing the object to be drawn, each of its faces representing a directional light source that shines towards the object.
@@ -770,6 +779,9 @@ function render_library.popViewMatrix()
 
 	cam[view_matrix_stack[i]]()
 	view_matrix_stack[i] = nil
+
+	cam.Start3D()
+	cam.End3D()
 end
 
 --- Sets background color of screen

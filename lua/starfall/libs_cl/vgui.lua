@@ -1030,7 +1030,7 @@ end
 --- Set a function to run when a file is selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onSelect(func)
-	unwrap(self).OnSelect = function(filepath, selpnl)
+	unwrap(self).OnSelect = function(panel, filepath, selpnl)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1039,7 +1039,7 @@ end
 --- When not in model viewer mode, UIFileBrowser:onSelect will also be called if the file is not already selected.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onRightClick(func)
-	unwrap(self).OnRightClick = function(filepath)
+	unwrap(self).OnRightClick = function(panel, filepath)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1048,7 +1048,7 @@ end
 --- Double-clicking a file or icon will trigger both this and UIFileBrowser:onSelect.
 --@param function callback Function to run. Has 1 argument which is the filepath to the selected file.
 function dfb_methods:onDoubleClick(func)
-	unwrap(self).OnDoubleClick = function(filepath)
+	unwrap(self).OnDoubleClick = function(panel, filepath)
 		instance:runFunction(func, filepath)
 	end
 end
@@ -1445,7 +1445,7 @@ end
 --@param function callback The function to run when the label is toggled. Has one argument which is the new toggle state.
 function dlab_methods:onToggled(func)
 	checkluatype(func, TYPE_FUNCTION)
-	unwrap(self).OnToggled = function(toggleState) instance:runFunction(func, toggleState) end
+	unwrap(self).OnToggled = function(panel, toggleState) instance:runFunction(func, toggleState) end
 end
 
 --- Enables or disables toggle functionality for a label. Retrieved with UILabel:getIsToggle.
@@ -1759,7 +1759,7 @@ end
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onValueChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	unwrap(self).OnValueChange = function(value) instance:runFunction(func, value) end
+	unwrap(self).OnValueChange = function(panel, value) instance:runFunction(func, value) end
 end
 
 --- Called whenever enter is pressed on a UITextEntry.
@@ -1767,7 +1767,7 @@ end
 --@param function callback The function to run when the text changes are applied. Has one argument which is the value that was applied.
 function dtxe_methods:onEnter(func)
 	checkluatype(func, TYPE_FUNCTION)
-	unwrap(self).OnEnter = function(value) instance:runFunction(func, value) end
+	unwrap(self).OnEnter = function(panel, value) instance:runFunction(func, value) end
 end
 
 --- Returns whether this UITextEntry is being edited or not. (i.e. has focus)
@@ -1963,7 +1963,7 @@ end
 --@param function callback The function to run when the checked state is changed. Has one argument which is the new checked value of the checkbox.
 function dchk_methods:onChange(func)
 	checkluatype(func, TYPE_FUNCTION)
-	unwrap(self).OnChange = function(bval) instance:runFunction(func, bval) end
+	unwrap(self).OnChange = function(panel, bval) instance:runFunction(func, bval) end
 end
 
 --- Creates a UINumSlider. The UINumSlider allows you to create a slider, allowing the user to slide it to set a value, or changing the value in the box. Inherits functions from Panel.
@@ -2223,7 +2223,7 @@ end
 --@param function callback The function to run when an option is selected. Has three arguments: (The index of the option, the name of the option, the data assigned to the option)
 function dcom_methods:onSelect(func)
 	checkluatype(func, TYPE_FUNCTION)
-	unwrap(self).OnSelect = function(id, val, data) instance:runFunction(func, id, val, data) end
+	unwrap(self).OnSelect = function(panel, id, val, data) instance:runFunction(func, id, val, data) end
 end
 
 --- Creates a UIColorMixer. A standard Derma color mixer. Inherits functions from UIPanel.
@@ -2245,7 +2245,7 @@ end
 --@param function callback The function to run when the color is changed. Has one argument which is the new color as a table.
 function dclm_methods:valueChanged(func)
 	checkluatype(func, TYPE_FUNCTION)
-	unwrap(self).ValueChanged = function(clr)
+	unwrap(self).ValueChanged = function(panel, clr)
 		instance:runFunction(func, {r = clr.r, g = clr.g, b = clr.b, a = clr.a}) 
 	end
 end
