@@ -999,7 +999,7 @@ end
 -- @param Entity parent New parent.
 function ents_methods:setParentEx(prnt)
 	if superOrAdmin(instance) then
-		eunwrap(self):SetParent(eunwrap(prnt))
+		eunwrap(self):SetParent(self and eunwrap(prnt) or nil)
 	end
 end
 
@@ -1410,8 +1410,8 @@ if SERVER then
 	-- @param Vector mins The size of the bottom corner.
 	-- @param Vector maxs The size of the opposite corner.
 	-- @param string|table filter A string or table of strings of entity classes. Trigger will be activated only by these classes. Filters players by default.
-	-- @param function onEnter The function to run when a valid entity enters the trigger.
-	-- @param function? onExit The function to run when a valid entity exits the trigger.
+	-- @param function onEnter The function to run when a valid entity enters the trigger. 2 args are passed (Entity which entered and the trigger itself)
+	-- @param function? onExit The function to run when a valid entity exits the trigger. Same args as onEnter
 	-- @return Entity The trigger entity.
 	function trigger_library.createBox(origin, mins, maxs, filter, onEnter, onExit)
 		local colly = ents.Create("starfall_triggerbox")
@@ -1441,7 +1441,7 @@ if SERVER then
 		function colly:StartTouch(ent)
 			local cls = ent:GetClass()
 			if self.filter[cls] then
-				instance:runFunction(onEnter, ewrap(ent))
+				instance:runFunction(onEnter, ewrap(ent), ewrap(self))
 			end
 		end
 		
@@ -1449,7 +1449,7 @@ if SERVER then
 			function colly:EndTouch(ent)
 				local cls = ent:GetClass()
 				if self.filter[cls] then
-					instance:runFunction(onExit, ewrap(ent))
+					instance:runFunction(onExit, ewrap(ent), ewrap(self))
 				end
 			end
 		end

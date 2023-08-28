@@ -532,7 +532,6 @@ end
 --- Sets whether stencil tests are carried out for each rendered pixel. Only pixels passing the stencil test are written to the render target.
 -- @param boolean enable True to enable, false to disable
 function render_library.setStencilEnable(enable)
-	enable = (enable == true) -- Make sure it's a boolean
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	if renderdata.noStencil and not renderdata.usingRT then SF.Throw("Stencil operations must be used inside RenderTarget or HUD") end
 	render.SetStencilEnable(enable)
@@ -547,11 +546,10 @@ end
 --- Suppresses or enables any engine lighting for any upcoming render operation.
 -- @param boolean suppress True to suppress false to enable.
 function render_library.suppressEngineLighting(enable)
-	enable = (enable == true)
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	render.SuppressEngineLighting(enable)
 end
-
+	
 --- Sets up the ambient lighting for any upcoming render operation. Ambient lighting can be seen as a cube enclosing the object to be drawn, each of its faces representing a directional light source that shines towards the object.
 -- @param number lightDirection The light source to edit, builtins.BOX enumeration.
 -- @param number r The red component of the light color.
@@ -781,7 +779,7 @@ function render_library.popViewMatrix()
 	view_matrix_stack[i] = nil
 
 	cam.Start3D()
-	cam.End3D()
+	cam.End3D() -- This fixes Vector:toScreen() breaking if you've pushed a viewmatrix beforehand. Yeah, it's stupid.
 end
 
 --- Sets background color of screen
@@ -1647,7 +1645,7 @@ end
 -- @param number x X coordinate
 -- @param number y Y coordinate
 -- @param string text Text to draw
--- @param number alignment Text alignment
+-- @param number alignment Horizontal text alignment. Default TEXT_ALIGN.LEFT
 function render_library.drawText(x, y, text, alignment)
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 
@@ -1660,8 +1658,8 @@ end
 -- @param number x X coordinate
 -- @param number y Y coordinate
 -- @param string text Text to draw
--- @param number? xalign Text x alignment
--- @param number? yalign Text y alignment
+-- @param number? xalign Horizontal text alignment. Default TEXT_ALIGN.LEFT
+-- @param number? yalign Vertical text alignment. Default TEXT_ALIGN.TOP
 -- @return number Width of the drawn text. Same as calling render.getTextSize
 -- @return number Height of the drawn text. Same as calling render.getTextSize
 function render_library.drawSimpleText(x, y, text, xalign, yalign)
