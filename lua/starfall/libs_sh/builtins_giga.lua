@@ -240,6 +240,12 @@ else
 		LocalPlayer():ConCommand(cmd)
 	end
 
+	--- Sets the internal parameter INT_RENDERPARM_WRITE_DEPTH_TO_DESTALPHA. Allows you to make masks for rendertargets.
+	-- @param boolean enable Enable writing depth to destination alpha.
+	function render_library.setWriteDepthToDestAlpha(enable)
+		render.SetWriteDepthToDestAlpha(enable)
+	end
+
 	--- Draws the Color Modify shader, which can be used to adjust colors on screen. Must be in drawscreenspace hook. Note that if you leave out a field, it will retain its last value which may have changed if another caller uses this function.
 	-- @client
 	-- @param table modifyparameters Color modification parameters. See https://wiki.facepunch.com/gmod/Shaders/g_colourmodify

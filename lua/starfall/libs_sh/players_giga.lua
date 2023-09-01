@@ -999,7 +999,7 @@ end
 -- @param Entity parent New parent.
 function ents_methods:setParentEx(prnt)
 	if superOrAdmin(instance) then
-		eunwrap(self):SetParent(self and eunwrap(prnt) or nil)
+		eunwrap(self):SetParent(prnt and eunwrap(prnt) or nil)
 	end
 end
 
@@ -1231,6 +1231,33 @@ if SERVER then
 	function ents_methods:addLayeredSequence(seq, priority)
 		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			return eunwrap(self):AddLayeredSequence(seq, priority)
+		end
+	end
+
+	--- Sets the duration of given layer.
+	-- @param number layerID The layer ID.
+	-- @param number duration The new duration of the layer in seconds.
+	function ents_methods:setLayerDuration(lid, dur)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			eunwrap(self):SetLayerDuration(lid, dur)
+		end
+	end
+
+	--- Sets layer blend in amount.
+	-- @param number layerID The layer ID.
+	-- @param number blendIn How long it takes for the anim to blend in.
+	function ents_methods:setLayerBlendIn(lid, blend)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			eunwrap(self):SetLayerBlendIn(lid, blend)
+		end
+	end
+
+	--- Sets layer blend out amount.
+	-- @param number layerID The layer ID.
+	-- @param number blendOut How long it takes for the anim to blend out.
+	function ents_methods:setLayerBlendOut(lid, blend)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			eunwrap(self):SetLayerBlendOut(lid, blend)
 		end
 	end
 	
