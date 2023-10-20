@@ -154,8 +154,19 @@ SF.hookAdd("SetupMove", nil, function(instance, ply, mv, cmd)
 	}
 end)
 
+--- Allows you to change the players movements before they're sent to the server.
+-- @name CreateMove
+-- @class hook
+-- @client
+-- @param CUserCmd cmd The command data.
+SF.hookAdd("CreateMove", nil, function(instance, cmd)
+	return true, {
+		instance.WrapObject(cmd)
+	}
+end)
+
 --- FinishMove is called after the engine process movements.
--- @name SetupMove
+-- @name FinishMove
 -- @class hook
 -- @shared
 -- @param Player ply The player whose movement was processed.
@@ -506,7 +517,7 @@ end
 --@param Vector vec The vector to write on the entity's datatable.
 function ents_methods:setDTVector(key, vec)
 	if superOrAdmin(instance) or instance.player==SF.Superuser then
-		eunwrap(self):SetDTVector(key, vwrap(vec))
+		eunwrap(self):SetDTVector(key, vunwrap(vec))
 	end
 end
 
@@ -515,7 +526,7 @@ end
 --@param Angle vec The angle to write on the entity's datatable.
 function ents_methods:setDTAngle(key, ang)
 	if superOrAdmin(instance) or instance.player==SF.Superuser then
-		eunwrap(self):SetDTAngle(key, awrap(ang))
+		eunwrap(self):SetDTAngle(key, aunwrap(ang))
 	end
 end
 
@@ -542,7 +553,7 @@ end
 --@param Entity ent The entity to write on this entity's datatable.
 function ents_methods:setDTEntity(key, ent)
 	if superOrAdmin(instance) or instance.player==SF.Superuser then
-		eunwrap(self):SetDTEntity(key, ewrap(ent))
+		eunwrap(self):SetDTEntity(key, eunwrap(ent))
 	end
 end
 
@@ -707,7 +718,7 @@ function cmv_methods:getOrigin()
 end
 
 --- Sets the player's velocity.
--- @param Vector The velocity to set.
+-- @param Vector vel The velocity to set.
 function cmv_methods:setVelocity(new)
 	local cmd = ounwrap(self)
 	if superOrAdmin(instance) or instance.player==SF.Superuser then
