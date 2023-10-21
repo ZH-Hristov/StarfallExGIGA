@@ -54,6 +54,7 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 	instance.source = code
 	instance.mainfile = mainfile
 	instance.requires = {}
+	instance.permissionOverrides = {}
 
 	instance.ppdata = {}
 	for filename, source in pairs(code) do
@@ -325,6 +326,10 @@ function SF.Instance:BuildEnvironment()
 		-- Do not elseif here because strings do have a metatable.
 		if safe_types[TypeID(object)] then
 			return object
+		end
+		-- Clientside holograms don't have a gmod metatype so check manually
+		if isentity(object) and object.IsSFHologram then
+			return self.Types.Hologram.Wrap(object)
 		end
 	end
 	self.WrapObject = WrapObject

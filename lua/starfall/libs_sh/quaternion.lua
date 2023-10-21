@@ -157,6 +157,10 @@ end
 --- Quaternion type. Recently reworked, for full changelist visit: https://github.com/thegrb93/StarfallEx/pull/953
 -- @name Quaternion
 -- @class type
+-- @field r The r value of the quaternion. Can also be indexed with [1]
+-- @field i The i value of the quaternion. Can also be indexed with [2]
+-- @field j The j value of the quaternion. Can also be indexed with [3]
+-- @field k The k value of the quaternion. Can also be indexed with [4]
 -- @libtbl quat_methods
 -- @libtbl quat_meta
 SF.RegisterType("Quaternion", true, false)
@@ -577,9 +581,15 @@ end
 
 -------------------------------------
 
---- Returns absolute value of the quaternion
--- @return Vector Absolute value
-function quat_methods:getAbsolute()
+--- Returns norm of the quaternion
+-- @return number norm value
+function quat_methods:getNorm()
+	return getQuatLen(self)
+end
+
+--- Returns squared norm of the quaternion
+-- @return number squared norm/absolute value
+function quat_methods:getNormSqr()
 	return getQuatLenSqr(self)
 end
 

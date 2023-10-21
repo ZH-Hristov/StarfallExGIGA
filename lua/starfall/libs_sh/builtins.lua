@@ -195,11 +195,13 @@ builtins_library.isbool = isbool
 -- @return boolean If the object is a function or not
 builtins_library.isfunction = isfunction
 
---- Returns the metatable of an object. Doesn't work on most internal metatables
--- @param table tbl Table to get metatable of
--- @return table The metatable of tbl
+--- Returns the metatable of an object or nil.
+-- Doesn't work on most internal metatables.
+-- For any types other than table, nil will be returned.
+-- @param any tbl Table to get metatable of
+-- @return table? The metatable of tbl
 builtins_library.getmetatable = function(tbl)
-	checkluatype(tbl, TYPE_TABLE)
+	if TypeID(tbl) ~= TYPE_TABLE then return end
 	return getmetatable(tbl)
 end
 
@@ -308,7 +310,7 @@ end
 -- @return boolean Whether the client has granted the specified permission.
 function builtins_library.hasPermission(perm, obj)
 	checkluatype(perm, TYPE_STRING)
-	if not SF.Permissions.permissionchecks[perm] then SF.Throw("Permission doesn't exist", 2) end
+	if not SF.Permissions.privileges[perm] then SF.Throw("Permission doesn't exist", 2) end
 	return haspermission(instance, ounwrap(obj), perm)
 end
 
@@ -339,8 +341,8 @@ if CLIENT then
 				if not privileges[v] then
 					SF.Throw("Invalid permission name: "..v)
 				end
-				if not privileges[v][3].client then
-					SF.Throw("Permission isn't requestable: "..v)
+				if not privileges[v].overridable then
+					SF.Throw("Only client controlled permissions are requestable: "..v)
 				end
 				overrides[v] = true
 			end
@@ -732,7 +734,7 @@ end
 --- Runs an included script and caches the result.
 -- The path must be an actual path, including the file extension and using slashes for directory separators instead of periods.
 -- @param string path The file path to include. Make sure to --@include it
--- @return ... Return value(s) of the script
+-- @return any Return value of the script
 function builtins_library.require(path)
 	checkluatype(path, TYPE_STRING)
 

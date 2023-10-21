@@ -320,7 +320,7 @@ function ents_methods:getLinkedComponents()
 		end
 	elseif ent:GetClass() == "starfall_hud" then
 		if SERVER then
-			for k, v in pairs(SF.HudVehicleLinks) do if v == ent then list[#list+1] = owrap(k) end end
+			for k, huds in pairs(SF.HudVehicleLinks) do if huds[ent] then list[#list+1] = owrap(k) end end
 		else
 			SF.Throw("You may only get starfall_hud links through the server", 2)
 		end
@@ -1010,6 +1010,20 @@ function ents_methods:getBoneMatrix(bone)
 	if bone == nil then bone = 0 else checkluatype(bone, TYPE_NUMBER) end
 
 	return mwrap(getent(self):GetBoneMatrix(bone))
+end
+
+--- Sets the bone matrix of given bone to given matrix. See also Entity:getBoneMatrix.
+-- @shared
+-- @param number bone The bone ID
+-- @param VMatrix matrix The matrix to set
+function ents_methods:setBoneMatrix(bone, matrix)
+	local matrix = munwrap(matrix)
+	local ent = getent(self)
+
+	checkluatype(bone, TYPE_NUMBER)
+	checkpermission(instance, ent, "entities.setRenderProperty")
+
+	ent:SetBoneMatrix(bone, matrix)
 end
 
 --- Returns the world transform matrix of the entity

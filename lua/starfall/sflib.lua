@@ -759,10 +759,8 @@ do
 		__index = {
 			add = function(self, index, func)
 				if not (self.hooks[index] or self.hookstoadd[index]) then
+					if self.n>=128 then SF.Throw("Max hooks limit reached", 3) end
 					self.n = self.n + 1
-					if self.n>128 then
-						SF.Throw("Max hooks limit reached", 3)
-					end
 				end
 				self.hookstoadd[index] = func
 			end,
@@ -774,7 +772,7 @@ do
 				self.hookstoadd[index] = nil
 			end,
 			isEmpty = function(self)
-				return next(self.hooks)==nil and next(self.hookstoadd)==nil
+				return self.n==0
 			end,
 			pairs = function(self)
 				for k, v in pairs(self.hookstoadd) do
@@ -1056,12 +1054,19 @@ end
 -- @param msg Optional error message
 function SF.CheckLuaType(val, typ, level, msg)
 	if TypeID(val) ~= typ then
-		-- Failed, throw error
 		assert(isnumber(typ))
-		
 		level = (level or 1) + 2
 		SF.ThrowTypeError(SF.TypeName(typ), SF.GetType(val), level, msg)
 	end
+end
+
+--- Checks that the value is a non-nan number
+-- @param val The value to be checked.
+-- @param level Level at which to error at. 2 is added to this value. Default is 1.
+-- @param msg Optional error message
+function SF.CheckValidNumber(val, level, msg)
+	if TypeID(val) ~= TYPE_NUMBER then SF.ThrowTypeError(SF.TypeName(TYPE_NUMBER), SF.GetType(val), (level or 1) + 2, msg) end
+	if val ~= val then SF.Throw((msg and #msg>0 and (msg .. " ") or "") .. "Input number is nan!", (level or 1) + 2) end
 end
 
 function SF.EntIsReady(ent)
@@ -1913,7 +1918,7 @@ do
 	loadModules("starfall/libs_sh/", SERVER or CLIENT)
 	loadModules("starfall/libs_sv/", SERVER)
 	loadModules("starfall/libs_cl/", CLIENT)
-	SF.Permissions.loadPermissionOptions()
+	SF.Permissions.loadPermissions()
 
 	if SERVER then
 		util.AddNetworkString("sf_receivelibrary")
