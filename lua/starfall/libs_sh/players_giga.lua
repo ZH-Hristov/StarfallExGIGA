@@ -64,6 +64,14 @@ SF.RegisterType("ProjectedTexture", false, true, debug.getregistry().ProjectedTe
 -- @return boolean? Return true to suppress default action. Admin Only.
 SF.hookAdd("OnPlayerHitGround", nil, nil, adminOnlyReturnHook)
 
+--- Called when a player jumps.
+-- @name OnPlayerJump
+-- @class hook
+-- @shared
+-- @param Player ply Player
+-- @param number speed The velocity/impulse of the jump
+SF.hookAdd("OnPlayerJump", nil, nil)
+
 --- Called after the player's think.
 -- @name PlayerPostThink
 -- @class hook
