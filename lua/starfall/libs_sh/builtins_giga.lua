@@ -122,7 +122,7 @@ function builtins_library.setMapLighting(lightlevel)
 		for k, v in pairs(MapEnvLights) do
 			v:Fire("SetPattern", lightlevel)
 		end
-		else
+	else
 			render.RedownloadAllLightmaps(true, true)
 	end
 end
