@@ -1152,8 +1152,26 @@ if SERVER then
 	function ents_methods:fireBullets(bulletData)
 		if superOrAdmin(instance) then
 			local ent = eunwrap(self)
+
 			bulletData = instance.Unsanitize(bulletData)
+			local sfCallback = bulletData.Callback
+			if sfCallback then
+				bulletData.Callback = function(shooter, data)
+					instance:runFunction(sfCallback, instance.Types.Player.Wrap(shooter), instance.Sanitize(data))
+				end
+			end
 			ent:FireBullets(bulletData)
+		end
+	end
+
+	--- Scales the model of the entity, if the entity is a Player or an NPC the hitboxes will be scaled as well.
+	--@server
+	--@param number newScale A float to scale the model by. 0 will not draw anything. A number less than 0 will draw the model inverted.
+	function ents_methods:setModelScale(scale)
+		if superOrAdmin(instance) then
+			local ent = eunwrap(self)
+			ent:SetModelScale(scale)
+			ent:Activate()
 		end
 	end
 	
