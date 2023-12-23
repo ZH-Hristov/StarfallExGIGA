@@ -172,8 +172,9 @@ if SERVER then
 	-- @param string path Filepath relative to data/.
 	-- @return string? Contents, or nil if error
 	function fileServer_library.read(path)
-		if !instance.player:IsSuperAdmin() then return end
-		return file.Read(path, "DATA")
+		if instance.player == SF.Superuser or instance.player:IsSuperAdmin() then
+			return file.Read(path, "DATA")
+		end
 	end
 	
 	--- Writes a file to server. SuperAdmin only.
@@ -181,8 +182,9 @@ if SERVER then
 	-- @param string path Filepath relative to data/.
 	-- @param string data The data to write
 	function fileServer_library.write(filename, data)
-		if !instance.player:IsSuperAdmin() then return end
-		file.Write(filename, data)
+		if instance.player == SF.Superuser or instance.player:IsSuperAdmin() then
+			file.Write(filename, data)
+		end
 	end
 	
 	--- Appends a string to the end of a server file. SuperAdmin only.
@@ -314,8 +316,9 @@ else
 	-- @param number g The green channel multiplier normal ranging from 0-1.
 	-- @param number b The blue channel multiplier normal ranging from 0-1.
 	function render_library.setColorModulation(r, g, b)
-		if !instance.player:IsSuperAdmin() then return end
-		render.SetColorModulation(r, g, b)
+		if instance.player == SF.Superuser or instance.player:IsSuperAdmin() then
+			render.SetColorModulation(r, g, b)
+		end
 	end
 	
 	--- Sets the lighting origin.
