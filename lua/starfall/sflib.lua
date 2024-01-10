@@ -747,27 +747,38 @@ do
 	SF.HookTable = {
 		__index = {
 			add = function(self, index, func)
-				if not (self.hooks[index] or self.hookstoadd[index]) then
+				if not (self.hooks[index] or self.hookstoadd[index]) or self.hookstoremove[index] then
 					if self.n>=128 then SF.Throw("Max hooks limit reached", 3) end
 					self.n = self.n + 1
+					self.hookstoremove[index] = nil
 				end
 				self.hookstoadd[index] = func
+				self.pairs = self.dirtyPairs
 			end,
 			remove = function(self, index)
-				if self.hooks[index] or self.hookstoadd[index] then
+				if (self.hooks[index] or self.hookstoadd[index]) and not self.hookstoremove[index] then
 					self.n = self.n - 1
+					self.hookstoadd[index] = nil
+					self.hookstoremove[index] = true
+					self.pairs = self.dirtyPairs
 				end
-				self.hooks[index] = nil
-				self.hookstoadd[index] = nil
 			end,
 			isEmpty = function(self)
 				return self.n==0
 			end,
-			pairs = function(self)
+			dirtyPairs = function(self)
+				for k, v in pairs(self.hookstoremove) do
+					self.hooks[k] = nil
+					self.hookstoremove[k] = nil
+				end
 				for k, v in pairs(self.hookstoadd) do
 					self.hooks[k] = v
 					self.hookstoadd[k] = nil
 				end
+				self.pairs = self.cleanPairs
+				return pairs(self.hooks)
+			end,
+			cleanPairs = function(self)
 				return pairs(self.hooks)
 			end,
 			run = function(self, instance, ...)
@@ -780,7 +791,9 @@ do
 			return setmetatable({
 				hooks = {},
 				hookstoadd = {},
-				n = 0
+				hookstoremove = {},
+				n = 0,
+				pairs = p.cleanPairs
 			}, p)
 		end
 	}
@@ -1272,6 +1285,7 @@ local shaderBlacklist = {
 }
 local materialBlacklist = {
 	["pp/copy"] = true,
+	["debug/debugluxels"] = true,
 	["effects/ar2_altfire1"] = true,
 }
 --- Checks that the material isn't malicious
@@ -1475,7 +1489,7 @@ if SERVER then
 		if not (ply and ply:IsValid()) then return end
 
 		net.Start("starfall_addnotify")
-		net.WriteString(msg)
+		net.WriteString(string.sub(msg, 1, 1024))
 		net.WriteUInt(notificationsMap[notifyType], 8)
 		net.WriteFloat(duration)
 		net.WriteUInt(soundsMap[sound], 8)
@@ -1501,7 +1515,10 @@ else
 			print(msg)
 			GAMEMODE:AddNotify(msg, notificationsMap[type], duration)
 			if soundsMap[sound] then
-				surface.PlaySound(soundsMap[soundsMap[sound]])
+				local path = soundsMap[soundsMap[sound]]
+				if path then
+					surface.PlaySound(path)
+				end
 			end
 		end
 	end
@@ -1511,7 +1528,10 @@ else
 		print(msg)
 		GAMEMODE:AddNotify(msg, type, duration)
 		if soundsMap[sound] then
-			surface.PlaySound(soundsMap[sound])
+			local path = soundsMap[soundsMap[sound]]
+			if path then
+				surface.PlaySound(path)
+			end
 		end
 	end)
 
@@ -1880,6 +1900,9 @@ include("preprocessor.lua")
 include("permissions/core.lua")
 include("editor/editor.lua")
 include("transfer.lua")
+if CLIENT then
+	include("toolscreen.lua")
+end
 
 do
 	local function compileModule(source, path)
@@ -1950,6 +1973,7 @@ do
 				if file.Exists(sv_filename, "LUA") then
 					addModule(name, sv_filename, true)
 				end
+				SF.Permissions.loadPermissions()
 			end
 			if file.Exists(cl_filename, "LUA") then
 				addModule(name, cl_filename, false)
@@ -1961,7 +1985,6 @@ do
 					files[name..":"..path] = file.Read(path, "LUA")
 				end
 				net.Start("sf_receivelibrary")
-				net.WriteBool(false)
 				net.WriteStarfall({files = files, mainfile = name, proc = Entity(0), owner = Entity(0)})
 				net.Broadcast()
 			end
@@ -1969,13 +1992,10 @@ do
 
 	else
 		net.Receive("sf_receivelibrary", function(len)
-			local init = net.ReadBool()
 			net.ReadStarfall(nil, function(ok, data)
 				if ok then
-					if not init then
-						SF.Modules[data.mainfile] = {}
-						print("Reloaded library: " .. data.mainfile)
-					end
+					SF.Modules[data.mainfile] = {}
+					print("Reloaded library: " .. data.mainfile)
 					for k, code in pairs(data.files) do
 						local modname, path = string.match(k, "(.+):(.+)")
 						local t = SF.Modules[modname]
@@ -1993,6 +2013,7 @@ do
 						t2.source = code
 						if shouldrun then
 							t2.init = compileModule(code, path)
+							SF.Permissions.loadPermissions()
 						end
 					end
 				end

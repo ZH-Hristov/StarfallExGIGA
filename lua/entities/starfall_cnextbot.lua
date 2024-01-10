@@ -105,9 +105,8 @@ function ENT:OnInjured(dmginfo)
 end
 
 function ENT:OnKilled(dmginfo)
-	if self.DeathCallbacks:isEmpty() then return end
-	local inst = self.chip.instance
 	if not self.DeathCallbacks:isEmpty() then
+		local inst = self.chip.instance
 		self.DeathCallbacks:run(inst,
 			dmginfo:GetDamage(),
 			inst.WrapObject(dmginfo:GetAttacker()),
