@@ -842,6 +842,25 @@ function pnl_methods:paintManual()
 	unwrap(self):PaintManual()
 end
 
+--- This makes it so that when you're hovering over this panel you can "click" on the world. Your weapon aim (and its viewmodel) will follow the cursor. This is primarily used for the Sandbox context menu.
+--@param boolean enable Whether to enable or disable the feature for this panel.
+function pnl_methods:setWorldClicker(enable)
+	unwrap(self):SetWorldClicker(enable)
+end
+
+--- Returns if a panel allows world clicking set by Panel:setWorldClicker.
+--@return boolean If the panel allows world clicking.
+function pnl_methods:isWorldClicker()
+	return unwrap(self):IsWorldClicker()
+end
+
+--- Adds a shadow falling to the bottom right corner of the panel's text. This works only on panels that derive from UILabel.
+--@param number distance The distance of the shadow from the panel.
+--@param Color clr The color of the shadow.
+function pnl_methods:setExpensiveShadow(dist, clr)
+	unwrap(self):SetExpensiveShadow(dist, cunwrap(clr))
+end
+
 --- Creates a UIPanel. A simple rectangular box, commonly used for parenting other elements to. Pretty much all elements are based on this. Inherits from UIPanelBase
 --@param any parent Panel to parent to.
 --@param string? name Custom name of the created panel for scripting/debugging purposes. Can be retrieved with Panel:getName.
