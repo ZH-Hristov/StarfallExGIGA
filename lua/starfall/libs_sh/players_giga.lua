@@ -441,6 +441,7 @@ local cmv_meta, cuc_meta, cmv_methods, cuc_methods = instance.Types.CMoveData, i
 local npc_methods, npc_meta, npcwrap, npcunwrap = instance.Types.Npc.Methods, instance.Types.Npc, instance.Types.Npc.Wrap, instance.Types.Npc.Unwrap
 local pt_meta, pt_methods = instance.Types.ProjectedTexture, instance.Types.ProjectedTexture.Methods
 local trigger_library, projectedtexture_library = instance.Libraries.trigger, instance.Libraries.projectedtexture
+local math_library = instance.Libraries.math
 local instancekey = "SF_"..instance.entity:EntIndex().."_"
 
 local function getply(self)
@@ -501,6 +502,17 @@ instance:AddHook("deinitialize", function()
 		end
 	end
 end)
+
+--- Cubic Hermite spline algorithm.
+--@param number Fraction From 0 to 1, where alongside the spline the point will be.
+--@param Vector p0 First point for the spline.
+--@param Vector tan0 Tangent for the first point for the spline.
+--@param Vector p1 Second point for the spline.
+--@param Vector tan1 Tangent for the second point for the spline.
+--@return Vector Point on the cubic Hermite spline, at given fraction.
+function math_library.cubicHermiteSpline(frac, p0, tan0, p1, tan1)
+	return vwrap( math.CHSpline(frac, vunwrap(p0), vunwrap(tan0), vunwrap(p1), vunwrap(tan1)) )
+end
 
 --- Sets the specified integer on the entity's datatable.
 --@param number key Goes from 0 to 31.
