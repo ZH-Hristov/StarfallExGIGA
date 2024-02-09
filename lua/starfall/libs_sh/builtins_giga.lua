@@ -326,9 +326,9 @@ else
 			matBlurScreen:SetFloat( "$blur", amt )
 			matBlurScreen:Recompute()
 			render.UpdateScreenEffectTexture()
-			--render.SetScissorRect( x, y, w, y, true )
+			render.SetScissorRect( x, y, x + w, y + h, true )
 			surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
-			--render.SetScissorRect( 0, 0, 0, 0, false )
+			render.SetScissorRect( 0, 0, 0, 0, false )
 			DisableClipping(wasEnabled)
 		end
 	end
