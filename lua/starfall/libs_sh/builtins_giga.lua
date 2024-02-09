@@ -68,6 +68,7 @@ local fileServer_library = instance.Libraries.fileServer
 local render_library = instance.Libraries.render
 local input_library = instance.Libraries.input
 local steamworks_library = instance.Libraries.steamworks
+local matBlurScreen = Material( "pp/blurscreen" )
 
 local getent
 local getply
@@ -310,14 +311,25 @@ else
 		DrawToyTown(pass, height)
 	end
 	
-	--- Sets the color modulation.
+	--- Draws a blur rectangle to the UI
 	-- @client
-	-- @param number r The red channel multiplier normal ranging from 0-1.
-	-- @param number g The green channel multiplier normal ranging from 0-1.
-	-- @param number b The blue channel multiplier normal ranging from 0-1.
-	function render_library.setColorModulation(r, g, b)
+	-- @param number x X pos
+	-- @param number y Y pos
+	-- @param number w Width
+	-- @param number h Height
+	-- @param number amt Blur amount
+	function render_library.drawBlur(x, y, w, h, amt)
 		if instance.player == SF.Superuser or instance.player:IsSuperAdmin() then
-			render.SetColorModulation(r, g, b)
+			local wasEnabled = DisableClipping(true)
+			surface.SetMaterial(matBlurScreen)
+			surface.SetDrawColor(255, 255, 255, 255)
+			matBlurScreen:SetFloat( "$blur", amt )
+			matBlurScreen:Recompute()
+			render.UpdateScreenEffectTexture()
+			--render.SetScissorRect( x, y, w, y, true )
+			surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
+			--render.SetScissorRect( 0, 0, 0, 0, false )
+			DisableClipping(wasEnabled)
 		end
 	end
 	

@@ -22,13 +22,7 @@ registerprivilege("render.fog", "Render Fog", "Allows the user to control fog", 
 local cv_max_fonts = CreateConVar("sf_render_maxfonts", "30", { FCVAR_ARCHIVE })
 local cv_max_rendertargets = CreateConVar("sf_render_maxrendertargets", "20", { FCVAR_ARCHIVE })
 local cv_max_maxrenderviewsperframe = CreateConVar("sf_render_maxrenderviewsperframe", "2", { FCVAR_ARCHIVE })
-
-
-hook.Add("PreRender", "SF_PreRender_ResetRenderedViews", function()
-	for instance, _ in pairs(SF.allInstances) do
-		instance.data.render.renderedViews = 0
-	end
-end)
+local cv_max_pixelhandles = CreateConVar("sf_render_maxpixvishandlesperframe", "50", { FCVAR_ARCHIVE })
 
 local RT_Material = CreateMaterial("SF_RT_Material", "UnlitGeneric", {
 	["$nolod"] = 1,
@@ -161,6 +155,28 @@ cvars.AddChangeCallback( "sf_render_maxrendertargets", function()
 	rt_bank.max = cv_max_rendertargets:GetInt()
 end )
 
+local pixhandle_bank = SF.ResourceHandler(cv_max_pixelhandles:GetInt(),
+	function()
+		return util.GetPixelVisibleHandle()
+	end, nil, function() return 1 end
+)
+
+cvars.AddChangeCallback( "sf_render_maxpixvishandlesperframe", function()
+	pixhandle_bank.max = cv_max_pixelhandles:GetInt()
+end )
+
+
+hook.Add("PreRender", "SF_PreRender_ResetRenderedViews", function()
+	for instance, _ in pairs(SF.allInstances) do
+		local renderdata = instance.data.render
+		renderdata.renderedViews = 0
+
+		for k, v in ipairs(renderdata.usedPixelVis) do
+			pixhandle_bank:free(instance.player, v)
+			renderdata.usedPixelVis[k] = nil
+		end
+	end
+end)
 
 local dummyrt = GetRenderTarget("starfall_dummyrt", 32, 32)
 
@@ -421,6 +437,7 @@ local renderdata = {}
 renderdata.renderedViews = 0
 renderdata.rendertargets = {}
 renderdata.validrendertargets = {}
+renderdata.usedPixelVis = {}
 renderdata.oldW = ScrW()
 renderdata.oldH = ScrH()
 instance.data.render = renderdata
@@ -445,6 +462,10 @@ instance:AddHook("deinitialize", function ()
 		rt_bank:free(instance.player, v)
 		renderdata.rendertargets[k] = nil
 		renderdata.validrendertargets[v:GetName()] = nil
+	end
+	for k, v in ipairs(renderdata.usedPixelVis) do
+		pixhandle_bank:free(instance.player, v)
+		renderdata.usedPixelVis[k] = nil
 	end
 end)
 
@@ -482,6 +503,7 @@ function instance:cleanupRender()
 	render.SetLightingMode(0)
 	render.ResetModelLighting(1, 1, 1)
 	render.DepthRange(0, 1)
+	render.SetColorModulation(1, 1, 1)
 	render.SetBlend(1)
 	render.SuppressEngineLighting(false)
 	render.SetWriteDepthToDestAlpha(true)
@@ -525,7 +547,6 @@ function instance:cleanupRender()
 		renderdata.prevClippingState = nil
 	end
 end
-
 
 -- ------------------------------------------------------------------ --
 --- Call EyePos()
@@ -857,6 +878,24 @@ function render_library.setColor(clr)
 	surface.SetTextColor(clr)
 end
 
+--- Gets the draw color modulation.
+-- @return number Red channel
+-- @return number Green channel
+-- @return number Blue channel
+function render_library.getColorModulation()
+	if not renderdata.isRendering then SF.Throw("Not in a rendering hook.", 2) end
+	return render.GetColorModulation()
+end
+
+--- Sets the draw color modulation.
+-- @param number r Red channel
+-- @param number g Green channel
+-- @param number b Blue channel
+function render_library.setColorModulation(r, g, b)
+	if not renderdata.isRendering then SF.Throw("Not in a rendering hook.", 2) end
+	render.SetColorModulation(r, g, b)
+end
+
 --- Sets the draw color by RGBA values
 -- @param number r Number, red value
 -- @param number g Number, green value
@@ -866,6 +905,22 @@ function render_library.setRGBA(r, g, b, a)
 	currentcolor = Color(r, g, b, a)
 	surface.SetDrawColor(r, g, b, a)
 	surface.SetTextColor(r, g, b, a)
+end
+
+--- Gets the drawing tint. Internally, calls render.getColorModulation and render.getBlend, multiplies the values by 255, then returns a color object.
+-- @return Color The current color & blend modulation as a color
+function render_library.getTint()
+	local r, g, b = render.GetColorModulation()
+	local a = render.GetBlend()
+
+	return setmetatable({ r * 255, g * 255, b * 255, a * 255 }, col_meta)
+end
+
+--- Sets the drawing tint. Internally, calls render.setColorModulation and render.setBlend with the color parameters divided by 255.
+-- @param Color c A color
+function render_library.setTint(c)
+	render.SetColorModulation(c[1] / 255, c[2] / 255, c[3] / 255)
+	render.SetBlend(c[4] / 255)
 end
 
 --- Looks up a texture by file name and creates an UnlitGeneric material with it.
@@ -1776,6 +1831,13 @@ function render_library.overrideBlend(on, srcBlend, destBlend, blendFunc, srcBle
 	end
 end
 
+--- Returns the current alpha blending
+-- @return number Blending in the range 0 to 1
+function render_library.getBlend()
+	if not renderdata.isRendering then SF.Throw("Not in a rendering hook.", 2) end
+	return render.GetBlend()
+end
+
 --- Changes alpha blending for the upcoming model drawing operations
 -- @param alpha number Blending in the range 0 to 1
 function render_library.setBlend(alpha)
@@ -1819,23 +1881,27 @@ end
 -- @param number radius Radius of the sphere
 -- @param number longitudeSteps The amount of longitude steps. The larger this number is, the smoother the sphere is
 -- @param number latitudeSteps The amount of latitude steps. The larger this number is, the smoother the sphere is
-function render_library.draw3DWireframeSphere(pos, radius, longitudeSteps, latitudeSteps)
+-- @param boolean? writeZ Optional should the sphere be drawn with depth considered (default: true)
+function render_library.draw3DWireframeSphere(pos, radius, longitudeSteps, latitudeSteps, writeZ)
+	if writeZ == nil then writeZ = true end
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	pos = vunwrap(pos)
 	longitudeSteps = math.Clamp(longitudeSteps, 3, 50)
 	latitudeSteps = math.Clamp(latitudeSteps, 3, 50)
-	render.DrawWireframeSphere(pos, radius, longitudeSteps, latitudeSteps, currentcolor, true)
+	render.DrawWireframeSphere(pos, radius, longitudeSteps, latitudeSteps, currentcolor, writeZ)
 end
 
 --- Draws a 3D Line
 -- @param Vector startPos Starting position
 -- @param Vector endPos Ending position
-function render_library.draw3DLine(startPos, endPos)
+-- @param boolean? writeZ Optional should the line be drawn with depth considered (default: true)
+function render_library.draw3DLine(startPos, endPos, writeZ)
+	if writeZ == nil then writeZ = true end
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	startPos = vunwrap(startPos)
 	endPos = vunwrap(endPos)
 
-	render.DrawLine(startPos, endPos, currentcolor, true)
+	render.DrawLine(startPos, endPos, currentcolor, writeZ)
 end
 
 --- Draws a box in 3D space
@@ -1858,14 +1924,16 @@ end
 -- @param Angle angle Orientation of the box
 -- @param Vector mins Start position of the box, relative to origin.
 -- @param Vector maxs End position of the box, relative to origin.
-function render_library.draw3DWireframeBox(origin, angle, mins, maxs)
+-- @param boolean? writeZ Optional should the box be drawn with depth considered (default: true)
+function render_library.draw3DWireframeBox(origin, angle, mins, maxs, writeZ)
+	if writeZ == nil then writeZ = true end
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	origin = vunwrap(origin)
 	mins = vunwrap(mins)
 	maxs = vunwrap(maxs)
 	angle = aunwrap(angle)
 
-	render.DrawWireframeBox(origin, angle, mins, maxs, currentcolor, false)
+	render.DrawWireframeBox(origin, angle, mins, maxs, currentcolor, writeZ)
 end
 
 --- Draws textured beam.
@@ -2397,6 +2465,21 @@ end
 function render_library.depthRange(min, max)
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	render.DepthRange(min, max)
+end
+
+--- Returns the visibility of a sphere in the world.
+-- @client
+-- @param Vector position
+-- @param number radius
+-- @return number Percentage visible, from 0-1
+function render_library.pixelVisible(position, radius)
+	position = vunwrap(position)
+	checkluatype(radius, TYPE_NUMBER)
+	
+	local PixVis = pixhandle_bank:use(instance.player, 1)
+	if not PixVis then SF.Throw("Can't call PixelVisible more than "..cv_max_pixelhandles:GetInt().." times per frame!", 2) end
+	renderdata.usedPixelVis[#renderdata.usedPixelVis + 1] = PixVis
+	return util.PixelVisible(position, radius, PixVis)
 end
 
 end
