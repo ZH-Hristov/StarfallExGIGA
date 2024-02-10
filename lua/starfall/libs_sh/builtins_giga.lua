@@ -318,17 +318,21 @@ else
 	-- @param number w Width
 	-- @param number h Height
 	-- @param number amt Blur amount
-	function render_library.drawBlur(x, y, w, h, amt)
+	-- @param number passes Pass amount
+	function render_library.drawBlur(x, y, w, h, amt, passes)
 		if instance.player == SF.Superuser or instance.player:IsSuperAdmin() then
 			local wasEnabled = DisableClipping(true)
+			passes = passes or 1
 			surface.SetMaterial(matBlurScreen)
 			surface.SetDrawColor(255, 255, 255, 255)
-			matBlurScreen:SetFloat( "$blur", amt )
-			matBlurScreen:Recompute()
-			render.UpdateScreenEffectTexture()
-			render.SetScissorRect( x, y, x + w, y + h, true )
-			surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
-			render.SetScissorRect( 0, 0, 0, 0, false )
+			for i = 1, passes do
+				matBlurScreen:SetFloat( "$blur", amt / passes )
+				matBlurScreen:Recompute()
+				render.UpdateScreenEffectTexture()
+				render.SetScissorRect( x, y, x + w, y + h, true )
+				surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
+				render.SetScissorRect( 0, 0, 0, 0, false )
+			end
 			DisableClipping(wasEnabled)
 		end
 	end
