@@ -72,6 +72,15 @@ SF.hookAdd("OnPlayerHitGround", nil, nil, adminOnlyReturnHook)
 -- @param number speed The velocity/impulse of the jump
 SF.hookAdd("OnPlayerJump", nil, nil)
 
+--- Animation updates (pose params etc) should be done here.
+-- @name UpdateAnimation
+-- @class hook
+-- @shared
+-- @param Player ply Player
+-- @param Vector velocity The player's velocity.
+-- @param number maxSeqGroundSpeed Speed of the animation - used for playback rate scaling.
+SF.hookAdd("UpdateAnimation", nil, nil)
+
 --- Called after the player's think.
 -- @name PlayerPostThink
 -- @class hook
@@ -1038,6 +1047,14 @@ end
 -- @return Entity The hands entity if player has one.
 function player_methods:getHands()
 	return ewrap(eunwrap(self):GetHands())
+end
+
+--- Sets the render angles of a player. Value set by this function is reset to player's angles (Entity:GetAngles) right after GM:UpdateAnimation.
+-- @param Angle newAng The new render angles to set
+function player_methods:setRenderAngles(ang)
+	if superOrAdmin(instance) then
+		eunwrap(self):SetRenderAngles(aunwrap(ang))
+	end
 end
 
 --- Returns the player's specified ViewModel.
