@@ -111,7 +111,7 @@ end)
 -- @return number Enums/ACT for the activity the player should use. A nil return will be treated as ACT_INVALID.
 SF.hookAdd("CalcMainActivity", nil, nil, function(instance, args, ply, velocity)
 	if ply:GetOwner() == instance.player or superOrAdmin(instance) or instance.player==SF.Superuser then
-		if args[2] then return args[2] end
+		if args[2] then return args[2], args[3] end
 	end
 end)
 
@@ -1065,6 +1065,20 @@ function player_methods:getViewModelEX(num)
 	return ewrap(eunwrap(self):GetViewModel(num))
 end
 
+--- Plays a sequence directly from a sequence number, similar to Player:playGesture. This function has the advantage to play sequences that haven't been bound to an existing ACT enum.
+-- @param number slot Gesture slot using GESTURE_SLOT enum
+-- @param number sequenceID The sequence ID to play, can be retrieved with Entity:lookupSequence.
+-- @param number cycle The cycle to start the animation at, ranges from 0 to 1.
+-- @param boolean autokill If the animation should not loop. true = stops the animation, false = the animation keeps playing.
+function player_methods:addVCDSequenceToGestureSlot(slot, sid, cyc, autokill)
+	local ent = eunwrap(self)
+	autokill = autokill or true
+	if isstring(sid) then sid = ent:LookupSequence(sid) end
+	if ent:GetOwner() == instance.player or superOrAdmin(instance) then
+		ent:AddVCDSequenceToGestureSlot(slot, sid, cyc, autokill)
+	end
+end
+
 --- Retrieves a networked integer (whole number) value that was previously set by Entity:setNWInt.
 -- @param string key The key that is associated with the value.
 -- @param number fallback The value to return if we failed to retrieve the value (If it isn't set).
@@ -1123,6 +1137,111 @@ function ents_methods:physicsInitStatic(val)
 	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 		return eunwrap(self):PhysicsInitStatic(val)
 	end
+end
+
+--- Returns the duration of given layer.
+-- @param number layerID The layer ID.
+-- @return The duration of the layer
+function ents_methods:getLayerDuration(lid)
+	return eunwrap(self):GetLayerDuration(lid)
+end
+
+--- Sets the duration of given layer.
+-- @param number layerID The layer ID.
+-- @param number duration The new duration of the layer in seconds.
+function ents_methods:setLayerDuration(lid, dur)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerDuration(lid, dur)
+	end
+end
+
+--- Sets layer blend in amount.
+-- @param number layerID The layer ID.
+-- @param number blendIn How long it takes for the anim to blend in.
+function ents_methods:setLayerBlendIn(lid, blend)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerBlendIn(lid, blend)
+	end
+end
+
+--- Returns the weight of given layer.
+-- @param number layerID The layer ID.
+-- @return number The duration of the layer
+function ents_methods:getLayerWeight(lid)
+	return eunwrap(self):GetLayerWeight(lid)
+end
+
+--- Sets the layer weight. This influences how strongly the animation should be overriding the normal animations of the entity.
+-- @param number layerID The layer ID.
+-- @param number newWeight The new layer weight.
+function ents_methods:setLayerWeight(lid, weight)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerWeight(lid, weight)
+	end
+end
+
+--- Sets layer blend out amount.
+-- @param number layerID The layer ID.
+-- @param number blendOut How long it takes for the anim to blend out.
+function ents_methods:setLayerBlendOut(lid, blend)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerBlendOut(lid, blend)
+	end
+end
+
+--- Returns the layer playback rate. See also Entity:getLayerDuration.
+-- @param number layerID The layer ID.
+-- @return number The current playback rate.
+function ents_methods:getLayerPlaybackRate(lid)
+	return eunwrap(self):GetLayerPlaybackRate(lid)
+end
+
+--- Sets the layer playback rate. See also Entity:setLayerDuration.
+-- @param number layerID The layer ID.
+-- @param number rate The new playback rate.
+function ents_methods:setLayerPlaybackRate(lid, rate)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerPlaybackRate(lid, rate)
+	end
+end
+
+--- Gets the cycle of given layer.
+-- @param number layerID The layer ID.
+-- @return number The animation cycle/frame for given layer.
+function ents_methods:getLayerCycle(lid)
+	return eunwrap(self):GetLayerCycle(lid)
+end
+
+--- Sets the animation cycle/frame of given layer.
+-- @param number layerID The layer ID.
+-- @param number cycle The new animation cycle/frame for given layer.
+function ents_methods:setLayerCycle(lid, cyc)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerCycle(lid, cyc)
+	end
+end
+
+--- Gets the sequence of given layer.
+-- @param number layerID The layer ID.
+-- @return number The sequenceID of the layer.
+function ents_methods:getLayerSequence(lid)
+	return eunwrap(self):GetLayerSequence(lid)
+end
+
+--- Sets the sequence of given layer.
+-- @param number layerID The layer ID.
+-- @param number seqid The sequenceID to set. See Entity:lookupSequence.
+function ents_methods:setLayerSequence(lid, seq)
+	if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+		eunwrap(self):SetLayerSequence(lid, seq)
+	end
+end
+
+--- Returns whether the given layer ID is valid and exists on this entity.
+-- @param numner layerID The Layer ID.
+-- @return boolean Whether the given layer ID is valid and exists on this entity.
+function ents_methods:isValidLayer(lid)
+	return eunwrap(self):IsValidLayer(lid)
 end
 
 --- Animates an animatable prop
@@ -1272,15 +1391,6 @@ if SERVER then
 			ent:SetName(name)
 		end
 	end
-	
-	--- Restarts the entity's animation gesture. If the given gesture is already playing, it will reset it and play it from the beginning.
-	-- @param number act The activity number to send to the entity.
-	-- @server
-	function ents_methods:restartGesture(act)
-		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			eunwrap(self):RestartGesture(act)
-		end
-	end
 
 	--- Adds a gesture animation to the entity and plays it.
 	-- @param number seqId The sequence ID to play as the gesture. See Entity:lookupSequence,
@@ -1297,33 +1407,6 @@ if SERVER then
 	function ents_methods:addLayeredSequence(seq, priority)
 		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			return eunwrap(self):AddLayeredSequence(seq, priority)
-		end
-	end
-
-	--- Sets the duration of given layer.
-	-- @param number layerID The layer ID.
-	-- @param number duration The new duration of the layer in seconds.
-	function ents_methods:setLayerDuration(lid, dur)
-		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			eunwrap(self):SetLayerDuration(lid, dur)
-		end
-	end
-
-	--- Sets layer blend in amount.
-	-- @param number layerID The layer ID.
-	-- @param number blendIn How long it takes for the anim to blend in.
-	function ents_methods:setLayerBlendIn(lid, blend)
-		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			eunwrap(self):SetLayerBlendIn(lid, blend)
-		end
-	end
-
-	--- Sets layer blend out amount.
-	-- @param number layerID The layer ID.
-	-- @param number blendOut How long it takes for the anim to blend out.
-	function ents_methods:setLayerBlendOut(lid, blend)
-		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			eunwrap(self):SetLayerBlendOut(lid, blend)
 		end
 	end
 	

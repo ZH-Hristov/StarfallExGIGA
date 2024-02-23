@@ -7,7 +7,9 @@ local dgetmeta = debug.getmetatable
 local checkluatype = SF.CheckLuaType
 local haspermission = SF.Permissions.hasAccess
 local registerprivilege = SF.Permissions.registerPrivilege
-local COLOR_WHITE = Color(255, 255, 255)
+local col_meta = FindMetaTable("Color")
+local col_SetUnpacked = col_meta.SetUnpacked
+local col_Unpack = col_meta.Unpack
 
 registerprivilege("render.screen", "Render Screen", "Allows the user to render to a starfall screen", { client = {} })
 registerprivilege("render.hud", "Render Hud", "Allows the user to render to your hud", { client = {} })
@@ -118,7 +120,7 @@ local circleMeshMaterial = CreateMaterial("SF_Circle_Material", "UnlitGeneric", 
 	["$vertexcolor"] = 1
 })
 
-local currentcolor
+local currentcolor = Color(0, 0, 0, 0)
 local defaultFont
 local MATRIX_STACK_LIMIT = 8
 local matrix_stack = {}
@@ -438,8 +440,8 @@ renderdata.renderedViews = 0
 renderdata.rendertargets = {}
 renderdata.validrendertargets = {}
 renderdata.usedPixelVis = {}
-renderdata.oldW = ScrW()
-renderdata.oldH = ScrH()
+renderdata.scrW = ScrW()
+renderdata.scrH = ScrH()
 instance.data.render = renderdata
 
 local render_library = instance.Libraries.render
@@ -471,16 +473,18 @@ end)
 
 
 function instance:prepareRender()
-	currentcolor = COLOR_WHITE
+	col_SetUnpacked(currentcolor, 255, 255, 255, 255)
 	circleMeshMatrix:Identity()
 	render.SetColorMaterial()
 	draw.NoTexture()
 	surface.SetDrawColor(255, 255, 255, 255)
 	surface.DisableClipping( true )
 	renderdata.isRendering = true
-	renderdata.needRT = false
-	renderdata.oldW = ScrW()
-	renderdata.oldH = ScrH()
+	if not renderingView then
+		renderdata.needRT = false
+		renderdata.scrW = ScrW()
+		renderdata.scrH = ScrH()
+	end
 end
 
 function instance:prepareRenderOffscreen()
@@ -507,7 +511,7 @@ function instance:cleanupRender()
 	render.SetBlend(1)
 	render.SuppressEngineLighting(false)
 	render.SetWriteDepthToDestAlpha(true)
-	render.SetViewPort(0, 0, renderdata.oldW, renderdata.oldH)
+	render.SetViewPort(0, 0, renderdata.scrW, renderdata.scrH)
 	pp.colour:SetTexture("$fbtexture", tex_screenEffect)
 	pp.downsample:SetTexture("$fbtexture", tex_screenEffect)
 	for i = #matrix_stack, 1, -1 do
@@ -873,9 +877,7 @@ end
 --- Sets the draw color
 -- @param Color clr Color type
 function render_library.setColor(clr)
-	currentcolor = clr
-	surface.SetDrawColor(clr)
-	surface.SetTextColor(clr)
+	render_library.setRGBA(clr[1], clr[2], clr[3], clr[4])
 end
 
 --- Gets the draw color modulation.
@@ -902,7 +904,11 @@ end
 -- @param number b Number, blue value
 -- @param number a Number, alpha value
 function render_library.setRGBA(r, g, b, a)
-	currentcolor = Color(r, g, b, a)
+	if r==nil then r=255 end
+	if g==nil then g=255 end
+	if b==nil then b=255 end
+	if a==nil then a=255 end
+	col_SetUnpacked(currentcolor, r, g, b, a)
 	surface.SetDrawColor(r, g, b, a)
 	surface.SetTextColor(r, g, b, a)
 end
@@ -1110,7 +1116,7 @@ function render_library.drawBlurEffect(blurx, blury, passes)
 	passes = math.Clamp(blurx, 0, 100)
 
 	local rt = render.GetRenderTarget()
-	local w, h = renderdata.oldW, renderdata.oldH
+	local w, h = renderdata.scrW, renderdata.scrH
 	local aspectRatio = w / h
 
 	render.BlurRenderTarget(rt, blurx*aspectRatio, blury, passes)
@@ -1369,23 +1375,24 @@ end
 --- Draws a filled circle
 -- @param number x Center x coordinate
 -- @param number y Center y coordinate
--- @param number r Radius
-function render_library.drawFilledCircle(x, y, r)
+-- @param number radius Radius
+function render_library.drawFilledCircle(x, y, radius)
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 
-	circleMeshVector:SetUnpacked(currentcolor.r / 255, currentcolor.g / 255, currentcolor.b / 255)
+	local r, g, b, a = col_Unpack(currentcolor)
+	circleMeshVector:SetUnpacked(r / 255, g / 255, b / 255)
 
 	circleMeshMaterial:SetVector("$color", circleMeshVector)
-	circleMeshMaterial:SetFloat("$alpha", currentcolor.a / 255)
+	circleMeshMaterial:SetFloat("$alpha", a / 255)
 
 	surface.SetMaterial(circleMeshMaterial)
 	render.SetMaterial(circleMeshMaterial)
 
-	if x ~= 0 or y ~= 0 or r ~= 1 then
+	if x ~= 0 or y ~= 0 or radius ~= 1 then
 		circleMeshVector:SetUnpacked(x, y, 0)
 		circleMeshMatrix:SetTranslation(circleMeshVector)
 
-		circleMeshVector:SetUnpacked(r, r, r)
+		circleMeshVector:SetUnpacked(radius, radius, radius)
 		circleMeshMatrix:SetScale(circleMeshVector)
 
 		cam.PushModelMatrix(circleMeshMatrix, true)
@@ -1465,7 +1472,7 @@ function render_library.drawTexturedRectUV(x, y, w, h, startU, startV, endU, end
 	makeQuad(x, y, w, h)
 	mesh.Begin(MATERIAL_QUADS, 1)
 	local success, err = pcall(function(startU, startV, endU, endV)
-		local r,g,b,a = currentcolor.r, currentcolor.g, currentcolor.b, currentcolor.a
+		local r, g, b, a = col_Unpack(currentcolor)
 		mesh.Position( quad_v1 )
 		mesh.Color( r,g,b,a )
 		mesh.TexCoord( 0, startU, startV )
@@ -1975,20 +1982,21 @@ function render_library.draw3DQuadUV(vert1, vert2, vert3, vert4)
 	if not renderdata.isRendering then SF.Throw("Not in rendering hook.", 2) end
 	mesh.Begin(MATERIAL_QUADS, 1)
 	local ok, err = pcall(function()
+		local r, g, b, a = col_Unpack(currentcolor)
 		mesh.Position( Vector(vert1[1], vert1[2], vert1[3]) )
-		mesh.Color( currentcolor.r, currentcolor.g, currentcolor.b, currentcolor.a )
+		mesh.Color( r, g, b, a )
 		mesh.TexCoord( 0, vert1[4], vert1[5] )
 		mesh.AdvanceVertex()
 		mesh.Position( Vector(vert2[1], vert2[2], vert2[3]) )
-		mesh.Color( currentcolor.r, currentcolor.g, currentcolor.b, currentcolor.a )
+		mesh.Color( r, g, b, a )
 		mesh.TexCoord( 0, vert2[4], vert2[5] )
 		mesh.AdvanceVertex()
 		mesh.Position( Vector(vert3[1], vert3[2], vert3[3]) )
-		mesh.Color( currentcolor.r, currentcolor.g, currentcolor.b, currentcolor.a )
+		mesh.Color( r, g, b, a )
 		mesh.TexCoord( 0, vert3[4], vert3[5] )
 		mesh.AdvanceVertex()
 		mesh.Position( Vector(vert4[1], vert4[2], vert4[3]) )
-		mesh.Color( currentcolor.r, currentcolor.g, currentcolor.b, currentcolor.a )
+		mesh.Color( r, g, b, a )
 		mesh.TexCoord( 0, vert4[4], vert4[5] )
 		mesh.AdvanceVertex()
 	end)
@@ -2114,7 +2122,7 @@ end
 -- @return number the X size of the game window
 -- @return number the Y size of the game window
 function render_library.getGameResolution()
-	return renderdata.oldW, renderdata.oldH
+	return renderdata.scrW, renderdata.scrH
 end
 
 --- Does a trace and returns the color of the textel the trace hits.

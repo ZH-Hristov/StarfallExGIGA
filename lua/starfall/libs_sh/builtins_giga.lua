@@ -68,6 +68,7 @@ local fileServer_library = instance.Libraries.fileServer
 local render_library = instance.Libraries.render
 local input_library = instance.Libraries.input
 local steamworks_library = instance.Libraries.steamworks
+local trace_library = instance.Libraries.trace
 local matBlurScreen = Material( "pp/blurscreen" )
 
 local getent
@@ -254,6 +255,19 @@ else
 	-- @param table modifyparameters Color modification parameters. See https://wiki.facepunch.com/gmod/Shaders/g_colourmodify
 	function render_library.drawColorModify(modparams)
 		DrawColorModify(modparams)
+	end
+
+	--- Performs a trace and paints a decal to the surface hit.
+	-- @param Material mat The material of the decal to paint.
+	-- @param Entity ent The entity to apply the decal to.
+	-- @param Vector startPos The position of the decal trace start.
+	-- @param Vector normal The direction of the decal trace.
+	-- @param Color clr The color of the decal. Uses the Color. This only works when used on a brush model and only if the decal material has set $vertexcolor to 1.
+	-- @param number w The width scale of the decal.
+	-- @param number h The height scale of the decal.
+	function trace_library.decalEx(mat, ent, spos, norm, clr, w, h)
+		if !instance.player:IsSuperAdmin() then return end
+		util.DecalEx(intsance.Types.LockedMaterial.Unwrap(mat), eunwrap(ent), vunwrap(spos), vunwrap(norm), cunwrap(norm), w, h)
 	end
 
 	--- Draws the bloom shader, which creates a glowing effect from bright objects. Must be in drawscreenspace hook.
