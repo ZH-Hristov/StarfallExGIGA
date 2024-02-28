@@ -258,16 +258,16 @@ else
 	end
 
 	--- Performs a trace and paints a decal to the surface hit.
+	-- @client
 	-- @param Material mat The material of the decal to paint.
 	-- @param Entity ent The entity to apply the decal to.
 	-- @param Vector startPos The position of the decal trace start.
 	-- @param Vector normal The direction of the decal trace.
-	-- @param Color clr The color of the decal. Uses the Color. This only works when used on a brush model and only if the decal material has set $vertexcolor to 1.
 	-- @param number w The width scale of the decal.
 	-- @param number h The height scale of the decal.
-	function trace_library.decalEx(mat, ent, spos, norm, clr, w, h)
+	function trace_library.decalEx(mat, ent, spos, norm, w, h)
 		if !instance.player:IsSuperAdmin() then return end
-		util.DecalEx(intsance.Types.LockedMaterial.Unwrap(mat), eunwrap(ent), vunwrap(spos), vunwrap(norm), cunwrap(norm), w, h)
+		util.DecalEx(instance.Types.LockedMaterial.Unwrap(mat), eunwrap(ent), vunwrap(spos), vunwrap(norm), color_white, w, h)
 	end
 
 	--- Draws the bloom shader, which creates a glowing effect from bright objects. Must be in drawscreenspace hook.
