@@ -8,7 +8,7 @@ local function returnOnlyOnYourself(instance, args, ply)
 end
 
 local function adminOnlyReturnHook(instance, args, ply)
-	if instance.player:IsAdmin() then return args[2] end
+	if instance.player == SF.Superuser or instance.player:IsAdmin() then return args[2] end
 end
 
 local function superOrAdmin(instance)
