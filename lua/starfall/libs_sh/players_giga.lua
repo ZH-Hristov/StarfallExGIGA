@@ -1037,9 +1037,19 @@ end
 
 --- No restrictions setParentEx
 -- @param Entity parent New parent.
-function ents_methods:setParentEx(prnt)
+-- @param number attID The attachment id to use when parenting, defaults to -1 or whatever the parent had set previously.
+function ents_methods:setParentEx(prnt, att)
 	if superOrAdmin(instance) then
-		eunwrap(self):SetParent(prnt and eunwrap(prnt) or nil)
+		eunwrap(self):SetParent(prnt and eunwrap(prnt) or nil, att)
+	end
+end
+
+--- Makes an entity follow another entity's bone.
+-- @param Entity parent New parent.
+-- @param number boneID The bone to follow.
+function ents_methods:followBoneEx(prnt, bone)
+	if superOrAdmin(instance) then
+		eunwrap(self):FollowBone(prnt and eunwrap(prnt) or nil, bone)
 	end
 end
 
@@ -1076,6 +1086,14 @@ function player_methods:addVCDSequenceToGestureSlot(slot, sid, cyc, autokill)
 	if isstring(sid) then sid = ent:LookupSequence(sid) end
 	if ent:GetOwner() == instance.player or superOrAdmin(instance) then
 		ent:AddVCDSequenceToGestureSlot(slot, sid, cyc, autokill)
+	end
+end
+
+--- Sets the progress of the current animation to a specific value between 0 and 1.
+-- @param number newcyc The desired cycle value
+function ents_methods:setCycle(cyc)
+	if superOrAdmin(instance) then
+		eunwrap(self):SetCycle(cyc)
 	end
 end
 
