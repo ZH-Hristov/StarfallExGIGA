@@ -1,6 +1,8 @@
 -- Global to all starfalls
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
+local IsValid = FindMetaTable("Entity").IsValid
+local IsValidPhys = FindMetaTable("PhysObj").IsValid
 
 -- Register privileges
 registerprivilege("prop.create", "Create prop", "Allows the user to create props")
@@ -75,7 +77,7 @@ function props_library.create(pos, ang, model, frozen)
 
 	for I = 0, propent:GetPhysicsObjectCount() - 1 do
 		local obj = propent:GetPhysicsObjectNum(I)
-		if obj:IsValid() then
+		if IsValidPhys(obj) then
 			obj:EnableMotion(not frozen)
 		end
 	end
@@ -124,7 +126,7 @@ function props_library.createRagdoll(model, frozen)
 	if frozen then
 		for I = 0, ent:GetPhysicsObjectCount() - 1 do
 			local obj = ent:GetPhysicsObjectNum(I)
-			if obj:IsValid() then
+			if IsValidPhys(obj) then
 				obj:EnableMotion(false)
 			end
 		end
@@ -201,7 +203,7 @@ function props_library.createCustom(pos, ang, vertices, frozen)
 	streamdata = util.Compress(streamdata:getString())
 	SF.NetBurst:use(instance.player, #streamdata*8)
 
-	plyVertexCount:free(-totalVertices)
+	plyVertexCount:free(ply, -totalVertices)
 
 	local propent = ents.Create("starfall_prop")
 	propent.streamdata = streamdata
@@ -212,7 +214,7 @@ function props_library.createCustom(pos, ang, vertices, frozen)
 	entList:register(instance, propent)
 
 	local physobj = propent:GetPhysicsObject()
-	if not physobj:IsValid() then
+	if not IsValidPhys(physobj) then
 		SF.Throw("Custom prop generated with invalid physics object!", 2)
 	end
 
@@ -266,10 +268,12 @@ function props_library.createComponent(pos, ang, class, model, frozen)
 	local ply = instance.player
 	model = SF.CheckModel(model, ply, true)
 
-	if not ply:CheckLimit("starfall_components") then SF.Throw("Limit of components reached!", 2) end
-	plyPropBurst:use(ply, 1)
-	entList:checkuse(ply, 1)
-	if ply ~= SF.Superuser and gamemode.Call("PlayerSpawnSENT", ply, class)==false then SF.Throw("Another hook prevented the component from spawning", 2) end
+	if ply ~= SF.Superuser then
+		if not ply:CheckLimit("starfall_components") then SF.Throw("Limit of components reached!", 2) end
+		plyPropBurst:use(ply, 1)
+		entList:checkuse(ply, 1)
+		if gamemode.Call("PlayerSpawnSENT", ply, class)==false then SF.Throw("Another hook prevented the component from spawning", 2) end
+	end
 
 	local comp = ents.Create(class)
 	comp:SetPos(pos)
@@ -286,7 +290,7 @@ function props_library.createComponent(pos, ang, class, model, frozen)
 
 	for I = 0,  comp:GetPhysicsObjectCount() - 1 do
 		local obj = comp:GetPhysicsObjectNum(I)
-		if obj:IsValid() then
+		if IsValidPhys(obj) then
 			obj:EnableMotion(not frozen)
 		end
 	end
@@ -374,7 +378,7 @@ function props_library.createSeat(pos, ang, model, frozen)
 	entList:register(instance, prop)
 
 	local phys = prop:GetPhysicsObject()
-	if phys:IsValid() then
+	if IsValidPhys(phys) then
 		phys:EnableMotion(not frozen)
 	end
 
@@ -433,7 +437,7 @@ function props_library.createSent(pos, ang, class, frozen, data)
 		end
 
 		entity = ents.Create(swep.ClassName)
-		if entity and entity:IsValid() then
+		if IsValid(entity) then
 			entity:SetPos(pos)
 			entity:SetAngles(ang)
 			entity:Spawn()
@@ -452,7 +456,7 @@ function props_library.createSent(pos, ang, class, frozen, data)
 			entity = sent.t.SpawnFunction( sent.t, ply, SF.dumbTrace(NULL, pos), class )
 		else
 			entity = ents.Create( class )
-			if entity and entity:IsValid() then
+			if IsValid(entity) then
 				entity:SetPos(pos)
 				entity:SetAngles(ang)
 				entity:Spawn()
@@ -469,7 +473,7 @@ function props_library.createSent(pos, ang, class, frozen, data)
 
 		entity = ents.Create(npc.Class)
 
-		if entity and entity:IsValid() then
+		if IsValid(entity) then
 			if (npc.Model) then
 				entity:SetModel(npc.Model)
 			end
@@ -501,7 +505,7 @@ function props_library.createSent(pos, ang, class, frozen, data)
 
 		entity = ents.Create(vehicle.Class)
 
-		if entity and entity:IsValid() then
+		if IsValid(entity) then
 			entity:SetModel(vehicle.Model)
 			if (vehicle.Model == "models/buggy.mdl") then
 				entity:SetKeyValue("vehiclescript", "scripts/vehicles/jeep_test.txt")
@@ -637,13 +641,13 @@ function props_library.createSent(pos, ang, class, frozen, data)
 		end
 	end
 
-	if entity and entity:IsValid() then
+	if IsValid(entity) then
 		entList:register(instance, entity)
 
 		if CPPI then entity:CPPISetOwner(ply == SF.Superuser and NULL or ply) end
 
 		local phys = entity:GetPhysicsObject()
-		if phys:IsValid() then
+		if IsValidPhys(phys) then
 			phys:EnableMotion(not frozen)
 		end
 
