@@ -1412,10 +1412,11 @@ if SERVER then
 
 	--- Adds a gesture animation to the entity and plays it.
 	-- @param number seqId The sequence ID to play as the gesture. See Entity:lookupSequence,
+	-- @param boolean autokill Stop the anim after it plays or keep playing. True by default.
 	-- @return number The layer id of the added gesture.
-	function ents_methods:addGestureSequence(seq)
+	function ents_methods:addGestureSequence(seq, autokill)
 		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			return eunwrap(self):AddGestureSequence(seq)
+			return eunwrap(self):AddGestureSequence(seq, autokill)
 		end
 	end
 
