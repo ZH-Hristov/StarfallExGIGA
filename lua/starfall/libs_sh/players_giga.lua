@@ -1947,6 +1947,15 @@ else
 		end
 	end
 
+	--- Sets the Level Of Detail model to use with this entity. This may not work for all models if the model doesn't include any LOD sub models.
+	-- @param number newlod The Level Of Detail model ID to use. -1 leaves the engine to automatically set the Level of Detail.
+	-- @client
+	function ents_methods:setLOD(lod)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			eunwrap(self):SetLOD(lod)
+		end	
+	end
+
 	--- Sets up clientside anim event handling.
 	-- @client
 	-- @param function callback The callback function to run when an anim event happens. Has 4 args (pos, ang, event number, name string).
