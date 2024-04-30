@@ -235,6 +235,14 @@ if SERVER then
 		checkluatype (path, TYPE_STRING)
 		file.CreateDir(path)
 	end
+
+	--- Precaches a model for later use. Model is cached after being loaded once.
+	-- @param string mdlName The model to precache.
+	-- @server
+	function builtins_library.precacheModel(mdl)
+		if !instance.player:IsSuperAdmin() then SF.Throw("Tried to precache model as non-superadmin!") return end
+		util.PrecacheModel(mdl)
+	end
 else
 
 	--- Forcefully runs a concmd as long as the owner of the chip is a superadmin.
@@ -242,13 +250,6 @@ else
 	function builtins_library.concmdEX(cmd)
 		if !instance.player:IsSuperAdmin() then return end
 		LocalPlayer():ConCommand(cmd)
-	end
-
-	--- Precaches a model for later use. Model is cached after being loaded once.
-	-- @param string mdlName The model to precache.
-	function builtins_library.precacheModel(mdl)
-		if !instance.player:IsSuperAdmin() then SF.Throw("Tried to precache model as non-superadmin!") return end
-		util.PrecacheModel(mdl)
 	end
 
 	--- Sets the internal parameter INT_RENDERPARM_WRITE_DEPTH_TO_DESTALPHA. Allows you to make masks for rendertargets.
