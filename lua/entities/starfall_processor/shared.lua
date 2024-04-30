@@ -19,10 +19,7 @@ ENT.States          = {
 local IsValid = FindMetaTable("Entity").IsValid
 
 function ENT:Compile()
-	if self.instance then
-		self:Destroy()
-	end
-
+	self:Destroy()
 	self.error = nil
 
 	if not (self.sfdata and self.sfdata.files and self.sfdata.files[self.sfdata.mainfile]) then return end
@@ -87,7 +84,17 @@ function ENT:Destroy()
 	end
 end
 
+function ENT:OnRemove(fullsnapshot)
+	if fullsnapshot then return end
+	self:Destroy()
+
+	-- This should remove the hook if it existed
+	if CLIENT then self:SetReuploadOnReload(false) end
+end
+
 function ENT:SetupFiles(sfdata)
+	self:Destroy()
+
 	self.sfdata = sfdata
 	self.owner = sfdata.owner
 	sfdata.proc = self
@@ -121,7 +128,6 @@ function ENT:GetGateName()
 end
 
 function ENT:Error(err)
-	if not self.instance then return end
 	self.error = err
 
 	local msg = err.message
@@ -138,11 +144,13 @@ function ENT:Error(err)
 		msg = string.sub(msg, 1, newline - 1)
 	end
 
-	hook.Run("StarfallError", self, self.owner, CLIENT and LocalPlayer() or false, self.sfdata.mainfile, msg, traceback)
+	hook.Run("StarfallError", self, self.owner, CLIENT and LocalPlayer() or false, self.sfdata and self.sfdata.mainfile or "", msg, traceback)
 	SF.SendError(self, msg, traceback)
 
-	self.instance:deinitialize()
-	self.instance = nil
+	if self.instance then
+		self.instance:deinitialize()
+		self.instance = nil
+	end
 
 	for inst, _ in pairs(SF.allInstances) do
 		inst:runScriptHook("starfallerror", inst.Types.Entity.Wrap(self), inst.Types.Player.Wrap(SERVER and self.owner or LocalPlayer()), msg)
@@ -353,7 +361,14 @@ function SF.LinkEnt(self, ent, transmit)
 	if SERVER and (changed or transmit) then
 		net.Start("starfall_processor_link")
 		net.WriteUInt(self:EntIndex(), 16)
-		net.WriteUInt(IsValid(ent) and ent:EntIndex() or 0, 16)
+		net.WriteUInt(self:GetCreationID(), 32)
+		if IsValid(ent) then
+			net.WriteUInt(ent:EntIndex(), 16)
+			net.WriteUInt(ent:GetCreationID(), 32)
+		else
+			net.WriteUInt(0, 16)
+			net.WriteUInt(0, 32)
+		end
 		if transmit then net.Send(transmit) else net.Broadcast() end
 	end
 end

@@ -165,6 +165,13 @@ if SERVER then
 	-- @param boolean teamChat True if team chat
 	-- @return string? New text. "" to stop from displaying. Nil to keep original.
 	add("PlayerSay", nil, nil, returnOnlyOnYourself, true)
+	
+	-- Serverside implementation of playerchat
+	gameevent.Listen("player_say")
+	add("player_say", "playerchat", function(instance, data)
+		local ply = Player(data.userid)
+		return true, {instance.WrapObject(ply), data.text, data.teamonly, not ply:Alive()}
+	end)
 
 	--- Called when a players sprays their logo
 	-- @name PlayerSpray
@@ -262,15 +269,18 @@ else
 	-- @client
 	add("FinishChat")
 
-	--- Called when a player's chat message is printed to the chat window
+	--- Called when a chat message is printed your chat window (chip owner only)
 	-- @name PlayerChat
 	-- @class hook
-	-- @client
+	-- @shared
 	-- @param Player ply Player that said the message
 	-- @param string text The message
 	-- @param boolean team Whether the message was team only
 	-- @param boolean isdead Whether the message was send from a dead player
-	add("OnPlayerChat", "playerchat")
+	-- @return boolean Return true to hide the message. Can only be done for the owner of the chip
+	add("OnPlayerChat", "playerchat", nil, function(instance, ret)
+		if ret[1] and instance.player == LocalPlayer() and ret[2] then return true end
+	end)
 
 	--- Called when the player's chat box text changes.
 	-- Requires the 'input' permission.
@@ -351,6 +361,26 @@ end
 -- @param Player ply Player toggling noclip
 -- @param boolean newState New noclip state. True if on.
 add("PlayerNoClip")
+
+--- Called whenever a player steps
+-- @name PlayerFootstep
+-- @class hook
+-- @shared
+-- @param Player ply The stepping player
+-- @param Vector pos The position of the step
+-- @param number foot Foot that is stepped. 0 for left, 1 for right
+-- @param string sound Sound that is going to play
+-- @param number volume Volume of the footstep
+-- @return boolean? Return true to prevent default step sound (only on chip owner)
+add("PlayerFootstep", nil, function(instance, ply, pos, foot, sound, volume)
+    return true, {
+        instance.WrapObject(ply),
+        instance.Types.Vector.Wrap(pos),
+        foot,
+        sound,
+        volume,
+    }
+end, returnOnlyOnYourself )
 
 --- Called when a player presses a key
 -- @name KeyPress
@@ -440,6 +470,7 @@ end)
 -- @class hook
 -- @shared
 -- @param Entity ent Entity being removed
+-- @param boolean isSnapshot If clientside, will be true if the entity isn't actually removed
 add("EntityRemoved")
 
 --- Called when an entity is broken
