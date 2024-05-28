@@ -649,6 +649,14 @@ function player_methods:getRagdollEntity()
 	return ewrap(getply(self):GetRagdollEntity())
 end
 
+--- Sets the gravity multiplier of the entity.
+-- @param number grav Value which specifies the gravity multiplier.
+function ents_methods:setGravity(grav)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetGravity(grav)
+	end
+end
+
 --- Returns whether this entity has the specified spawnflags bits set.
 --@param number flag The spawnflag bits to check.
 --@return boolean Whether the entity has that spawnflag set or not.
@@ -674,6 +682,21 @@ end
 --@return The frame of the currently played sequence.
 function ents_methods:getCycle()
 	return eunwrap(self):GetCycle()
+end
+
+--- Gets the players velocity.
+--@return Vector The player's velocity
+function cmv_methods:getVelocity()
+	return ounwrap(self):GetVelocity()
+end
+
+--- Sets the player's velocity.
+-- @param Vector newvel The velocity to set.
+function cmv_methods:setVelocity(vec)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		local cmd = ounwrap(self)
+		cmd:SetVelocity(vunwrap(vec))
+	end
 end
 
 --- Adds keys to the move data, as if player pressed them.
@@ -905,6 +928,26 @@ end
 function player_methods:stripWeapons()
 	if superOrAdmin(instance) then
 		getply(self):StripWeapons()
+	end
+end
+
+--- Sets the mins and maxs of the AABB of the players collision.
+-- @server
+-- @param Vector mins The min coordinates of the hull.
+-- @param Vector maxs The max coordinates of the hull.
+function player_methods:setHull(mins, maxs)
+	if superOrAdmin(instance) then
+		getply(self):SetHull(vunwrap(mins), vunwrap(maxs))
+	end
+end
+
+--- Sets the mins and maxs of the AABB of the players collision when crouching.
+-- @server
+-- @param Vector mins The min coordinates of the hull.
+-- @param Vector maxs The max coordinates of the hull.
+function player_methods:setHullDuck(mins, maxs)
+	if superOrAdmin(instance) then
+		getply(self):SetHullDuck(vunwrap(mins), vunwrap(maxs))
 	end
 end
 
