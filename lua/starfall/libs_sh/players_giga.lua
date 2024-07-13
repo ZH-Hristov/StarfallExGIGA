@@ -53,25 +53,6 @@ SF.RegisterType("CUserCmd", false, true, debug.getregistry().CUserCmd)
 -- @libtbl pt_meta
 SF.RegisterType("ProjectedTexture", false, true, debug.getregistry().ProjectedTexture)
 
---- Called when a player makes contact with the ground after a jump or a fall.
--- @name OnPlayerHitGround
--- @class hook
--- @shared
--- @param Player ply Player
--- @param boolean inWater Did the player land in water?
--- @param boolean onFloater Did the player land on an object floating in the water?
--- @param number speed The speed at which the player hit the ground
--- @return boolean? Return true to suppress default action. Admin Only.
-SF.hookAdd("OnPlayerHitGround", nil, nil, adminOnlyReturnHook)
-
---- Called when a player jumps.
--- @name OnPlayerJump
--- @class hook
--- @shared
--- @param Player ply Player
--- @param number speed The velocity/impulse of the jump
-SF.hookAdd("OnPlayerJump", nil, nil)
-
 --- Animation updates (pose params etc) should be done here.
 -- @name UpdateAnimation
 -- @class hook
@@ -1988,15 +1969,6 @@ else
 		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
 			eunwrap(self):Remove()
 		end
-	end
-
-	--- Sets the Level Of Detail model to use with this entity. This may not work for all models if the model doesn't include any LOD sub models.
-	-- @param number newlod The Level Of Detail model ID to use. -1 leaves the engine to automatically set the Level of Detail.
-	-- @client
-	function ents_methods:setLOD(lod)
-		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
-			eunwrap(self):SetLOD(lod)
-		end	
 	end
 
 	--- Sets up clientside anim event handling.
