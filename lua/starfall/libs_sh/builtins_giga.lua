@@ -34,6 +34,12 @@ local function lockControls(instance)
 	end)
 end
 
+--- Static file functions. Allows reading data from data_static
+-- @name fileStatic
+-- @class library
+-- @libtbl fileStatic_library
+SF.RegisterLibrary("fileStatic")
+
 if SERVER then
 	--- File functions. Allows modification of files.
 	-- @name fileServer
@@ -165,6 +171,44 @@ end
 -- @param string fromList Which list to retrieve. See getAllLists()
 function builtins_library.getList(fromList)
 	return list.Get(fromList)
+end
+
+--- Returns the content of a file from the static data folder.
+-- @param string path Filepath relative to data_static/.
+-- @return string The data from the file as a string, or nil if the file isn't found.
+function fileStatic_library.read(path)
+	checkluatype(path, TYPE_STRING)
+	return file.Read("data_static/"..path, "GAME")
+end
+
+--- Reads a file asynchronously from the static data folder.
+-- @param string path Filepath relative to data_static/.
+-- @param function callback A callback function for when the read operation finishes. It has 3 arguments: `filename` string, `status` number and `data` string
+function fileStatic_library.asyncRead(path, callback)
+	checkluatype(path, TYPE_STRING)
+	checkluatype(callback, TYPE_FUNCTION)
+	file.AsyncRead("data_static/"..path, "GAME", function(_, _, status, data)
+		instance:runFunction(callback, path, status, data)
+	end)
+end
+
+--- Returns a boolean of whether the file or directory exists or not.
+-- @param string path Filepath relative to data_static/.
+-- @return boolean Returns true if the file exists and false if it does not.
+function fileStatic_library.exists(path)
+	checkluatype(path, TYPE_STRING)
+	return file.Exists("data_static/"..path, "GAME")
+end
+
+--- Returns a list of files and directories inside a single folder.
+-- @param string Filepath relative to data_static/.
+-- @param string sorting The sorting to be used, optional. Check https://wiki.facepunch.com/gmod/file.Find for valid sort types.
+-- @return table A table of found files, or nil if the path is invalid.
+-- @return table A table of found directories, or nil if the path is invalid.
+function fileServer_library.find(path, sorttype)
+	checkluatype(path, TYPE_STRING)
+	checkluatype(sorttype, TYPE_STRING)
+	return file.Find("data_static/"..path, "GAME", sorttype)
 end
 
 if SERVER then
