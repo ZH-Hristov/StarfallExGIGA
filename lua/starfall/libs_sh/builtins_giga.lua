@@ -70,7 +70,7 @@ local ang_meta, awrap, aunwrap = instance.Types.Angle, instance.Types.Angle.Wrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 
 local builtins_library = instance.env
-local fileServer_library = instance.Libraries.fileServer
+local fileServer_library, fileStatic_library = instance.Libraries.fileServer, instance.Libraries.fileStatic
 local render_library = instance.Libraries.render
 local input_library = instance.Libraries.input
 local steamworks_library = instance.Libraries.steamworks
@@ -205,9 +205,9 @@ end
 -- @param string sorting The sorting to be used, optional. Check https://wiki.facepunch.com/gmod/file.Find for valid sort types.
 -- @return table A table of found files, or nil if the path is invalid.
 -- @return table A table of found directories, or nil if the path is invalid.
-function fileServer_library.find(path, sorttype)
+function fileStatic_library.find(path, sorttype)
 	checkluatype(path, TYPE_STRING)
-	checkluatype(sorttype, TYPE_STRING)
+	if sorttype then checkluatype(sorttype, TYPE_STRING) end
 	return file.Find("data_static/"..path, "GAME", sorttype)
 end
 
@@ -442,11 +442,11 @@ else
 		-- This is dirty, yeah
 		local dista = -1
 		for k, t in pairs( pixelVisList ) do
-			if ( t.c != cl ) then continue end
+			if ( t.c ~= cl ) then continue end
 			dista = Vector( scrpos.x, scrpos.y, 0 ):Distance( Vector( t.x, t.y, 0 ) )
 			if ( dista < mindist ) then break end
 		end
-		if ( dista > 0 && dista < mindist ) then return end
+		if ( dista > 0 and dista < mindist ) then return end
 
 		local viewdiff = ( pos - EyePos() )
 		local viewdir = viewdiff:GetNormal()
@@ -455,7 +455,7 @@ else
 		local Dist = EyePos():Distance( pos )
 		dot = dot * dp
 
-		if ( dot > 0 && Dist < distance ) then
+		if ( dot > 0 and Dist < distance ) then
 			DrawSunbeams( dark, ( mul * dot ) / math.Clamp( Dist / distance, 1, 100 * ( mul * dot ) ), size / Dist, scrpos.x / ScrW(), scrpos.y / ScrH() )
 			table.insert( pixelVisList, { x = scrpos.x, y = scrpos.y, c = cl } )
 		end
