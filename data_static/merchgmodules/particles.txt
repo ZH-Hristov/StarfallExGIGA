@@ -1,0 +1,104 @@
+_G.RegisteredParticles = {}
+_G.RegisteredParticlesLUT = {}
+
+if CLIENT then
+    _G.GParticleEmitter = particle.create(Vector(), false)
+    _G.ParticleCoroutines = {}
+    _G.GEffectEmitter = effect.create()
+end
+
+local RemoveParticleTask = function(id)
+    ParticleCoroutines[id] = nil
+    
+    if table.isEmpty(ParticleCoroutines) then
+        hook.remove("hink", "HandleParticleCoroutines")
+    end
+end
+
+local AddParticleTask = function(id, func, vargs)
+    if table.isEmpty(ParticleCoroutines) then
+        hook.add("think", "HandleParticleCoroutines", function()
+            if quotaAverage() < quotaMax() * 0.8 then
+                for taskid, task in pairs(ParticleCoroutines) do
+                    if task[2] then
+                        if task[1](unpack(task[2])) then
+                            RemoveParticleTask(taskid)
+                        end
+                    else
+                        if task() then
+                            RemoveParticleTask(taskid)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    
+    local ntbl = {coroutine.wrap(func), vargs}
+    ParticleCoroutines[id..table.address(ntbl)] = ntbl
+end
+
+function RegisterParticle(name, cotask, funcname)
+    if SERVER then
+        RegisteredParticles[name] = table.count(RegisteredParticles)
+    else
+        RegisteredParticlesLUT[name] = table.count(RegisteredParticles)
+        RegisteredParticles[table.count(RegisteredParticles)] = cotask
+    end
+    
+    if funcname then
+        _G[funcname] = function(...) FireParticleEntless(name, ...) end
+    end
+end
+
+function FireParticle(id, ent)
+    if SERVER then
+        net.start("FireParticlesFromSV")
+        net.writeUInt(RegisteredParticles[id], 13)
+        if ent then net.writeEntity(ent) end
+        net.send(find.allPlayers(), true)
+    else
+        if !isValid(ent) then return end
+        if isstring(id) then id = RegisteredParticlesLUT[id] end
+        
+        AddCoTask("FireParticle_"..id..timer.curtime()..ent:entIndex(), RegisteredParticles[id], ent)
+    end
+end
+
+function FireParticleEntless(id, ...)
+    if SERVER then
+        net.start("FireParticlesEntlessFromSV")
+        net.writeUInt(RegisteredParticles[id], 13)
+        local args = {...}
+        net.writeUInt(#args, 8)
+        for _, v in pairs(args) do
+            net.writeType(v)
+        end
+        net.send(find.allPlayers(), true)
+    else
+        if isstring(id) then
+            id = RegisteredParticlesLUT[id]
+            local args = {...}
+            AddParticleTask(id, RegisteredParticles[id], args)
+            return
+        end
+        
+        AddParticleTask(id, RegisteredParticles[id], ...)
+    end
+end
+
+if CLIENT then
+    net.receive("FireParticlesFromSV", function()
+        FireParticle(net.readUInt(13), net.readEntity())
+    end)
+    
+    net.receive("FireParticlesEntlessFromSV", function()
+        local id = net.readUInt(13)
+        local argnum = net.readUInt(8)
+        local args = {}
+        for i = 1, argnum do
+            args[i] = net.readType()
+        end
+        FireParticleEntless(id, args)
+    end)
+end

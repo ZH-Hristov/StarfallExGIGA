@@ -1,0 +1,287 @@
+_G.HGButtonSnd = 'buttons/button18.wav'
+_G.HGButtonFont = 'DermaLarge'
+_G.HGUIContainer = vgui.createPanel()
+_G.UIParticles = {}
+
+local tempty = table.isEmpty
+
+HGUIContainer:setSize(render.getResolution())
+HGUIContainer:setPaintBackground(false)
+
+HGClearAll = function() HGUIContainer:clear() end
+
+HGButton = function(x, y, w, h, text, onclick, clr, center)
+    local bg = vgui.createPanel(HGUIContainer)
+    
+    if center then
+        bg:setPos(x - w * 0.5, y - h * 0.5)
+    else
+        bg:setPos(x, y)    
+    end
+    clr = clr or Color(50, 50, 50)
+    
+    if AddTween then
+        bg:setSize(0, h)
+        AddTween("HGButtonCreate_"..text..x..y..w..h, {w = 0, r = 255, g = 255, b = 255}, {w = 1, r = clr.r, g = clr.g, b = clr.b}, 0.5, nil, math.easeOutSine, function(data)
+            bg:setSize(w * data.w, h)
+            bg:setBackgroundColor(Color(data.r, data.g, data.b))
+        end)
+    else
+        bg:setSize(w, h)
+        bg:setBackgroundColor(clr)
+    end
+    
+    local lab = vgui.createLabel(bg)
+    lab:setText(text)
+    lab:setContentAlignment(5)
+    lab:dock(1)
+    lab:setFont(HGButtonFont)
+    
+    bg.label = lab
+    
+    local but = vgui.createButton(bg)
+    but:dock(1)
+    but:setAlpha(0)
+    but:onClick(function()
+        onclick()
+        if HGButtonSnd then
+            playSoundUI(HGButtonSnd)
+        end
+    end)
+    
+    bg.but = but
+    
+    hook.run("HGButtonCreated", bg)
+    
+    return bg
+end
+
+HGModelButton = function(mdl, x, y, wh, onclick)
+    local bg = vgui.createPanel(HGUIContainer)
+    bg:setSize(wh, wh)
+    bg:setBackgroundColor(Color(50, 50, 50))
+    
+    local img = vgui.createImage(bg)
+    img:dock(1)
+    img:setImage("spawnicons/"..mdl:stripExtension()..".png")
+    
+    bg.img = img
+    
+    bg:dockPadding(10, 10, 10, 10)
+    
+    local but = vgui.createButton(bg)
+    but:dock(1)
+    but:setAlpha(0)
+    but:onClick(function()
+        onclick()
+        if HGButtonSnd then
+            playSoundUI(HGButtonSnd)
+        end
+    end)
+    
+     bg.but = but
+    
+    return bg
+end
+
+HGFillBar = function(x, y, w, h, fillcol)
+    local bg = vgui.createPanel(HGUIContainer)
+    bg:setPos(x, y)
+    bg:setSize(w, h)
+    bg:setBackgroundColor(Color(50, 50, 50))
+    
+    local fill = vgui.createPanel(bg)
+    fill:setBackgroundColor(fillcol)
+    fill:setSize(w, h)
+    
+    function bg:SetFill(frac)
+        fill:setWidth(bg:getWidth() * frac)
+    end
+    
+    return bg
+end
+
+local function Add2DParticleHandler()
+    hook.add("drawhud", "UIParticleHandler", function()
+        for k, data in pairs(UIParticles) do
+        
+            if data.life <= 0 then
+                if data.clr.a > 0 then
+                    data.clr.a = math.approach(data.clr.a, 0, 2)
+                else
+                    UIParticles[k] = nil
+                end
+            end
+        
+            data.x = data.x + data.vel.x
+            data.y = data.y + data.vel.y
+            
+            data.vel = math.lerpVector(0.01, data.vel, data.grav)
+            data.rot = data.rot + data.rotamt
+            
+            render.setMaterial(data.mat)
+            render.setColor(data.clr)
+            render.drawTexturedRectRotated(data.x, data.y, data.w, data.h, data.rot)
+            
+            data.life = math.approach(data.life, 0, timer.frametime() / data.time)
+        end
+    end)
+end
+
+local function Remove2DParticleHandler()
+    hook.remove("think", "UIParticleHandler")
+end
+
+HGParticle = function(x, y, w, h, mat, time, vel, grav, rotamt, clr, startrot)
+    if tempty(UIParticles) then
+        Add2DParticleHandler()
+    end
+    
+    table.insert(UIParticles, {
+        x = x,
+        y = y,
+        w = w,
+        h = h,
+        life = 1,
+        time = time or 1,
+        rotamt = rotamt or 0,
+        rot = startrot or 0,
+        clr = clr and clr:clone() or Color(),
+        vel = vel and vel:clone() or Vector(),
+        grav = grav and grav:clone() or Vector(),
+        mat = mat
+    })
+end
+
+HGUISound = function(str, pitch)
+    player():emitSound(str, 0, pitch or 100, 1, 6)
+end
+
+CheckHGParticles = function()
+    if #UIParticles <= 0 then
+        Remove2DParticleHandler()
+    end
+end
+
+local white = Color()
+
+local rendertypes = {
+    rect = function(data) render.drawRect(data.x, data.y, data.w, data.h) end,
+    rectOutline = function(data) render.drawRectOutline(data.x, data.y, data.w, data.h, data.thick) end,
+    texRect = function(data) render.setMaterial(data.mat) render.drawTexturedRect(data.x, data.y, data.w, data.h) end,
+    texRectUV = function(data) render.setMaterial(data.mat) render.drawTexturedRectUV(data.x, data.y, data.w, data.h, unpack(data.UV)) end,
+    stext = function(data) render.pushMatrix(data.vm) data.vm:setScale(Vector(data.scale, data.scale, 0)) data.vm:setTranslation(Vector(data.x, data.y, 0)) render.setFont(data.font or "DermaLarge") render.drawSimpleText(0, 0, data.txt, data.xal, data.yal) render.popMatrix() end,
+    text = function(data) render.pushMatrix(data.vm) data.vm:setScale(Vector(data.scale, data.scale, 0)) data.vm:setTranslation(Vector(data.x, data.y, 0)) render.setFont(data.font or "DermaLarge") render.drawText(0, 0, data.txt, data.al) render.popMatrix() end,
+    poly = function(data) render.setMaterial(data.mat) render.drawPoly(data.polys) end,
+    holo = function(data) if data.holo then render.pushViewMatrix(data.vm) data.holo:draw() render.popViewMatrix() end end,
+    line = function(data) render.drawLine(data.x1, data.y1, data.x2, data.y2) end
+}
+HGDrawObjects = function(tbl)
+    for k, data in ipairs(tbl) do
+        render.setColor(data.clr or white)
+        if data.scis then render.enableScissorRect(unpack(data.scis)) end
+            rendertypes[data.type](data)
+        render.disableScissorRect()
+    end
+end
+
+
+local function Mask(domask, dodraw, stencilCompareFunction)
+    render.clearStencil()
+    render.setStencilEnable(true)
+    
+    render.setStencilWriteMask(1)
+    render.setStencilTestMask(1)
+    
+    render.setStencilFailOperation(STENCIL.REPLACE)
+    render.setStencilPassOperation(STENCIL.ZERO)
+    render.setStencilZFailOperation(STENCIL.ZERO)
+    render.setStencilCompareFunction(STENCIL.NEVER)
+    render.setStencilReferenceValue(1)
+    
+    render.setMaterial()
+    domask()
+    
+    render.setStencilFailOperation(STENCIL.ZERO)
+    render.setStencilPassOperation(STENCIL.REPLACE)
+    render.setStencilZFailOperation(STENCIL.ZERO)
+    render.setStencilCompareFunction(stencilCompareFunction)
+    render.setStencilReferenceValue(1)
+    
+    dodraw()
+    
+    render.setStencilEnable(false)
+    render.clearStencil()
+end
+
+local function MaskZFail(domask, dodraw)
+    render.setStencilWriteMask( 0xFF )
+    render.setStencilTestMask( 0xFF )
+    render.setStencilReferenceValue( 0 )
+    render.setStencilCompareFunction( STENCIL.ALWAYS )
+    render.setStencilPassOperation( STENCIL.KEEP )
+    render.setStencilFailOperation( STENCIL.KEEP )
+    render.setStencilZFailOperation( STENCIL.KEEP )
+    render.clearStencil()
+
+    render.setStencilEnable( true )
+    render.setStencilReferenceValue( 1 )
+    render.setStencilCompareFunction( STENCIL.ALWAYS )
+    render.setStencilZFailOperation( STENCIL.REPLACE )
+
+    domask()
+
+    render.setStencilCompareFunction( STENCIL.EQUAL )
+    dodraw()
+
+    render.setStencilEnable( false )
+end
+
+local function MaskZPass(domask, dodraw)
+    -- Reset everything to known good
+    render.setStencilWriteMask( 0xFF )
+    render.setStencilTestMask( 0xFF )
+    render.setStencilReferenceValue( 0 )
+    render.setStencilCompareFunction( STENCIL.ALWAYS )
+    render.setStencilPassOperation( STENCIL.KEEP )
+    render.setStencilFailOperation( STENCIL.KEEP )
+    render.setStencilZFailOperation( STENCIL.KEEP )
+    render.clearStencil()
+
+    -- Enable stencils
+    render.setStencilEnable( true )
+    -- Set the reference value to 1. This is what the compare function tests against
+    render.setStencilReferenceValue( 1 )
+    -- Always draw everything
+    render.setStencilCompareFunction( STENCIL.ALWAYS )
+    -- If something would draw to the screen but is behind something, set the pixels it draws to 1
+    render.setStencilZFailOperation( STENCIL.REPLACE )
+
+    -- Draw our entities. They will draw as normal
+domask()
+
+    -- Now, only draw things that have their pixels set to 1. This is the hidden parts of the stencil tests.
+    render.setStencilCompareFunction( STENCIL.EQUAL )
+    -- Flush the screen. This will draw teal over all hidden sections of the stencil tests
+    dodraw()
+
+    -- Let everything render normally again
+    render.setStencilEnable( false )
+end
+
+HGDrawMask = function(domask, dodraw)
+    Mask(domask, dodraw, STENCIL.EQUAL)
+end
+
+HGDrawMaskInverted = function(domask, dodraw)
+    Mask(domask, dodraw, STENCIL.NOTEQUAL)
+end
+
+HGDrawMaskBehind = function(domask, dodraw)
+    MaskZFail(domask, dodraw)
+end
+
+HGDrawMaskDepth = function(domask, dodraw)
+    MaskZPass(domask, dodraw)
+end
+

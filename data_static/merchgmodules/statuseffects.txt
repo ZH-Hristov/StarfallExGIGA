@@ -1,0 +1,85 @@
+_G.RegisteredStatusEffects = {}
+_G.StatusAfflicted = {}
+
+local em = getMethods("Entity")
+local rse = RegisteredStatusEffects
+local sa = StatusAfflicted
+
+local function AddHook()
+  hook.add("tick", "StatusEffects", function()
+    for ent, _ in pairs(sa) do
+      if !ent.StatusEffects then return end
+      
+      local sse = ent.StatusEffects
+      for id, data in pairs(sse) do
+        if timer.curtime() >= data.endt or ent:getHealth() <= 0 then
+            ent:RemoveStatusEffect(id)
+            return
+        end
+    
+        if timer.curtime() >= data.nt then
+            rse[id].ontick(ent, data.amount)
+            data.nt = timer.curtime() + rse[id].interval
+        end
+      end
+    end
+  end)
+end
+
+local function RemoveHook()
+    hook.remove("tick", "StatusEffects")
+end
+
+function RegisterStatusEffect(id, interval, ontick)
+  rse[id] = {
+  id = id,
+  interval = interval,
+  ontick = ontick
+  }
+end
+
+function em:AddStatusEffect(id, stacks, duration)
+  if table.isEmpty(StatusAfflicted) then AddHook() end
+  
+  if !rse[id] then print("No status effect "..id.."found!") return end
+  sa[self] = true
+  self.StatusEffects = self.StatusEffects or {}
+  local sse = self.StatusEffects
+  
+  if sse[id] then
+    local cse = sse[id]
+    
+    cse.amount = cse.amount + 1
+    cse.endt = cse.endt + duration
+    else
+    sse[id] = {amount = stacks or 1, endt = timer.curtime() + duration, nt = timer.curtime()}
+  end
+end
+
+function em:RemoveStatusEffect(id)
+  local sse = self.StatusEffects
+  
+  sse[id] = nil
+  
+  if table.isEmpty(sse) then
+    sa[self] = nil
+  end
+  
+  if table.isEmpty(sa) then
+    RemoveHook()
+  end
+end
+
+function em:RemoveStatusEffectStacks(id, amount)
+  local sse = self.StatusEffects
+  
+  if !sse[id] then return end
+  
+  sse[id] = sse[id] - amount
+  
+  if sse[id] <= 0 then self:RemoveStatusEffect(id) end
+end
+
+function em:GetStatusEffects()
+    return self.StatusEffects
+end

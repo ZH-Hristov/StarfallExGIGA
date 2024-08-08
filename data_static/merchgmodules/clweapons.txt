@@ -1,0 +1,345 @@
+
+if SERVER then
+_G.RegisteredGunFuncs = {}
+
+net.receive("fireCLWeapon", function(len, ply)
+    local wepid = net.readInt(16)
+    local argNum = net.readUInt(16)
+    local args = {}
+    local isMany
+    
+    if argNum > 0 then
+        if argNum > 1 then
+            for i = 1, argNum do
+                table.insert(args, net.readType())
+            end
+            
+            isMany = true
+        else
+            args = net.readType()
+        end
+    end
+    
+    if isMany then
+        RegisteredGunFuncs[wepid](ply, unpack(args))
+    else
+        RegisteredGunFuncs[wepid](ply, args)
+    end
+end)
+
+else
+
+enableHud(player(), true)
+
+_G.RegisteredGuns = {}
+_G.Ammotypes = {}
+_G.GunBase = class("CL Weapons Base")
+_G.VMMatrix = {type = "3D", origin = Vector(), angles = Angle(), fov = 75}
+_G.VMBobAng = {SwayAng = Angle(), GenericAng = Angle()}
+_G.VMBobPos = {GenericPos = Vector()}
+_G.CurMdlHolos = {}
+_G.VMBobEnabled = true
+
+local zeroVec = Vector()
+local zeroAng = Angle()
+local tempty = table.isEmpty
+local em = getMethods("Entity")
+
+function table.sumVector(tbl)
+    if tempty(tbl) then return zeroVec end
+
+    local sum = Vector(0)
+    for _, val in pairs(tbl) do
+        sum = sum + val
+    end
+    return sum
+end
+
+function table.sumAngle(tbl)
+    if tempty(tbl) then return zeroAng end
+
+    local sum = Angle(0)
+    for _, val in pairs(tbl) do
+        sum = sum + val
+    end
+    return sum
+end
+
+function AddAmmo(typestr, amt)
+    if Ammotypes[typestr] then
+        Ammotypes[typestr] = Ammotypes[typestr] + amt
+    else
+        Ammotypes[typestr] = amt
+    end
+end
+
+function SetAmmo(typestr, amt)
+    Ammotypes[typestr] = amt
+end
+
+function GetAmmo(typestr)
+    if Ammotypes[typestr] then return Ammotypes[typestr] end
+    return 0
+end
+
+function GunBase:initialize(equipNow)
+    self.equipped = false
+    if equipNow then self:equip() end
+end
+
+function GunBase:firePrimary()
+    if self:canPrimary() and self.atk1 then self:atk1() hook.run("CLWeaponPrimary", self) end
+end
+
+function GunBase:releasePrimary()
+    if self.rel1 then self:rel1() hook.run("CLWeaponReleasePrimary", self) end
+end
+
+function GunBase:releaseSecondary()
+    if self.rel2 then self:rel2() hook.run("CLWeaponReleaseSecondary", self) end
+end
+
+function GunBase:releaseTertiary()
+    if self.rel3 then self:rel3() hook.run("CLWeaponReleaseTertiary", self) end
+end
+
+function GunBase:fireSecondary()
+    if self:canPrimary() and self.atk2 then self:atk2() end
+end
+
+function GunBase:fireTertiary()
+    if self:canTertiary() and self.tert then self:tert() end
+end
+
+function GunBase:reload()
+    if self:canReload() and self.rld then AddCoTask("reloadclweapon_"..self.class.name, self.rld, self) end
+end
+
+function GunBase:canPrimary()
+    return false
+end
+
+function GunBase:canSecondary()
+    return false
+end
+
+function GunBase:canTertiary()
+    return false
+end
+
+function GunBase:canReload()
+    return false
+end
+
+function GunBase:setClip(new)
+    self.clip = new
+end
+
+function GunBase:takeClip(amt)
+    self.clip = self.clip - amt
+end
+
+function GunBase:getReserveAmmo()
+    if self.ammotype then
+        return player().inv:GetItemAmount(self.ammotype)
+    end
+end
+
+_G.ClearVMHolos = function()
+    if #CurMdlHolos > 0 then
+        for k, v in pairs(CurMdlHolos) do
+            CurMdlHolos[k] = nil
+            v:remove()
+        end
+    end
+end
+
+function GunBase:equip()
+    if Coroutines.equipWeapon then return end
+    AddCoTask("equipWeapon", function()
+        if player().equippedWeapon == self then return true end
+        if player().equippedWeapon then player():unequip() end
+        
+        while Coroutines.unequipWeapon do
+            coroutine.yield()
+        end
+    
+        ClearVMHolos()
+    
+        if self.vmholos then
+            for k, v in pairs(self.vmholos) do
+                local hl = holograms.create(v[1], v[2], v[3], v[4])
+                hl:setColor(Color(0, 0, 0, 0))
+                
+                if v.mat then
+                    hl:setMaterial(v.mat)
+                end
+                
+                table.insert(CurMdlHolos, hl)
+            end
+        end
+    
+        player().equippedWeapon = self
+        if self.equipAnim then
+            self:equipAnim()
+        else
+            self.equipped = true
+            hook.run("CLWeaponEquipped", self)
+        end
+        
+        return true
+    end)
+end
+
+function em:unequip()
+    if !self.equippedWeapon then return end
+
+    if self.equippedWeapon.unequipAnim then
+        AddCoTask("unequipWeapon", function()
+            self.equippedWeapon.equipped = false
+            self.equippedWeapon:unequipAnim()
+            ClearVMHolos()
+            hook.run("CLWeaponUnequipped", self)
+            self.equippedWeapon = nil
+            
+            return true
+        end, self.equippedWeapon)
+    else
+        self.equippedWeapon.equipped = false
+        ClearVMHolos()
+        hook.run("CLWeaponUnequipped", self)
+        self.equippedWeapon = nil
+    end
+end
+
+function GunBase:fireServer(...)
+    net.start("fireCLWeapon")
+    net.writeInt(player().equippedWeapon.id, 16)
+    if ... then
+        local args = { ... }
+        net.writeUInt(#args, 16)
+        for _, v in pairs(args) do
+            net.writeType(v)
+        end
+    end
+    net.send()
+end
+
+function GunBase:drawViewModel()
+    render.pushViewMatrix(VMMatrix)
+    render.depthRange(0, 0)
+    render.suppressEngineLighting(true)
+    
+    local light = render.computeLighting(eyePos(), Vector(0, 0, 1))
+    render.resetModelLighting(light.x, light.y, light.z)
+    
+    
+    if self.hands then
+        render.setColorModulation(1, 1, 1)
+        self.hands:draw()
+    end
+    
+    if CurMdlHolos then
+        render.setColorModulation(1, 1, 1)
+        for _, v in pairs(CurMdlHolos) do
+            v:draw()
+        end
+    end
+    
+    render.suppressEngineLighting(false)
+    render.depthRange(0, 1)
+    render.popViewMatrix()
+end
+
+local unsmoothPos = Vector()
+local unsmoothAng = Angle()
+
+function GunBase:bobViewmodel(vel)
+    local clampedSpeed = (math.clamp(player():getVelocity():getLength() / player():getMaxSpeed(), -1, 1)) * (player():isOnGround() and 1 or 0)
+    local animSpeed =  9 - (player():keyDown(IN_KEY.WALK) and 3 or 0) + (player():keyDown(IN_KEY.SPEED) and 3 or 0)
+
+    unsmoothPos = Vector(3 * clampedSpeed, math.sin(timer.curtime() * animSpeed) * clampedSpeed
+    + ( math.clamp(-vel.y * 0.01, -2, 2) ), math.abs(math.sin(timer.curtime() * animSpeed) * 2 * clampedSpeed))
+    unsmoothAng = Angle(math.abs(math.sin(timer.curtime() * animSpeed) * 3 * clampedSpeed), vel.y * 0.01, 10 * (math.clamp(vel.y / player():getMaxSpeed(), -1, 1)) )
+    
+    VMBobPos["GenericPos"] = math.lerpVector(0.1, VMBobPos["GenericPos"], unsmoothPos)
+    VMBobAng["GenericAng"] = math.lerpAngle(0.1, VMBobAng["GenericAng"], unsmoothAng)
+end
+
+function AddSimpleRecoil(pospower, angpower, dur, ease)
+    local curtname = "simplerecoil_"..timer.curtime()
+    local curtpos = curtname.."pos"
+    local curtang = curtname.."ang"
+    
+    VMBobPos[curtpos] = Vector(0)
+    VMBobAng[curtang] = Angle(0)
+    
+    AddTween(curtpos, VMBobPos, {[curtpos] = pospower or Vector()},
+    dur, function() VMBobPos[curtpos] = nil end, ease or math.easeRecoilSpike)
+    
+    AddTween(curtang, VMBobAng, {[curtang] = angpower or Angle()},
+    dur, function() VMBobAng[curtang] = nil end, ease or math.easeRecoilSpike)
+end
+
+local jumphullmin = Vector(-12, -12, 0)
+local jumphullmax = Vector(12, 12, 12)
+
+local keyswitch = {
+    [IN_KEY.ATTACK] = function() player().equippedWeapon:firePrimary() end,
+    [IN_KEY.ATTACK2] = function() player().equippedWeapon:fireSecondary() end,
+    [IN_KEY.ZOOM] = function() player().equippedWeapon:fireTertiary() end,
+    [IN_KEY.RELOAD] = function() player().equippedWeapon:reload() end,
+    [IN_KEY.JUMP] = function() end
+}
+
+local relkeyswitch = {
+    [IN_KEY.ATTACK] = function() player().equippedWeapon:releasePrimary() end,
+    [IN_KEY.ATTACK2] = function() player().equippedWeapon:releaseSecondary() end,
+    [IN_KEY.ZOOM] = function() player().equippedWeapon:releaseTertiary() end,
+}
+
+
+hook.add("KeyPress", "HandleCLWeapons", function(_, key)
+    if player().equippedWeapon and keyswitch[key] and player():isAlive() then
+        keyswitch[key]()
+    end
+end)
+
+hook.add("KeyRelease", "HandleCLWeaponsRelease", function(_, key)
+    if player().equippedWeapon and relkeyswitch[key] and player():isAlive() then
+        relkeyswitch[key]()
+    end
+end)
+
+hook.add("mousemoved", "VMSway", function(x, y)
+    VMBobAng.SwayAng = VMBobAng.SwayAng + Angle(-y * 0.003, x * 0.003)
+end)
+
+hook.add("PreDrawHud", "DrawCLWViewModels", function()
+    if player().equippedWeapon and player():isAlive() then
+        VMMatrix.origin = zeroVec + table.sumVector(VMBobPos)
+        VMMatrix.angles = zeroAng + table.sumAngle(VMBobAng)
+        VMBobAng.SwayAng = math.lerpAngle(0.1, VMBobAng.SwayAng, Angle())
+        if VMBobEnabled then
+            player().equippedWeapon:bobViewmodel(player():getLocalVelocity())
+        end
+        player().equippedWeapon:drawViewModel()
+    end
+end)
+
+end
+
+function RegisterGun(name, serverFunc, cldata, base)
+    if SERVER then
+        table.insert(RegisteredGunFuncs, serverFunc)
+    else
+        RegisteredGuns[name] = class(name, base or GunBase)
+        RegisteredGuns[name].id = table.count(RegisteredGuns)
+        if cldata then
+            for k, v in pairs(cldata) do
+                RegisteredGuns[name][k] = v
+            end
+        end
+    end
+end
+

@@ -1,0 +1,195 @@
+if SERVER then
+_G.MapLoader = {LoadedMaps = {}, tagHandlers = {}, mdlHandlers = {}, loadingMaps = {}}
+MapLoader.classHandlers = {
+    prop_physics = function(obj)
+        local e = prop.create(obj.pos, obj.ang, obj.mdl, true)
+        
+        if not MapLoader.mdlHandlers[obj.mdl] then
+            e:physicsInitStatic(6)
+        end
+        
+        if obj.scale then e:setModelScale(obj.scale) end
+        return e
+    end,
+    
+    prop_dynamic = function(obj)
+        local e = holograms.create(obj.pos, obj.ang, obj.mdl, obj.scale and Vector(obj.scale) or Vector(1))
+        return e
+    end,
+    
+    gmod_light = function(obj)
+        local e = prop.createSent(obj.pos, Angle(), "cheap_light")
+        e:setDTVector(0, obj.lclr)
+        e:setDTFloat(0, obj.radius)
+        e:setDTInt(0, obj.brightness)
+        return e
+    end,
+    
+    edit_sky = function(obj)
+        local e = prop.createSent(chip():getPos(), Angle(), "edit_sky")
+        e:setPos(obj.pos)
+        
+        for typenm, typetbl in pairs(obj.nwdata) do
+            for k, v in pairs(typetbl) do
+                e["setDT"..typenm](e, k, v)
+            end
+        end
+
+        return e
+    end,
+    
+    edit_sun = function(obj)
+        local e = prop.createSent(obj.pos, Angle(), "edit_sun")
+        
+        for typenm, typetbl in pairs(obj.nwdata) do
+            for k, v in pairs(typetbl) do
+                e["setDT"..typenm](e, k, v)
+            end
+        end
+        
+        return e
+    end
+}
+
+function MapLoader.setLoadState(mname, state)
+    MapLoader.loadingMaps[mname] = state ~= 0 and state or nil
+    net.start("MaploaderStateSet")
+    net.writeString(mname)
+    net.writeUInt(state, 4)
+    net.send(find.allPlayers())
+end
+
+function MapLoader.addClassHandler(classname, func)
+    MapLoader.classHandlers[classname] = func
+end
+
+function MapLoader.addTagHandler(tagname, func)
+    MapLoader.tagHandlers[tagname] = func
+end
+
+function MapLoader.addModelHandler(mdlname, func)
+    MapLoader.mdlHandlers[mdlname] = func
+end
+
+function MapLoader.unloadMap(name, cback)
+    if not MapLoader.LoadedMaps[name] then print("Tried to unload map "..name.." but it isn't loaded!") return end
+    AddCoTask("UnloadMap_"..name, function()
+        for _, v in pairs(MapLoader.LoadedMaps[name]) do
+            if not isValid(v) then continue end
+            v:remove()
+        end
+        
+        MapLoader.LoadedMaps[name] = nil
+        if cback then cback(name) end
+        return true
+    end)
+end
+
+function MapLoader.createFModel(pos, ang, data, onLoad)
+    AddCoTask("SpawnFakeModel_"..timer.curtime(), function()
+        local newBase = (data.base.holo and holograms.create(pos, ang, data.base.mdl) or prop.create(pos, ang, data.base.mdl, true))
+        if data.base.clr then newBase:setColor(data.base.clr) end
+        
+        local i = 1
+        local toSpawn = #data.objs + 1
+        
+        local parts = {newBase}
+        while prop.canSpawn() and holograms.canSpawn() and i < toSpawn do
+            local obj = data.objs[i]
+            local lwp, lwa = localToWorld(obj.pos, obj.ang, newBase:getPos(), newBase:getAngles())
+
+            local spawned = (obj.holo and holograms.create(lwp, lwa, obj.mdl) or prop.create(lwp, lwa, obj.mdl, true))
+
+            if obj.clr then spawned:setColor(obj.clr) end
+            table.insert(parts, spawned)
+            
+            i = i + 1
+            coroutine.yield()
+        end
+        
+        if onLoad then onLoad(parts) end
+        
+        parts = nil
+        
+        return true
+    end)
+end
+
+function MapLoader.loadMap(path, cback)
+    AddCoTask("LoadMap_"..path, function()
+        local loaded = 1
+        local mapTbl = json.decode(fileStatic.read(path))
+        local loadNeed = #mapTbl
+        local paramObj = mapTbl[1]
+        local spawnedEnts = {}
+        
+        local function insertFunc(ent)
+            table.insert(spawnedEnts, ent)
+        end
+
+        local setAtribs = {
+            ["clr"] = function(e, clr) e:setColor(clr) if clr.a < 255 then e:setRenderMode(RENDERMODE.GLOW) end end,
+            ["mat"] = function(e, mat) e:setMaterial(mat) end,
+            ["tag"] = function(e, tag) e:setName(tag) end
+        }
+        
+        hook.run("MapLoader_Precache", paramObj.name)
+        MapLoader.setLoadState(paramObj.name, 1)
+        for _, obj in pairs(mapTbl) do        
+            while cpuAverage() / cpuMax() > 0.15 and timer.frametime() < 0.5 do
+                coroutine.yield()
+            end
+            
+            if obj.mdl then precacheModel(obj.mdl) end
+        end
+        
+        hook.run("MapLoader_Load", paramObj.name)
+        MapLoader.setLoadState(paramObj.name, 2)
+        while prop.canSpawn() and loaded < loadNeed do
+            for _, obj in pairs(mapTbl) do
+                if not MapLoader.classHandlers[obj.class] then continue end
+                
+                local entIfSpawned = MapLoader.classHandlers[obj.class](obj)
+                
+                if entIfSpawned and isValid(entIfSpawned) then
+                    for atribName, atribVal in pairs(setAtribs) do
+                        if not obj[atribName] then continue end
+                        setAtribs[atribName](entIfSpawned, obj[atribName])
+                    end
+                    
+                    if obj.tag then
+                        if MapLoader.tagHandlers[obj.tag] then
+                            MapLoader.tagHandlers[obj.tag](entIfSpawned, insertFunc)
+                        end
+                    end
+                    
+                    if MapLoader.mdlHandlers[obj.mdl] then
+                        MapLoader.mdlHandlers[obj.mdl](entIfSpawned, insertFunc)
+                    end
+                    
+                    table.insert(spawnedEnts, entIfSpawned)
+                end
+                
+                loaded = loaded + 1
+                coroutine.yield()
+            end
+        end
+        
+        MapLoader.LoadedMaps[paramObj.name] = spawnedEnts
+        hook.run("MapLoader_Loaded", paramObj.name, MapLoader.LoadedMaps[paramObj.name], paramObj)
+        MapLoader.setLoadState(paramObj.name, 0)
+        if cback then cback(paramObj.name) end
+        return true
+    end)
+end
+
+else
+    net.receive("MaploaderStateSet", function()
+        local nm = net.readString()
+        local st = net.readUInt(4)
+        
+        MapLoaderLoadingMaps = MapLoaderLoadingMaps or {}
+        
+        MapLoaderLoadingMaps[nm] = st ~= 0 and st or nil
+    end)
+end

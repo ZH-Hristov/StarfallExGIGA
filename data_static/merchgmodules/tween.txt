@@ -1,0 +1,132 @@
+_G.Tweens = {}
+
+local function Flip(x)
+    return 1 - x
+end
+
+local vecMethods = getMethods("Vector")
+
+math.easeFlip = Flip
+
+math.easeSineSpike = function(t)
+    if t <= 0.5 then
+        return math.easeInOutSine(t / 0.5)
+    end
+    return math.easeInOutSine(Flip(t) / 0.5)
+end
+
+math.easeLinearSpike = function(t)
+    if t <= 0.5 then
+        return (t / 0.5)
+    end
+    return (Flip(t) / 0.5)
+end
+
+math.easeCubicSpike = function(t)
+    if t <= 0.5 then
+        return math.easeOutCubic(t / 0.5)
+    end
+    return math.easeInOutCubic(Flip(t) / 0.5)
+end
+
+math.easeRecoilSpike = function(t)
+    if t <= 0.2 then
+        return math.easeOutSine(t / 0.2)
+    end
+    return math.easeInOutSine(Flip(t) / 0.8)
+end
+
+math.easeJumpSpike = function(t)
+    if t <= 0.4 then
+        return math.easeOutCubic(t / 0.4)
+    end
+    return math.easeInOutSine(Flip(t) / 0.6)
+end
+
+function vecMethods:clampLength( max )
+    if self:getLengthSqr() > max * max then
+        self:normalize()
+        self:mul( max )
+    end
+end
+
+function math.smoothDampVector( current, target, current_velocity, smooth_time, max_speed, delta_time )
+    smooth_time = math.max( 1e-4, smooth_time )
+    max_speed = max_speed or math.huge
+    delta_time = delta_time or timer.frametime()
+
+    local omega = 2 / smooth_time
+    local x = omega * delta_time
+    local max_length = max_speed * smooth_time
+    local exp = 1 / ( 1 + x + 0.48 * x * x + 0.235 * x * x * x )
+
+    local delta = current - target
+    delta:clampLength( max_length )
+
+    local new_target = current - delta
+
+    local tmp = ( current_velocity + ( delta * omega ) ) * delta_time
+    local output = new_target + ( delta + tmp ) * exp
+
+    current_velocity:sub( tmp * omega )
+    current_velocity:mul( exp )
+
+    if ( target - current ):dot( output - target ) > 0 then
+        output = target
+    
+        current_velocity[1] = 0
+        current_velocity[2] = 0
+        current_velocity[3] = 0
+    end
+
+    return output, current_velocity
+end
+
+local function lerpEX(t,a,b) return a * (1-t) + b * t end
+
+math.lerpEX = lerpEX
+
+AddTween = function(id, tbl, ending, duration, endfunc, easefunc, whilefunc)
+    if table.isEmpty(Tweens) then
+        hook.add("think", "TweenHandler", function()
+            if !table.isEmpty(Tweens) then
+                for _, curlerp in pairs(Tweens) do
+                    if curlerp and curlerp.cycle < 1 then
+                        curlerp.cycle = math.approach(curlerp.cycle, 1, timer.frametime() / curlerp.duration)
+                        for k, v in pairs(curlerp.ending) do
+                            if type(curlerp.tbl[k]) == "Vector" then
+                                curlerp.tbl[k] = math.lerpVector(curlerp.easefunc and curlerp.easefunc(curlerp.cycle) or curlerp.cycle, curlerp.begin[k], curlerp.ending[k])
+                            elseif type(curlerp.tbl[k]) == "Angle" then
+                                curlerp.tbl[k] = math.lerpAngle(curlerp.easefunc and curlerp.easefunc(curlerp.cycle) or curlerp.cycle, curlerp.begin[k], curlerp.ending[k])
+                            else
+                                curlerp.tbl[k] = lerpEX(curlerp.easefunc and curlerp.easefunc(curlerp.cycle) or curlerp.cycle, curlerp.begin[k], curlerp.ending[k])
+                            end
+                            
+                            if curlerp and curlerp.whilefunc then curlerp.whilefunc(curlerp.tbl) end
+                        end
+                    else
+                        if curlerp and curlerp.endfunc then curlerp.endfunc() end
+                        Tweens[curlerp.id] = nil
+                    end
+                end
+            end
+        end)
+    end
+    local lerptbl = {}
+    lerptbl.tbl = tbl
+    lerptbl.begin = table.copy(tbl)
+    lerptbl.ending = ending
+    lerptbl.duration = duration
+    lerptbl.endfunc = endfunc
+    lerptbl.easefunc = easefunc
+    lerptbl.whilefunc = whilefunc
+    lerptbl.cycle = 0
+    lerptbl.id = id
+    Tweens[id] = lerptbl
+    return id
+end
+
+RemoveTween = function(id)
+    if Tweens[id] then Tweens[id] = nil end
+    if table.isEmpty(Tweens) then hook.remove("think", "TweenHandler") end
+end

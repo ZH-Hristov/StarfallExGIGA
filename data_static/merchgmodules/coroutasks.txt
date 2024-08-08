@@ -1,0 +1,128 @@
+_G.Coroutines = {}
+_G.CoSignals = {}
+
+AddCoTask = function(id, func, classInstance)
+    if table.isEmpty(Coroutines) then
+        hook.add("think", "HandleCoroutines", function()
+            if quotaAverage() < quotaMax() * 0.75 then
+                for taskid, task in pairs(Coroutines) do
+                    if task[1](task[2]) then
+                        RemoveCoTask(taskid)
+                    end
+                end
+            end
+        end)
+    end
+    Coroutines[id] = {coroutine.wrap(func), classInstance}
+end
+
+RemoveCoTask = function(id)
+    Coroutines[id] = nil
+    
+    if table.isEmpty(Coroutines) then
+        hook.remove("think", "HandleCoroutines")
+    end
+end
+
+AwaitChatInput = function(cback, allowedPly)
+    local sinput
+    
+    if SERVER then
+        hook.add("PlayerSay", "AwaitChatInputSV", function(sentPly, txt)
+            if allowedPly and allowedPly ~= sentPly then return end
+            sinput = txt
+            hook.remove("PlayerSay", "AwaitChatInputSV")
+        end)
+    else
+        hook.add("PlayerChat", "AwaitChatInputCL", function(p, txt)
+            if p ~= player() then return end
+            sinput = txt
+            hook.remove("PlayerChat", "AwaitChatInputSV")
+        end)
+    end
+    
+    while not sinput do
+        coroutine.yield()
+        coroutine.wait(0.5)
+    end
+    
+    cback(sinput)
+    sinput = nil
+end
+
+net.receive("CoSignal", function()
+    local id = net.readString()
+    local value = net.readType()
+    local expire = net.readFloat()
+    CoSignals[id] = value or true
+    
+    if not timeout then return end
+    AddCoTask("CoSignalExpire_"..id..expire, function()
+        coroutine.waitPrecise(expire)
+        CoSignals[id] = nil
+        return true
+    end)
+end)
+
+SendSignal = function(id, value, expire)
+    net.start("CoSignal")
+    net.writeString(id)
+    
+    net.writeType(value or true)
+    
+    if expire then
+        net.writeFloat(expire)
+    end
+    
+    if SERVER then net.send(find.allPlayers()) else net.send() end
+end
+
+AwaitSignal = function(id, timeout, whilefunc)
+    
+    if timeout then
+        local timcyc = 0
+        while not CoSignals[id] and timcyc < 1 do
+            timcyc = math.approach(timcyc, 1, timer.frametime() / timeout)
+            if whilefunc then whilefunc() end
+            coroutine.yield()
+        end
+        
+        local cache = CoSignals[id]
+        CoSignals[id] = cache
+        if timcyc ~= 1 then return true else return false end
+    else
+        while not CoSignals[id] do
+            if whilefunc then whilefunc() end
+            coroutine.yield()
+        end
+        
+        local cache = CoSignals[id]
+        CoSignals[id] = nil
+        return cache
+    end
+end
+
+function coroutine.waitPrecise(waittime)
+    local prog = 0
+    while prog < 1 do
+        prog = math.approach(prog, 1, timer.frametime() / waittime)
+        coroutine.yield()
+    end
+    prog = nil
+end
+
+local frt = timer.frametime
+function coroutine.whileProg(func, time, addCheck)
+    time = time or 1
+    
+    local prog = 0
+    while prog < 1 and (addCheck and addCheck() or true) do
+        prog = math.approach(prog, 1, frt() / time)
+        func(prog)
+        coroutine.yield()
+    end
+    
+    prog = nil
+    time = nil
+end
+
