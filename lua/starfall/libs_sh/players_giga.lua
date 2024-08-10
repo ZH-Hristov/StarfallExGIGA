@@ -31,6 +31,10 @@ duplicator.RegisterEntityModifier( "STARFALL_SAVETRIGGERS", function(ply, dent, 
 	end
 end)
 
+duplicator.Disallow("starfall_triggerbox")
+duplicator.Disallow("starfall_triggersphere")
+
+
 --- CMoveData type
 -- @name CMoveData
 -- @class type
