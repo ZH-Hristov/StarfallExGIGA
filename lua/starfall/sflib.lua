@@ -723,6 +723,55 @@ if CLIENT then
 	end)
 end
 
+SF.RenderStack = {
+	__index = {
+		create = function(self, data)
+			return setmetatable({
+				run = self.runDirty,
+				data = data,
+			}, self.objindex)
+		end,
+
+		runDirty = function(self, flags)
+			local pushes = {self.maincode[1]}
+			local pops = {self.maincode[3]}
+			for _, v in ipairs(self.properties) do
+				pushes[#pushes+1], pops[#pops+1] = v(self.data)
+			end
+
+			local code = {}
+			for i=1, #pushes do
+				code[#code + 1] = pushes[i]
+			end
+			code[#code + 1] = self.maincode[2]
+			for i=#pops, 1, -1 do
+				code[#code + 1] = pops[i]
+			end
+
+			self.renderfunc = CompileString(table.concat(code, " "), "RenderStack")()
+			self.run = self.runClean
+			self:run(flags)
+		end,
+
+		runClean = function(self, flags)
+			self.renderfunc(self.data, flags)
+		end,
+
+		makeDirty = function(self)
+			self.run = self.runDirty
+		end,
+	},
+	__call = function(p, maincode, properties)
+		local ret = setmetatable({
+			maincode = maincode,
+			properties = properties
+		}, p)
+		ret.objindex = {__index = ret}
+		return ret
+	end
+}
+setmetatable(SF.RenderStack, SF.RenderStack)
+
 
 -- Error type containing error info
 SF.Errormeta = {
@@ -1313,10 +1362,18 @@ do
 		local ss = SF.StringStream(str)
 		local tableLookup = {}
 
-		local function stringToType()
-			local t = ss:readUInt8()
-			local func = stringtotypefuncs[t]
-			if func then return func(ss) else error("Invalid type " .. t) end
+		local stringToType
+		if instance then
+			function stringToType()
+				local t = ss:readUInt8()
+				local val = (stringtotypefuncs[t] or error("Invalid type " .. t))(ss)
+				return instance.WrapObject(val) or val
+			end
+		else
+			function stringToType()
+				local t = ss:readUInt8()
+				return (stringtotypefuncs[t] or error("Invalid type " .. t))(ss)
+			end
 		end
 
 		stringtotypefuncs[TYPE_TABLE] = function(ss)
@@ -1330,16 +1387,7 @@ do
 			tableLookup[index] = t
 			
 			for i=1, ss:readUInt16() do
-				local key, val
-				if instance then
-					key = stringToType()
-					key = instance.WrapObject(key) or key
-					val = stringToType()
-					val = instance.WrapObject(val) or val
-				else
-					key = stringToType()
-					val = stringToType()
-				end
+				local key, val = stringToType(), stringToType()
 				t[key] = val
 			end
 			return t
