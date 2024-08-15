@@ -180,7 +180,7 @@ local function getShakeFloat(seed, freq)
     return perlin:noise(seed, (timer.curtime() * freq ) - 0.5, 0) * 2
 end
 
-function CamShake(freq, intensity, dur, ease)
+function CamShake(freq, intensity, dur, ease, roll)
     local id = "CamShake_"..timer.curtime()..freq..intensity..dur
     
     Cam.AngOffsets[id] = Angle()
@@ -188,7 +188,8 @@ function CamShake(freq, intensity, dur, ease)
     AddTween(id, Cam.AngOffsets, {[id] = Angle(0, 0, 1)}, dur, function() Cam.AngOffsets[id] = nil end, ease or math.easeLinearSpike, function(dat)
         local nResult = getShakeFloat(1, freq)
         local nResult2 = getShakeFloat(10, freq)
-        dat[id] = Angle(nResult * intensity * Cam.AngOffsets[id].r, nResult2 * intensity * Cam.AngOffsets[id].r, 0)
+        local nResult3 = (roll and getShakeFloat(100, freq) or 0)
+        dat[id] = Angle(nResult * intensity * Cam.AngOffsets[id].r, nResult2 * intensity * Cam.AngOffsets[id].r, nResult3 * intensity * Cam.AngOffsets[id].r)
     end)
 end
 
