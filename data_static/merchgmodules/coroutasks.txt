@@ -13,12 +13,7 @@ AddCoTask = function(id, func, classInstance)
             end
         end)
     end
-    
-    local cwrap = coroutine.wrap(func)
-    local nt = {cwrap, classInstance}
-    nt[1].address = table.address(nt)
-    
-    Coroutines[id] = nt
+    Coroutines[id] = {coroutine.wrap(func), classInstance}
 end
 
 RemoveCoTask = function(id)
