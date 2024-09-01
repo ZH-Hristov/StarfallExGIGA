@@ -104,7 +104,7 @@ function GunBase:releaseTertiary()
 end
 
 function GunBase:fireSecondary()
-    if self:canPrimary() and self.atk2 then self:atk2() end
+    if self:canSecondary() and self.atk2 then self:atk2() end
 end
 
 function GunBase:fireTertiary()
