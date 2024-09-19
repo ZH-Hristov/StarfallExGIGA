@@ -1,0 +1,960 @@
+local function InRange(num, min, max)
+    return num >= min and num <= max
+end
+
+local function runHookShared(name, ...)
+    if SERVER then
+        local args = { ... }
+        hook.run(name, unpack(args))
+        net.start("cl_runhookshared")
+        net.writeString(name)
+        net.writeUInt(#args, 8)
+        for _, v in pairs(args) do
+            net.writeType(v)
+        end
+        net.send(find.allPlayers())
+    end
+end
+
+if CLIENT then
+    net.receive("cl_runhookshared", function()
+        local name = net.readString()
+        local num = net.readUInt(8)
+        local args = {}
+        
+        for i = 1, num do
+            table.insert(args, net.readType())
+        end
+        
+        hook.run(name, unpack(args))
+    end)
+end
+
+if SERVER then
+    local pm = getMethods("Player")
+    
+    function pm:setClimbTask(func)
+        if self.ClimbTask then return end
+        self.ClimbTask = true
+        AddCoTask("ClimbTask_"..self:entIndex(), func, self)
+    end
+    
+    function pm:climbCD(time)
+        AddCoTask("PlyClimbCD_"..self:entIndex(), function()
+            self.ClimbCD = true
+            coroutine.wait(time or 0.1)
+            self.ClimbCD = false
+            return true
+        end, self)
+    end
+
+    local BoxHull = Vector(16, 16, 73)
+    local BoxHullMins = Vector(-16, -16, 0)
+    local BoxHull2 = Vector(8, 8, 2)
+    
+    local function CubicBezier(t, p0, p1, p2, p3)
+
+        local l1 = math.lerpVector(t, p0, p1)
+        
+        local l2 = math.lerpVector(t, p1, p2)
+        
+        local l3 = math.lerpVector(t, p2, p3)
+        
+        local l4 = math.lerpVector(t, l1, l2)
+        
+        local l5 = math.lerpVector(t, l2, l3)
+        
+        local cubic = math.lerpVector(t, l4, l5)
+        
+        return cubic
+    
+    end
+    
+    function LedgeHang(ply, ledge, ledgeZ, ledgenormal)
+        ply.LastColGroup = ply:getCollisionGroup()
+        local plyVel = ply:getVelocity()
+        local startVel = math.max(math.max( plyVel.x, plyVel.y, plyVel.z ), 100)
+        runHookShared("CM_CatchLedge", ply, plyVel)
+        ply:setLocalVelocity(Vector())
+        ply:setMoveType(MOVETYPE.PUSH)
+        ply:setCollisionGroupEX(COLLISION_GROUP.IN_VEHICLE)
+    
+        local lst = Vector(ledge.x, ledge.y, ledgeZ - 76)
+        --ply.LookDir = ( (ledge - ledgenormal * Vector(100, 100, 100)) - lst ):getAngle()
+        
+        ply:setClimbTask(function()
+            local trans = false
+            local PullingUp = false
+            local Progress = 0
+            local SideProgress = 0
+            local LedgeStartPos = lst
+            local LedgeNormal = ledgenormal
+            local LedgeCatchStartPos = ply:getPos()
+            local ValidPullUp
+            
+            local catchTime = LedgeCatchStartPos:getDistance(LedgeStartPos) / startVel
+            
+            while ply:isAlive() and Progress < 1 do
+                Progress = math.approach(Progress, 1, timer.frametime() / catchTime)
+                ply:setPos(math.lerpVector(math.easeOutSine(Progress), LedgeCatchStartPos, LedgeStartPos))
+                coroutine.yield()
+            end
+            
+            Progress = 0
+                
+            while ply:isAlive() and !trans do
+                if PullingUp and ValidPullUp then
+                    Progress = math.approach(Progress, 1, timer.frametime() / 0.7)
+                    if Progress == 1 then
+                        ply:setMoveType(MOVETYPE.WALK)
+                        ply.LookDir = nil
+                        trans = true
+                        runHookShared("CM_FinishedPullUp", ply)
+                    end
+                elseif !PullingUp and ValidPullUp then
+                    Progress = math.approach(Progress, 0, timer.frametime())
+                end
+    
+                if ValidPullUp then
+                    ply:setPos( CubicBezier(math.easeInSine(Progress), LedgeStartPos, LedgeStartPos + Vector(0, 0, 10), LedgeStartPos + Vector(0, 0, 75), ValidPullUp) )
+                end
+                
+                if ply:keyPressed(IN_KEY.FORWARD) and ValidPullUp then
+                    runHookShared("CM_StartedPullUp", ply)
+                end
+            
+                if ply:keyDown(IN_KEY.FORWARD) then
+                    PullingUp = true
+                    if !ValidPullUp then
+                        local start = ply:getPos() - (LedgeNormal * Vector(20, 20, 0) ) + Vector(0, 0, 80)
+                        local endpos = start - Vector(0, 0, 75)
+        
+                        local tr = trace.hull(
+                            start,
+                            endpos,
+                            BoxHullMins,
+                            BoxHull,
+                            ply
+                        )
+        
+                        if !tr.StartSolid then
+                            ValidPullUp = tr.HitPos
+                            runHookShared("CM_ValidPullUp", ply)
+                            if ply:keyDown(IN_KEY.FORWARD) then
+                                runHookShared("CM_StartedPullUp", ply)
+                            end
+                        else
+                            runHookShared("CM_InvalidPullUp", ply)
+                        end
+                    end
+                else
+                    PullingUp = false
+                end
+                
+                if Progress == 0 then
+                    if ply:keyPressed(IN_KEY.BACK) then
+                        ply:setMoveType(MOVETYPE.WALK)
+                        ply.LookDir = nil
+                        trans = true
+                        runHookShared("CM_HangDrop", ply)
+                    end
+                    
+                    if ply:keyPressed(IN_KEY.JUMP) then
+                        local dot = (ply:getEyeAngles() * Angle(0, 1, 0)):getForward():dot( LedgeNormal )
+                        if dot > 0 then
+                            ply:setMoveType(MOVETYPE.WALK)
+                            local aimV = ply:getAimVector() * 400
+                            ply:setLocalVelocity( Vector(aimV.x, aimV.y, aimV.z * 0.6) )
+                            ply.LookDir = nil
+                            trans = true
+                        else
+                            ply:setMoveType(MOVETYPE.WALK)
+                            ply:setLocalVelocity( Vector(0, 0, 200) )
+                            ply.LookDir = nil
+                            ply:climbCD(0.1)
+                            trans = true
+                        end
+                    end
+    
+                    if ply:keyDown(IN_KEY.MOVERIGHT) then
+                        local newledge, newledgeZ, newledgenormal, side = TraceForLedgeSide(ply, -1, LedgeNormal)
+                        if newledge then
+                            local lst = Vector(newledge.x, newledge.y, newledgeZ - 76)
+                            
+                            runHookShared("CM_ShimmyStart", ply, side)
+                            
+                            while SideProgress < 1 do
+                                SideProgress = math.approach(SideProgress, 1, timer.frametime() / 0.1)
+                                ply:setPos(math.lerpVector(SideProgress, LedgeStartPos, lst))
+                                
+                                coroutine.yield()
+                            end
+                            
+                            LedgeStartPos = lst
+                            LedgeNormal = newledgenormal
+                            LedgeZ = newledgeZ
+                            ValidPullUp = nil
+                            --ply.LookDir = ( (newledge - newledgenormal * Vector(100, 100, 100)) - lst ):getAngle()
+                            
+                            SideProgress = 0
+                            
+                            runHookShared("CM_ShimmyEnd", ply, side)
+                        end
+                    elseif ply:keyDown(IN_KEY.MOVELEFT) then
+                        local newledge, newledgeZ, newledgenormal, side = TraceForLedgeSide(ply, 1, LedgeNormal)
+                        if newledge then
+                            local lst = Vector(newledge.x, newledge.y, newledgeZ - 76)
+                            
+                            runHookShared("CM_ShimmyStart", ply, side)
+                            
+                            while SideProgress < 1 do
+                                SideProgress = math.approach(SideProgress, 1, timer.frametime() / 0.1)
+                                ply:setPos(math.lerpVector(SideProgress, LedgeStartPos, lst))
+                                
+                                coroutine.yield()
+                            end
+                            
+                            LedgeStartPos = lst
+                            LedgeNormal = newledgenormal
+                            LedgeZ = newledgeZ
+                            ValidPullUp = nil
+                            --ply.LookDir = ( (newledge - newledgenormal * Vector(100, 100, 100)) - lst ):getAngle()
+                            
+                            SideProgress = 0
+                            
+                            runHookShared("CM_ShimmyEnd", ply, side)
+                        end
+                    end
+                end
+                
+                ply.ClimbTask = nil
+                coroutine.yield()
+            end
+            
+            return true
+        end)
+    end
+    
+    function DoSpaceCheck(ply, startendpos)
+        local spacecheck = trace.hull(
+            startendpos,
+            startendpos,
+            BoxHullMins,
+            BoxHull,
+            ply
+        )
+    
+        return (!spacecheck.Hit and !spacecheck.StartSolid)
+    end
+
+    function TraceForLedge(ply)
+        if ply.ClimbCD then return end
+        local tr = trace.hull(ply:getPos(), ply:getPos() + ( ply:getAimVector() * 60 ), BoxHullMins, BoxHull, ply, MASK.PLAYERSOLID)
+        
+        if isValid(tr.Entity) and ClimbModule.useswcase[tr.Entity:getName()] then return end
+    
+        local cangrab = DoSpaceCheck(ply, tr.HitPos)
+    
+        if tr.Hit and cangrab and InRange(tr.HitNormal.z, -0.35, 0.4) then
+            local tr2sp = tr.HitPos - (tr.HitNormal * Vector(20, 20, 0)) + Vector(0, 0, 80)
+            local tr2 = trace.hull(
+                tr2sp,
+                tr2sp - Vector(0, 0, 30),
+                -BoxHull2,
+                BoxHull2,
+                ply,
+                MASK.PLAYERSOLID
+            )
+    
+            if tr2.Hit and InRange(tr2.HitNormal.z, 0.85, 1) and !tr2.StartSolid and tr2.HitPos.z >= ply:getShootPos().z then
+                local ledgepos = Vector(tr.HitPos.x, tr.HitPos.y, tr2.HitPos.z - 73)
+                local cangrab = DoSpaceCheck(ply, ledgepos)
+    
+                if cangrab then
+                    return tr.HitPos, tr2.HitPos.z, tr.HitNormal
+                end
+            end
+        end
+    end
+    
+    function TraceForLedgeSide(ply, side, ledgenormal)
+        local norm = ledgenormal:getAngle()
+        local start = ply:getPos() + (ledgenormal * Vector(50, 50, 0)) + (norm:getRight() * side * Vector(5, 5, 0) )
+        local endpos = ply:getPos() - (ledgenormal * Vector(50, 50, 0)) + (norm:getRight() * side * Vector(5, 5, 0) )
+    
+        local tr = trace.hull(
+            start,
+            endpos,
+            BoxHullMins,
+            BoxHull,
+            ply,
+            MASK.PLAYERSOLID
+        )
+    
+
+    
+        if tr.Hit and InRange(tr.HitNormal.z, -0.35, 0.4) then
+            local tr2sp = tr.HitPos - (tr.HitNormal * Vector(20, 20, 0)) + Vector(0, 0, 80)
+            local tr2 = trace.hull(
+                tr2sp,
+                tr2sp - Vector(0, 0, 30),
+                -BoxHull2,
+                BoxHull2,
+                ply
+            )
+            
+            if tr2.Hit and InRange(tr2.HitNormal.z, 0.85, 1) and !tr2.StartSolid then
+                return tr.HitPos, tr2.HitPos.z, tr.HitNormal, side
+            end
+        end
+    end
+    
+    function VerticalPole(ply, pole)
+        if ply.ClimbTask then return end
+        ply:setClimbTask(function()
+            local trans = false
+            local sidepos
+            local mprog = 0
+            
+            local function getSidePos(cpos, side)
+                local lookat = (cpos - ply:getPos()):getAngle()
+            
+                local tr = trace.line(
+                    ply:getPos() + lookat:getRight() * side,
+                    cpos,
+                    ply
+                )
+                
+                if isValid(tr.Entity) and tr.Entity == pole then
+                    return tr.HitNormal
+                end
+            end
+            
+            pole.abstop = pole:localToWorld(pole:obbMaxs() - Vector(pole:obbMaxs().x, pole:obbMaxs().y, 0))
+            pole.toppos = pole:localToWorld(pole:obbMaxs() - Vector(pole:obbMaxs().x, pole:obbMaxs().y, 73))
+            pole.botpos = pole:localToWorld(pole:obbMins() - Vector(pole:obbMins().x, pole:obbMins().y, -1))
+            local time = pole.botpos:getDistance(pole.toppos) / 100
+            
+            if ply:getPos().z < pole.botpos.z then
+                trans = true
+                ply:setMoveType(MOVETYPE.WALK)
+                ply.ClimbTask = nil
+                return true
+            end
+            
+            pole.linedist = pole.botpos:getDistance(pole.toppos)
+            
+            local dfl, np, dalfs = math.distanceToLine(pole.botpos, pole.toppos, ply:getPos())
+            local climbfrac = dalfs / pole.linedist
+            local climbprogress = math.clamp(climbfrac, 0.1, 1)
+            local cpos = math.lerpVector(climbprogress, pole.botpos, pole.toppos)
+            
+            sidepos = getSidePos(cpos, 0)
+            
+            if !DoSpaceCheck(ply, cpos + sidepos * 32) then
+                trans = true
+                ply:setMoveType(MOVETYPE.WALK)
+                ply.ClimbTask = nil
+                return true
+            end
+            
+            ply:setMoveType(MOVETYPE.PUSH)
+            
+            local startpos = ply:getPos()
+            while mprog < 1 do
+                mprog = math.approach(mprog, 1, timer.frametime() / 0.3)
+                local tcpos = math.lerpVector(climbprogress, pole.botpos, pole.toppos)
+                ply:setPos(math.lerpVector(math.easeOutBack(mprog), startpos, tcpos + sidepos * 32))
+                coroutine.yield()
+            end
+            
+            startpos= nil
+            mprog = 0
+            
+            while ply:isAlive() and !trans do
+                cpos = math.lerpVector(climbprogress, pole.botpos, pole.toppos)
+                ply:setPos( cpos + sidepos * 32 )
+                
+                if ply:keyPressed(IN_KEY.JUMP) then
+                    trans = true
+                    ply:setMoveType(MOVETYPE.WALK)
+                    ply:setLocalVelocity(ply:getAimVector() * 300)
+                end
+                
+                if ply:keyDown(IN_KEY.MOVELEFT) then
+                    if getSidePos(cpos, -15) then
+                        local curspos = sidepos
+                        local newspos = getSidePos(cpos, -15)
+                        
+                        if DoSpaceCheck(ply, cpos + newspos * 32) then
+                            while mprog < 1 do
+                                mprog = math.approach(mprog, 1, timer.frametime() / 0.5)
+                                sidepos = math.lerpVector(mprog, curspos, newspos)
+                                ply:setPos( cpos + sidepos * 32 )
+                                coroutine.yield()
+                            end
+                            
+                            mprog = 0
+                        end
+                    end
+                elseif ply:keyDown(IN_KEY.MOVERIGHT) then
+                    if getSidePos(cpos, 15) then
+                        local curspos = sidepos
+                        local newspos = getSidePos(cpos, 15)
+                        
+                        if DoSpaceCheck(ply, cpos + newspos * 32) then
+                            while mprog < 1 do
+                                mprog = math.approach(mprog, 1, timer.frametime() / 0.5)
+                                sidepos = math.lerpVector(mprog, curspos, newspos)
+                                ply:setPos( cpos + sidepos * 32 )
+                                coroutine.yield()
+                            end
+                            
+                            mprog = 0
+                        end
+                    end
+                end
+                
+                if ply:keyDown(IN_KEY.FORWARD) then
+                    climbprogress = math.approach(climbprogress, 1, timer.frametime() / time)
+                    if climbprogress == 1 and DoSpaceCheck(ply, pole.abstop + Vector(0, 0, 1)) then
+                        local eprog = 0
+                        local startpos = ply:getPos()
+                        while ply:isAlive() and eprog < 1 do
+                            eprog = math.approach(eprog, 1, timer.frametime() / 0.7)
+                            ply:setPos(math.lerpVector(math.easeInSine(eprog), startpos, pole.abstop))
+                            coroutine.yield()
+                        end
+                        
+                        ply:setLocalVelocity(Vector())
+                        trans = true
+                    end
+                elseif ply:keyDown(IN_KEY.BACK) then
+                    climbprogress = math.approach(climbprogress, 0, timer.frametime() / time)
+                end
+                
+                coroutine.yield()
+            end
+            
+            ply.ClimbTask = nil
+            ply:setMoveType(MOVETYPE.WALK)
+            return true
+        end)
+    end
+    
+    function CornerPole(ply, pole)
+        local trans = false
+        ply:setClimbTask(function()
+            ply:setLocalVelocity(Vector())
+            ply:setMoveType(MOVETYPE.PUSH)
+            local startpos = ply:getPos()
+            local side = (ply:getForward():dot(pole:getForward()) < 0.5 and 1 or -1)
+            local mprog = 0
+            
+            local poses = {
+                Vector(pole:getPos().x + pole:getForward().x * 32 * side, pole:getPos().y + pole:getForward().y * 32 * side, startpos.z),
+                Vector(pole:getPos().x + pole:getRight().x * 32, pole:getPos().y + pole:getRight().y * 32, startpos.z ),
+                Vector(pole:getPos().x - pole:getForward().x * 32 * side, pole:getPos().y - pole:getForward().y * 32 * side, startpos.z),
+            }
+            
+            while mprog < 1 do
+                mprog = math.approach(mprog, 1, timer.frametime() / 0.2)
+                ply:setPos(math.lerpVector(mprog, startpos, poses[1]))
+                coroutine.yield()
+            end
+
+            mprog = 0
+            
+            runHookShared("CM_CornerPole", ply, side)
+            while mprog < 1 do
+                mprog = math.approach(mprog, 1, timer.frametime() / 0.3)
+                local bezier = math.bezierVector(mprog, poses[1], poses[2], poses[3])
+                ply:setPos(bezier)
+                coroutine.yield()
+            end
+            
+            ply:setMoveType(MOVETYPE.WALK)
+            if side == 1 then
+                ply:setLocalVelocity( -pole:getForward() * 200 * side - pole:getRight() * 200 * side )
+            else
+                ply:setLocalVelocity( -pole:getForward() * 200 * side + pole:getRight() * 200 * side )
+            end
+            ply.ClimbTask = nil
+            return true
+        end)
+    end
+    
+    function SwingPole(ply, pole)
+        local trans = false
+        ply:setClimbTask(function()
+            ply:setLocalVelocity(Vector())
+            ply:setMoveType(MOVETYPE.PUSH)
+            local startpos = ply:getPos()
+            local side = (ply:getForward():dot(pole:getForward()) < 0.5 and 1 or -1)
+            local mprog = 0
+            local obbc = pole:obbCenterW()
+            
+            local poses = {
+                Vector(obbc.x + pole:getForward().x * 40 * side, obbc.y + pole:getForward().y * 40 * side, pole:getPos().z - 73),
+                Vector(obbc.x + pole:getRight().x * 32, obbc.y + pole:getRight().y * 32, pole:getPos().z - 146 ),
+                Vector(obbc.x - pole:getForward().x * 40 * side, obbc.y - pole:getForward().y * 40 * side, pole:getPos().z - 50),
+            }
+            
+            runHookShared("CM_SwingPoleStart", ply)
+            while ply:isAlive() and mprog < 1 do
+                mprog = math.approach(mprog, 1, timer.frametime() / 0.2)
+                ply:setPos(math.lerpVector(mprog, startpos, poses[1]))
+                coroutine.yield()
+            end
+
+            mprog = 0
+            
+            while ply:isAlive() and mprog < 0.7 do
+                mprog = math.approach(mprog, 0.7, timer.frametime() / 0.5)
+                local bezier = math.bezierVector(mprog, poses[1], poses[2], poses[3])
+                ply:setPos(bezier)
+                coroutine.yield()
+            end
+            
+            if ply:keyDown(IN_KEY.JUMP) then
+                while ply:isAlive() and mprog < 1 do
+                    mprog = math.approach(mprog, 1, timer.frametime() / 0.5)
+                    local bezier = math.bezierVector(mprog, poses[1], poses[2], poses[3])
+                    ply:setPos(bezier)
+                    coroutine.yield()
+                end
+                
+                ply:setMoveType(MOVETYPE.WALK)
+                if side == 1 then
+                    ply:setLocalVelocity( -pole:getForward() * 200 + Vector(0, 0, 300) )
+                else
+                    ply:setLocalVelocity( pole:getForward() * 200 + Vector(0, 0, 300) )
+                end
+                runHookShared("CM_SwingPoleJump", ply, true)
+            else
+                ply:setMoveType(MOVETYPE.WALK)
+                if side == 1 then
+                    ply:setLocalVelocity( -pole:getForward() * 400 + Vector(0, 0, 150) )
+                else
+                    ply:setLocalVelocity( pole:getForward() * 400 + Vector(0, 0, 150) )
+                end
+                runHookShared("CM_SwingPoleJump", ply, false)
+            end
+            
+
+            ply.ClimbTask = nil
+            return true
+        end)
+    end
+    
+    function Slide(ply)
+        if ply.ClimbTask then return end
+        ply:setClimbTask(function()
+            local trans = false
+            local hMin, hMax = ply:getPhysicsObject():getAABB()
+            local curSpeed = ply:getVelocity():getLength() * 0.2
+            local desiredSpeed
+            local slideSound = sound.create(ply, "physics/body/body_medium_scrape_rough_loop1.wav")
+            slideSound:play()
+            
+            hook.add("SetupMove", "Slide_ForceCrouch_"..ply:entIndex(), function(cply, mv)
+                if cply == ply then
+                    mv:addKey(IN_KEY.DUCK)
+                    mv:removeKey(IN_KEY.JUMP)
+                end
+            end)
+            
+            runHookShared("CM_SlideStart", ply)
+            
+            while ply:isAlive() and !trans do
+                local tr = trace.hull(ply:getPos(), ply:getPos() - Vector(0, 0, 30), hMin, hMax, ply)
+                
+                if tr.Hit and ply:isOnGround() then
+                    local n = tr.HitNormal
+                    local steepness = 1 - n.z
+                    
+                    if n.z < 0.9 or ply:getGroundEntity():getName() == "slidesurf" then
+                        local desiredSpeed = Vector(1000) * steepness
+                        curSpeed = math.approach(curSpeed, desiredSpeed.x, 1)
+                        
+                        ply:setVelocity( Vector(curSpeed) * Vector(n.x, n.y) - Vector(0, 0, -n.z))
+                    else
+                        local desiredSpeed = Vector(0)
+                        curSpeed = math.approach(curSpeed, desiredSpeed.x, n.z)
+                        ply:setVelocity( Vector(curSpeed) * Vector(n.x, n.y) - Vector(0, 0, -n.z))
+                        
+                        if curSpeed < 50 and !ply:keyDown(IN_KEY.DUCK) or curSpeed <= 10 then
+                            trans = true
+                        end
+                    end
+                    
+                    if ply:keyDown(IN_KEY.JUMP) then
+                        trans = true
+                        ply:setLocalVelocity(ply:getVelocity() + Vector(0, 0, 250))
+                        runHookShared("CM_SlideJump", ply)
+                    end
+                elseif !ply:isOnGround() then
+                    trans = true
+                end
+                
+                slideSound:setPitch(math.clamp(curSpeed, 100, 200))
+                slideSound:setVolume( ply:isOnGround() and curSpeed / 600 or 0 )
+                
+                coroutine.yield()
+            end
+            
+            ply.ClimbTask = nil
+            slideSound:destroy()
+            runHookShared("CM_SlideEnd", ply)
+            coroutine.wait(0.5)
+            hook.remove("SetupMove", "Slide_ForceCrouch_"..ply:entIndex())
+            return true
+        end)
+    end
+    
+    function GrindRail(ply, rail, speed)
+        local trans = false
+        
+        ply:setClimbTask(function()
+            ply:setMoveType(MOVETYPE.PUSH)
+            ply:setLocalVelocity(Vector())
+            local prog = 0
+            speed = speed or 500
+            local startpos = ply:getPos()
+        
+            rail.toppos = rail:localToWorld(rail:obbMaxs() - Vector(rail:obbMaxs().x, rail:obbMaxs().y, 0))
+            rail.botpos = rail:localToWorld(rail:obbMins() - Vector(rail:obbMins().x, rail:obbMins().y, 0))
+            local time = rail.botpos:getDistance(rail.toppos) / speed
+            
+            local dfl, np, dalfs = math.distanceToLine(rail.botpos, rail.toppos, ply:getPos())
+            rail.linedist = rail.botpos:getDistance(rail.toppos)
+            local railfrac = dalfs / rail.linedist
+            prog = math.clamp(railfrac, 0, 1)
+            
+            runHookShared("CM_GrindStart", ply, rail)
+            
+            while ply:isAlive() and !trans and prog < 1 do
+                if ply:keyPressed(IN_KEY.JUMP) then
+                    trans = true
+                    ply:setMoveType(MOVETYPE.WALK)
+                    
+                    local add = Vector()
+                    
+                    if ply:keyDown(IN_KEY.MOVERIGHT) then
+                        add = -rail:getRight() * 200
+                    elseif ply:keyDown(IN_KEY.MOVELEFT) then
+                        add = rail:getRight() * 200
+                    end
+                    
+                    ply:setLocalVelocity(rail:getUp() * speed + rail:getForward() * 200 + add)
+                end
+            
+                if prog < 0.99 then
+                    prog = math.approach(prog, 0.99, timer.frametime() / time)
+                    local newpos = math.lerpVector(prog, rail.botpos, rail.toppos) + rail:getForward() * (rail:obbMaxs().x * 2) +
+                    rail:getForward() * 73 * ( math.abs(math.clamp(rail:getForward().z, -1, 0)) ) +
+                    rail:getForward() * 32 * ( math.abs(rail:getRight().z) )
+                    ply:setPos(math.lerpVector(0.3, ply:getPos(), newpos))
+                else
+                    local nextTrace = trace.hull(
+                        rail.toppos,
+                        rail.toppos + rail:getUp() * 32,
+                        -BoxHull2,
+                        BoxHull2,
+                        rail
+                    )
+                    
+                    if ply:isAlive() and isValid(nextTrace.Entity) and nextTrace.Entity:getName() == "grindrail" then
+                        rail = nextTrace.Entity
+                        rail.toppos = rail:localToWorld(rail:obbMaxs() - Vector(rail:obbMaxs().x, rail:obbMaxs().y, 0))
+                        rail.botpos = rail:localToWorld(rail:obbMins() - Vector(rail:obbMins().x, rail:obbMins().y, 0))
+                        time = rail.botpos:getDistance(rail.toppos) / speed
+                        
+                        local dfl, np, dalfs = math.distanceToLine(rail.botpos, rail.toppos, ply:getPos())
+                        rail.linedist = rail.botpos:getDistance(rail.toppos)
+                        local railfrac = dalfs / rail.linedist
+                        prog = math.clamp(railfrac, 0, 1)
+                        runHookShared("CM_GrindSwitch", ply, rail)
+                    else
+                        prog = 1
+                    end
+                end
+                coroutine.yield()
+            end
+            
+            if !trans then
+                ply:setMoveType(MOVETYPE.WALK)
+                ply:setLocalVelocity(rail:getUp() * speed)
+            end
+            runHookShared("CM_GrindEnd", ply)
+            ply.ClimbTask = nil
+            return true
+        end)
+    end
+    
+    function Vault(ply, p1, p2, p3, canSpring)    
+        ply:setClimbTask(function()
+            local prog = 0
+            local startpos = ply:getPos()
+            ply:setMoveType(MOVETYPE.PUSH)
+            
+            runHookShared("CM_VaultP0", ply)
+            
+            while ply:isAlive() and prog < 1 do
+                prog = math.approach(prog, 1, timer.frametime() / 0.2)
+                ply:setPos(math.lerpVector(prog, startpos, p1))
+                coroutine.yield()
+            end
+            
+            prog = 0
+            
+            runHookShared("CM_VaultStart", ply)
+            while ply:isAlive() and prog < 0.3 do
+                prog = math.approach(prog, 0.3, timer.frametime() / 0.25)
+                local bezier = math.bezierVector(prog, p1, p2, p3)
+                ply:setPos(bezier)
+                coroutine.yield()
+            end
+            
+            if ply:isAlive() and canSpring and ply:keyDown(IN_KEY.JUMP) then
+                prog = 0
+                local springStart = ply:getPos()
+                
+                runHookShared("CM_SpringJumpStart", ply)
+                while ply:isAlive() and prog < 1 do
+                    prog = math.approach(prog, 1, timer.frametime() / 0.3)
+                    ply:setPos(math.lerpVector(prog, springStart, p2))
+                    coroutine.yield()
+                end
+                
+                local far = ply:keyDown(IN_KEY.FORWARD)
+                
+                ply.ClimbTask = nil
+                ply:setMoveType(MOVETYPE.WALK)
+                ply:setLocalVelocity(ply:getForward() * (far and 500 or 200) + Vector(0, 0, (far and 260 or 450) ))
+                runHookShared("CM_SpringJumped", ply, far)
+            else
+                while ply:isAlive() and prog < 1 do
+                    prog = math.approach(prog, 1, timer.frametime() / 0.4)
+                    local bezier = math.bezierVector(prog, p1, p2, p3)
+                    ply:setPos(bezier)
+                    coroutine.yield()
+                end
+                runHookShared("CM_VaultEnd", ply)
+            end
+            
+            ply.ClimbTask = nil
+            ply:setMoveType(MOVETYPE.WALK)
+            return true
+        end)
+    end
+    
+    function Wallrun(ply, spos, normal, side)
+        ply:setClimbTask(function()
+            local initPos = ply:getPos()
+            local startspeed = ply:getVelocity():getLength()
+            local upmove = 16
+            ply:setMoveType(MOVETYPE.PUSH)
+            ply:setLocalVelocity(Vector())
+            print("wallran")
+        
+            coroutine.whileProg(function(p)
+                ply:setPos(math.lerpVector(p, initPos, spos))
+            end, 0.1, function() return ply:isAlive() end)
+            
+            local espos, enpos = Vector(), Vector()
+            local jumped = false
+            
+            while ply:isAlive() and startspeed > 100 and upmove >= -20 and not jumped do
+                local npos = spos + (normal:getAngle():getRight() * side) * 32 + Vector(0, 0, upmove)
+                
+                if not DoSpaceCheck(ply, npos) then break end
+                local enttr = trace.hull(npos, npos - normal * 16, BoxHullMins, BoxHull, ply)
+                if not enttr.Hit then break end
+                
+                local t = spos:getDistance(npos) / startspeed
+                
+                coroutine.whileProg(function(p)
+                    ply:setPos(math.lerpVector(p, spos, npos))
+                    if not ply:keyDown(IN_KEY.JUMP) then jumped = true end
+                end, t, function() return ply:isAlive() end)
+                
+                upmove = upmove - 3
+                
+                espos, enpos = spos, npos
+                spos = npos
+            end
+            
+            ply:setMoveType(MOVETYPE.WALK)
+            if jumped then
+                ply:setLocalVelocity((ply:getAimVector() * Vector(1, 1, 0)) * 200 + Vector(0, 0, 200))
+            else
+                ply:setLocalVelocity( (enpos - espos):getAngle():getForward() * 200 )
+            end
+            ply.ClimbTask = nil
+            return true
+        end)
+    end
+
+    hook.add("PlayerPostThink", "ClimbModule_Think", function(ply)
+        if !ply.ClimbTask and !ply:isOnGround() and ply:keyDown(IN_KEY.JUMP) then
+            
+            local tr = trace.hull(ply:getEyePos(), ply:getEyePos() + ( ply:getAimVector() * 60 ), -BoxHull2, BoxHull2, ply, MASK.PLAYERSOLID)
+            if isValid(tr.Entity) and ClimbModule.useswcase[tr.Entity:getName()] then
+                ClimbModule.useswcase[tr.Entity:getName()](ply, tr.Entity)
+                return
+            else
+                local ledge, ledgeZ, ledgenormal = TraceForLedge(ply)
+                if ledge and ply:getMoveType() == MOVETYPE.WALK then
+                    LedgeHang(ply, ledge, ledgeZ, ledgenormal)
+                    return
+                end
+            end
+        end
+
+        if ply:keyPressed(IN_KEY.DUCK) and !ply.AboutToRoll and !ply.RollCD then
+            ply.AboutToRoll = true
+            ply.RollCD = true
+
+            timer.simple(0.2, function() ply.AboutToRoll = nil end)
+            timer.simple(1, function() ply.RollCD = nil end)
+        end
+
+        if ply.LookDir then ply:setEyeAngles( math.lerpAngle(0.1, ply:getEyeAngles(), ply.LookDir) ) end
+    end)
+    
+    hook.add("OnPlayerHitGround", "ClimbModule_HandleLand", function(ply, inWater, onFloater, speed)
+        local grent = ply:getGroundEntity()
+        if !inWater and !onFloater then
+            if isValid(grent) and ClimbModule.landswcase[grent:getName()] then
+                ClimbModule.landswcase[grent:getName()](ply, grent)
+            end
+        end
+    end)
+    
+    hook.add("OnPlayerJump", "ClimbModule_HandleJump", function(ply, speed)
+        if ply:getForward():dot(ply:getVelocity()) < 150 then return end
+        
+        local trsp = ply:getPos() + Vector(0, 0, 20)
+        local tr = trace.hull(
+            trsp,
+            trsp + ply:getForward() * 64,
+            -BoxHull2,
+            BoxHull2,
+            ply
+        )
+        
+        if tr.Hit and !tr.StartSolid then
+            local tr2sp = tr.HitPos - tr.HitNormal * 10
+            local tr2 = trace.hull(
+                tr2sp + Vector(0, 0, 33),
+                tr2sp,
+                BoxHullMins,
+                Vector(16, 16, 37),
+                ply
+            )
+
+            if tr2.Hit and !tr2.StartSolid then
+                local tr3sp = tr2.HitPos - tr.HitNormal * 50
+                local tr3 = trace.hull(
+                    tr3sp,
+                    tr3sp - Vector(0, 0, 64),
+                    BoxHullMins,
+                    BoxHull,
+                    ply
+                )
+                
+                if tr3.Hit and !tr3.StartSolid or !tr3.Hit then
+                    Vault(ply, tr.HitPos, tr2.HitPos, tr3.HitPos, DoSpaceCheck(ply, tr2.HitPos))
+                    return
+                end
+            end
+        end
+        
+        local trsideright = trace.hull(
+            trsp,
+            trsp + ply:getRight() * 16,
+            BoxHullMins,
+            BoxHull,
+            ply
+        )
+        
+        local trsideleft = trace.hull(
+            trsp,
+            trsp - ply:getRight() * 16,
+            BoxHullMins,
+            BoxHull,
+            ply
+        )
+        
+        if trsideright.Hit and !trsideright.StartSolid or trsideleft.Hit and !trsideleft.StartSolid then
+            local rfrac = trsideright.Fraction
+            local lfrac = trsideleft.Fraction
+            
+            local side = 1
+            
+            if lfrac < rfrac then
+                side = -1
+            end
+        
+            Wallrun(ply, side == 1 and trsideright.HitPos or trsideleft.HitPos, side == 1 and trsideright.HitNormal or trsideleft.HitNormal, side)
+        end
+    end)
+    
+    hook.add("GetFallDamage", "ClimbModule_Fall", function(ply, speed)
+        local hMin, hMax = ply:getPhysicsObject():getAABB()
+        local tr = trace.hull(ply:getPos(), ply:getPos() - Vector(0, 0, 30), hMin, hMax, ply)
+        local steepToSlide = tr.Hit and tr.HitNormal.z < 0.9
+        
+        if steepToSlide or isValid(tr.Entity) and ClimbModule.landswcase[tr.Entity:getName()] then
+            if steepToSlide then
+                Slide(ply)
+            end
+            return true
+        end
+    
+        if speed <= 800 and ply.AboutToRoll and !ply.ClimbTask then
+            ply:setClimbTask(function()
+                local endTime = timer.curtime() + 1
+                
+                hook.add("SetupMove", "Roll_ForceCrouch_"..ply:entIndex(), function(cply, mv, cmd)
+                    if cply == ply then
+                        mv:addKey(IN_KEY.DUCK)
+                        mv:removeKey(IN_KEY.JUMP)
+                        cmd:clearMovement()
+                    end
+                end)
+                
+                runHookShared("CM_RollStart", ply)
+                while timer.curtime() < endTime and ply:isOnGround() and ply:isAlive() do
+                    local y = ply:getAngles()
+                    y.p = 0
+                    y.r = 0
+                    ply:setLocalVelocity(y:getForward() * 200)
+                    coroutine.yield()
+                end
+                
+                ply.ClimbTask = nil
+                hook.remove("SetupMove", "Roll_ForceCrouch_"..ply:entIndex())
+                runHookShared("CM_RollEnd")
+                return true
+            end)
+            
+            return false
+        end
+    end)
+    
+    
+    _G.ClimbModule = {
+        useswcase = {
+            vpole = VerticalPole,
+            cpole = CornerPole,
+            spole = SwingPole
+        },
+        
+        landswcase = {
+            grindrail = GrindRail,
+            slidesurf = Slide
+        }
+    }
+end

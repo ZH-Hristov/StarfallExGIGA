@@ -41,14 +41,15 @@ local function convertFilter(filter)
 	if filter == nil then
 		return nil
 	elseif istable(filter) then
-		if ent_meta.sf2sensitive[filter]==nil then
+		local meta = debug.getmetatable(filter)
+		if meta==ent_meta or (meta and meta.supertype==ent_meta) then
+			return eunwrap(filter)
+		else
 			local l = {}
 			for i, v in ipairs(filter) do
 				l[i] = eunwrap(v)
 			end
 			return l
-		else
-			return eunwrap(filter)
 		end
 	elseif isfunction(filter) then
 		return function(ent)
@@ -133,6 +134,19 @@ function trace_library.intersectRayWithOBB(rayStart, rayDelta, boxOrigin, boxAng
 
 	local pos, normal, fraction = util_IntersectRayWithOBB(start_vec, endpos_vec, origin_vec, angles_ang, minbox_vec, maxbox_vec)
 	if pos then return vwrap(pos), vwrap(normal), fraction end
+end
+
+--- Performs a box-sphere intersection and returns whether there was an intersection or not.
+-- @param Vector boxMins The minimum extents of the World Axis-Aligned box.
+-- @param Vector boxMaxs The maximum extents of the World Axis-Aligned box.
+-- @param Vector spherePos Position of the sphere.
+-- @param number sphereRadius The radius of the sphere.
+-- @return boolean true if there is an intersection, false otherwise.
+function trace_library.isBoxIntersectingSphere(boxMins, boxMaxs, spherePos, sphereRadius)
+	vec_SetUnpacked(minbox_vec, boxMins[1], boxMins[2], boxMins[3])
+	vec_SetUnpacked(maxbox_vec, boxMaxs[1], boxMaxs[2], boxMaxs[3])
+	vec_SetUnpacked(origin_vec, spherePos[1], spherePos[2], spherePos[3])
+	return util.IsBoxIntersectingSphere(minbox_vec, maxbox_vec, origin_vec, sphereRadius)
 end
 
 --- Does a ray plane intersection returning the position hit or nil if not hit
