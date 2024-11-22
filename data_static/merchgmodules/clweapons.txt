@@ -7,19 +7,19 @@ net.receive("fireCLWeapon", function(len, ply)
     local argNum = net.readUInt(16)
     local args = {}
     local isMany
-    
+
     if argNum > 0 then
         if argNum > 1 then
             for i = 1, argNum do
                 table.insert(args, net.readType())
             end
-            
+
             isMany = true
         else
             args = net.readType()
         end
     end
-    
+
     if isMany then
         RegisteredGunFuncs[wepid](ply, unpack(args))
     else
@@ -159,26 +159,26 @@ function GunBase:equip()
     AddCoTask("equipWeapon", function()
         if player().equippedWeapon == self then return true end
         if player().equippedWeapon then player():unequip() end
-        
+
         while Coroutines.unequipWeapon do
             coroutine.yield()
         end
-    
+
         ClearVMHolos()
-    
+
         if self.vmholos then
             for k, v in pairs(self.vmholos) do
                 local hl = holograms.create(v[1], v[2], v[3], v[4])
                 hl:setColor(Color(0, 0, 0, 0))
-                
+
                 if v.mat then
                     hl:setMaterial(v.mat)
                 end
-                
+
                 table.insert(CurMdlHolos, hl)
             end
         end
-    
+
         player().equippedWeapon = self
         if self.equipAnim then
             self:equipAnim()
@@ -188,7 +188,7 @@ function GunBase:equip()
             self.equipped = true
             hook.run("CLWeaponEquipped", self)
         end
-        
+
         return true
     end)
 end
@@ -203,7 +203,7 @@ function em:unequip()
             ClearVMHolos()
             hook.run("CLWeaponUnequipped", self)
             self.equippedWeapon = nil
-            
+
             return true
         end, self.equippedWeapon)
     else
@@ -227,27 +227,29 @@ function GunBase:fireServer(...)
     net.send()
 end
 
+local smoothlight = Vector()
 function GunBase:drawViewModel()
     render.pushViewMatrix(VMMatrix)
     render.depthRange(0, 0)
     render.suppressEngineLighting(true)
-    
+
     local light = render.computeLighting(eyePos(), Vector(0, 0, 1))
-    render.resetModelLighting(light.x, light.y, light.z)
-    
-    
+    smoothlight = math.lerpVector(timer.frametime() * 10, smoothlight, light)
+    render.resetModelLighting(smoothlight.x, smoothlight.y, smoothlight.z)
+
+
     if self.hands then
         render.setColorModulation(1, 1, 1)
         self.hands:draw()
     end
-    
+
     if CurMdlHolos then
         render.setColorModulation(1, 1, 1)
         for _, v in pairs(CurMdlHolos) do
             v:draw()
         end
     end
-    
+
     render.suppressEngineLighting(false)
     render.depthRange(0, 1)
     render.popViewMatrix()
@@ -263,7 +265,7 @@ function GunBase:bobViewmodel(vel)
     unsmoothPos = Vector(3 * clampedSpeed, math.sin(timer.curtime() * animSpeed) * clampedSpeed
     + ( math.clamp(-vel.y * 0.01, -2, 2) ), math.abs(math.sin(timer.curtime() * animSpeed) * 2 * clampedSpeed))
     unsmoothAng = Angle(math.abs(math.sin(timer.curtime() * animSpeed) * 3 * clampedSpeed), vel.y * 0.01, 10 * (math.clamp(vel.y / player():getMaxSpeed(), -1, 1)) )
-    
+
     VMBobPos["GenericPos"] = math.lerpVector(0.1, VMBobPos["GenericPos"], unsmoothPos)
     VMBobAng["GenericAng"] = math.lerpAngle(0.1, VMBobAng["GenericAng"], unsmoothAng)
 end
@@ -272,13 +274,13 @@ function AddSimpleRecoil(pospower, angpower, dur, ease)
     local curtname = "simplerecoil_"..timer.curtime()
     local curtpos = curtname.."pos"
     local curtang = curtname.."ang"
-    
+
     VMBobPos[curtpos] = Vector(0)
     VMBobAng[curtang] = Angle(0)
-    
+
     AddTween(curtpos, VMBobPos, {[curtpos] = pospower or Vector()},
     dur, function() VMBobPos[curtpos] = nil end, ease or math.easeRecoilSpike)
-    
+
     AddTween(curtang, VMBobAng, {[curtang] = angpower or Angle()},
     dur, function() VMBobAng[curtang] = nil end, ease or math.easeRecoilSpike)
 end
@@ -317,7 +319,7 @@ hook.add("mousemoved", "VMSway", function(x, y)
     VMBobAng.SwayAng = VMBobAng.SwayAng + Angle(-y * 0.003, x * 0.003)
 end)
 
-hook.add("PreDrawHud", "DrawCLWViewModels", function()
+hook.add("PreDrawViewModels", "DrawCLWViewModels", function()
     if player().equippedWeapon and player():isAlive() then
         VMMatrix.origin = zeroVec + table.sumVector(VMBobPos)
         VMMatrix.angles = zeroAng + table.sumAngle(VMBobAng)
