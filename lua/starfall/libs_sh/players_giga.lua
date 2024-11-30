@@ -1975,6 +1975,17 @@ else
 		end
 	end
 
+	--- Sets the bone position and angles. Needs to be in rendering hook.
+	-- @client
+	-- @param number bone The bone ID to manipulate.
+	-- @param Vector pos The position to set.
+	-- @param Angle ang The angles to set.
+	function ents_methods:setBonePosition(bone, pos, ang)
+		if eunwrap(self):GetOwner() == instance.player or superOrAdmin(instance) then
+			eunwrap(self):SetBonePosition(bone, vunwrap(pos), aunwrap(ang))
+		end
+	end
+
 	--- Sets up clientside anim event handling.
 	-- @client
 	-- @param function callback The callback function to run when an anim event happens. Has 4 args (pos, ang, event number, name string).

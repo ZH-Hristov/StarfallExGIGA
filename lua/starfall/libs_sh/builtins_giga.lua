@@ -52,7 +52,13 @@ else
 	-- @class hook
 	-- @client
 	SF.hookAdd("RenderScreenspaceEffects", "drawscreenspace", hudPrepareSafeArgs, cleanupRender)
-	
+
+	--- Called before the player is drawn.
+	-- @name preplayerdraw
+	-- @class hook
+	-- @client
+	SF.hookAdd("PrePlayerDraw", "preplayerdraw", hudPrepareSafeArgs, cleanupRender)
+
 	--- Steamworks Library
 	-- @name steamworks
 	-- @class library
