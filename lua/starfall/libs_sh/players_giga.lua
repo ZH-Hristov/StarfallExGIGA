@@ -508,6 +508,21 @@ function math_library.cubicHermiteSpline(frac, p0, tan0, p1, tan1)
 	return vwrap( math.CHSpline(frac, vunwrap(p0), vunwrap(tan0), vunwrap(p1), vunwrap(tan1)) )
 end
 
+--- Returns entity's save table to be used with ent:setSaveValue.
+-- @return table The entity's save table
+function ents_methods:getSaveTable()
+	return eunwrap(self):GetSaveTable()
+end
+
+--- Sets a save value for an entity. You can see a full list of an entity's save values by creating it and printing Entity:getSaveTable(). SuperAdmin only.
+-- @param string key Name of the save value to set.
+-- @param any value Value to set.
+function ents_methods:setSaveValue(key, value)
+	if superOrAdmin(instance) or instance.player==SF.Superuser then
+		eunwrap(self):SetSaveValue(key, value)
+	end
+end
+
 --- Sets the specified integer on the entity's datatable.
 --@param number key Goes from 0 to 31.
 --@param number int The integer to write on the entity's datatable. This will be cast to a 32-bit signed integer internally.

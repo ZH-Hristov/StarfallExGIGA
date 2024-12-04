@@ -1,0 +1,105 @@
+if SERVER then
+    RagIK = {}
+
+    function RagIK.create(handMdl)
+        if RagIK.ActiveRagdoll then print("Tried to create RagIK twice") return end
+
+        RagIK.ActiveRagdoll = prop.createRagdoll("models/breen.mdl", true)
+
+        local rag = RagIK.ActiveRagdoll
+        rag:setSaveValue("m_ragdoll.allowStretch", true)
+        rag:setSolid(false)
+        rag:setMaterial("particle/warp1_warp")
+
+        for i = 0, rag:getPhysicsObjectCount() - 1 do
+            local po = rag:getPhysicsObjectNum(i)
+
+            po:setPos(chip():getPos() + Vector(0, 0, 100))
+        end
+
+        local trans = rag:translateBoneToPhysBone(rag:lookupBone("ValveBiped.Bip01_R_Forearm"))
+        local trans2 = rag:translateBoneToPhysBone(rag:lookupBone("ValveBiped.Bip01_R_Upperarm"))
+        local trans3 = rag:translateBoneToPhysBone(rag:lookupBone("ValveBiped.Bip01_R_Hand"))
+
+        local ltrans = rag:translateBoneToPhysBone(rag:lookupBone("ValveBiped.Bip01_L_Forearm"))
+        local ltrans2 = rag:translateBoneToPhysBone(rag:lookupBone("ValveBiped.Bip01_L_Upperarm"))
+        local ltrans3 = rag:translateBoneToPhysBone(rag:lookupBone("ValveBiped.Bip01_L_Hand"))
+
+        rag:getPhysicsObjectNum(trans):enableMotion(true)
+        rag:getPhysicsObjectNum(trans2):enableMotion(true)
+
+        rag:getPhysicsObjectNum(ltrans):enableMotion(true)
+        rag:getPhysicsObjectNum(ltrans2):enableMotion(true)
+
+        local ignoreBones = {[2] = true, [6] = true, [7] = true, [5] = true, [4] = true, [3] = true}
+
+        net.start("RagIKCreateFakeHands")
+        net.writeEntity(rag)
+        net.writeString(handMdl or owner():getHands():getModel())
+        net.send(entity(1))
+
+        hook.add("think", "RagIKThink", function()
+            for i = 0, rag:getPhysicsObjectCount() - 1 do
+                local po = rag:getPhysicsObjectNum(i)
+                if ignoreBones[i] then continue end
+
+                local yawgs = owner():getEyeAngles()
+                rag:getPhysicsObjectNum(0):setAngles(yawgs + Angle(0, 90, 90))
+                rag:getPhysicsObjectNum(1):setAngles(yawgs + Angle(-90, 0, -90))
+                po:setPos(owner():getPos() + Vector(0, 0, 45) - owner():getAimVector() * 15)
+            end
+
+            rag:getPhysicsObjectNum(trans3):setPos(RagIK.RightPos or entity(1):getEyePos())
+            rag:getPhysicsObjectNum(trans3):wake()
+            rag:getPhysicsObjectNum(trans3):setAngles(RagIK.RightAngle or Angle(-90, 90, 0))
+
+            rag:getPhysicsObjectNum(ltrans3):setPos(RagIK.LeftPos or entity(1):getEyePos())
+            rag:getPhysicsObjectNum(ltrans3):wake()
+            rag:getPhysicsObjectNum(ltrans3):setAngles(RagIK.LeftAngle or Angle(-90, 90, 0))
+        end)
+    end
+
+    function RagIK.setRightPos(pos)
+        RagIK.RightPos = pos
+    end
+
+    function RagIK.setLeftPos(pos)
+        RagIK.LeftPos = pos
+    end
+
+    function RagIK.setRightAngle(ang)
+        RagIK.RightAngle = ang
+    end
+
+    function RagIK.setLeftAngle(ang)
+        RagIK.LeftAngle = ang
+    end
+
+    function RagIK.getRightHand()
+        return RagIK.ActiveRagdoll:getPhysicsObjectNum(7)
+    end
+
+    function RagIK.getLeftHand()
+        return RagIK.ActiveRagdoll:getPhysicsObjectNum(5)
+    end
+
+    function RagIK.remove()
+        hook.remove("think", "RagIKThink")
+
+        if isValid(RagIK.ActiveRagdoll) then
+            RagIK.ActiveRagdoll:remove()
+        end
+
+        RagIK.ActiveRagdoll = nil
+    end
+else
+    net.receive("RagIKCreateFakeHands", function()
+        net.readEntity(function(ent)
+            if not ent or not isValid(ent) then return end
+
+            local hands = hologram.create(Vector(), Angle(), net.readString())
+            hands:setParentEx(ent, nil, 2)
+            hands:addEffects(EF.BONEMERGE)
+        end)
+    end)
+end
