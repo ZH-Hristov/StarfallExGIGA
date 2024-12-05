@@ -32,6 +32,7 @@ if SERVER then
         rag:getPhysicsObjectNum(ltrans2):enableMotion(true)
 
         local ignoreBones = {[2] = true, [6] = true, [7] = true, [5] = true, [4] = true, [3] = true}
+        local first = true
 
         net.start("RagIKCreateFakeHands")
         net.writeEntity(rag)
@@ -41,7 +42,7 @@ if SERVER then
         hook.add("think", "RagIKThink", function()
             for i = 0, rag:getPhysicsObjectCount() - 1 do
                 local po = rag:getPhysicsObjectNum(i)
-                if ignoreBones[i] then continue end
+                if ignoreBones[i] and not first then continue end
 
                 local yawgs = owner():getEyeAngles()
                 rag:getPhysicsObjectNum(0):setAngles(yawgs + Angle(0, 90, 90))
@@ -49,11 +50,24 @@ if SERVER then
                 po:setPos(owner():getPos() + Vector(0, 0, 45) - owner():getAimVector() * 15)
             end
 
-            rag:getPhysicsObjectNum(trans3):setPos(RagIK.RightPos or RagIK.getRightDefPos())
+            if first then first = false end
+
+            local trleft, trright
+            if RagIK.RightPos then
+                local lookAt = (RagIK.RightPos - ply:getEyePos()):getAngle():getForward()
+                trright = trace.line(ply:getEyePos(), ply:getEyePos() + lookAt * math.min(ply:getEyePos():getDistance(RagIK.RightPos), 24), ply, 0)
+            end
+
+            if RagIK.LeftPos then
+                local lookAt = (RagIK.LeftPos - ply:getEyePos()):getAngle():getForward()
+                trleft = trace.line(ply:getEyePos(), ply:getEyePos() + lookAt * math.min(ply:getEyePos():getDistance(RagIK.LeftPos), 24), ply, 0)
+            end
+
+            rag:getPhysicsObjectNum(trans3):setPos(trright and trright.HitPos or RagIK.getRightDefPos())
             rag:getPhysicsObjectNum(trans3):wake()
             rag:getPhysicsObjectNum(trans3):setAngles(RagIK.RightAngle or Angle(-90, 90, 0))
 
-            rag:getPhysicsObjectNum(ltrans3):setPos(RagIK.LeftPos or RagIK.getRightDefPos())
+            rag:getPhysicsObjectNum(ltrans3):setPos(trleft and trleft.HitPos or RagIK.getLeftDefPos())
             rag:getPhysicsObjectNum(ltrans3):wake()
             rag:getPhysicsObjectNum(ltrans3):setAngles(RagIK.LeftAngle or Angle(-90, 90, 0))
         end)
@@ -84,11 +98,18 @@ if SERVER then
     end
 
     function RagIK.getRightDefPos()
-        return entity(1):getEyePos() - Vector(0, 0, 30) + entity(1):getRight() * 10
+        return entity(1):getEyePos() - Vector(0, 0, 30) + entity(1):getRight() * 10 + entity(1):getForward() * -10
     end
 
     function RagIK.getLeftDefPos()
-        return entity(1):getEyePos() - Vector(0, 0, 30) + entity(1):getRight() * -10
+        return entity(1):getEyePos() - Vector(0, 0, 30) + entity(1):getRight() * -10 + entity(1):getForward() * -10
+    end
+
+    function RagIK.clearPose()
+        RagIK.RightPos = nil
+        RagIK.RightAngle = nil
+        RagIK.LeftPos = nil
+        RagIK.LeftAngle = nil
     end
 
     function RagIK.remove()
@@ -97,6 +118,8 @@ if SERVER then
         if isValid(RagIK.ActiveRagdoll) then
             RagIK.ActiveRagdoll:remove()
         end
+
+        RagIK.clearPose()
 
         RagIK.ActiveRagdoll = nil
     end
@@ -108,6 +131,16 @@ else
             local hands = hologram.create(Vector(), Angle(), net.readString())
             hands:setParentEx(ent, nil, 2)
             hands:addEffects(EF.BONEMERGE)
+
+            AddCoTask("RemoveIKRAGHANDSONREMOVEAAh", function()
+                while isValid(hands:getParent()) do
+                    coroutine.yield()
+                end
+
+                hands:remove()
+
+                return true
+            end)
         end)
     end)
 end
