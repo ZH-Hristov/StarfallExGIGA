@@ -18,7 +18,7 @@ end
 
 RemoveCoTask = function(id)
     Coroutines[id] = nil
-    
+
     if table.isEmpty(Coroutines) then
         hook.remove("think", "HandleCoroutines")
     end
@@ -26,7 +26,7 @@ end
 
 AwaitChatInput = function(cback, allowedPly)
     local sinput
-    
+
     if SERVER then
         hook.add("PlayerSay", "AwaitChatInputSV", function(sentPly, txt)
             if allowedPly and allowedPly ~= sentPly then return end
@@ -40,12 +40,12 @@ AwaitChatInput = function(cback, allowedPly)
             hook.remove("PlayerChat", "AwaitChatInputSV")
         end)
     end
-    
+
     while not sinput do
         coroutine.yield()
         coroutine.wait(0.5)
     end
-    
+
     cback(sinput)
     sinput = nil
 end
@@ -55,7 +55,7 @@ net.receive("CoSignal", function()
     local value = net.readType()
     local expire = net.readFloat()
     CoSignals[id] = value or true
-    
+
     if not timeout then return end
     AddCoTask("CoSignalExpire_"..id..expire, function()
         coroutine.waitPrecise(expire)
@@ -67,18 +67,18 @@ end)
 SendSignal = function(id, value, expire)
     net.start("CoSignal")
     net.writeString(id)
-    
+
     net.writeType(value or true)
-    
+
     if expire then
         net.writeFloat(expire)
     end
-    
+
     if SERVER then net.send(find.allPlayers()) else net.send() end
 end
 
 AwaitSignal = function(id, timeout, whilefunc)
-    
+
     if timeout then
         local timcyc = 0
         while not CoSignals[id] and timcyc < 1 do
@@ -86,16 +86,16 @@ AwaitSignal = function(id, timeout, whilefunc)
             if whilefunc then whilefunc() end
             coroutine.yield()
         end
-        
+
         local cache = CoSignals[id]
-        CoSignals[id] = cache
-        if timcyc ~= 1 then return true else return false end
+        CoSignals[id] = nil
+        if timcyc ~= 1 then return cache else return false end
     else
         while not CoSignals[id] do
             if whilefunc then whilefunc() end
             coroutine.yield()
         end
-        
+
         local cache = CoSignals[id]
         CoSignals[id] = nil
         return cache
@@ -114,14 +114,14 @@ end
 local frt = timer.frametime
 function coroutine.whileProg(func, time, addCheck)
     time = time or 1
-    
+
     local prog = 0
     while prog < 1 and (addCheck and addCheck() or true) do
         prog = math.approach(prog, 1, frt() / time)
         func(prog)
         coroutine.yield()
     end
-    
+
     prog = nil
     time = nil
 end

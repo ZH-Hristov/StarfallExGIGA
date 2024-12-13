@@ -48,6 +48,18 @@ MapLoader.classHandlers = {
         end
         
         return e
+    end,
+
+    edit_fog = function(obj)
+        local e = prop.createSent(obj.pos, Angle(), "edit_fog")
+        
+        for typenm, typetbl in pairs(obj.nwdata) do
+            for k, v in pairs(typetbl) do
+                e["setDT"..typenm](e, k, v)
+            end
+        end
+        
+        return e
     end
 }
 
