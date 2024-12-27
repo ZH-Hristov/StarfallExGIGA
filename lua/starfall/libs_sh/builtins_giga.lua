@@ -28,7 +28,7 @@ end
 local function lockControls(instance)
 	instance.data.input.controlsLocked = true
 	controlsLocked = true
-	
+
 	hook.Add("PlayerBindPress", "sf_keyboard_blockinputEX", function(ply, bind, pressed)
 		if bind ~= "+attack" and bind ~= "+attack2" then return true end
 	end)
@@ -74,6 +74,13 @@ local ent_meta, ewrap, eunwrap = instance.Types.Entity, instance.Types.Entity.Wr
 local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
 local ang_meta, awrap, aunwrap = instance.Types.Angle, instance.Types.Angle.Wrap, instance.Types.Angle.Unwrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
+
+local material_methods, material_meta, matwrap, matunwrap
+local lmaterial_methods, lmaterial_meta, lmatwrap, lmatunwrap
+if CLIENT then
+	material_methods, material_meta, matwrap, matunwrap = instance.Types.Material.Methods, instance.Types.Material, instance.Types.Material.Wrap, instance.Types.Material.Unwrap
+	lmaterial_methods, lmaterial_meta, lmatwrap, lmatunwrap = instance.Types.LockedMaterial.Methods, instance.Types.LockedMaterial, instance.Types.LockedMaterial.Wrap, instance.Types.LockedMaterial.Unwrap
+end
 
 local builtins_library = instance.env
 local fileServer_library, fileStatic_library = instance.Libraries.fileServer, instance.Libraries.fileStatic
@@ -128,7 +135,7 @@ end
 function builtins_library.setMapLighting(lightlevel)
 	if SERVER then
 		engine.LightStyle(0, lightlevel)
-		
+
 		local MapEnvLights = ents.FindByClass("light_environment")
 			if table.Count(MapEnvLights) == 0 then
 				ents.Create("light_environment")
@@ -146,10 +153,10 @@ function builtins_library.setMapAmbientLight(clr, brightness)
 	if table.Count(MapEnvLights) == 0 then
 		ents.Create("light_environment")
 	end
-	
+
 	local c = cunwrap(clr)
-	
-	
+
+
 	for _, v in pairs(MapEnvLights) do
 		v:SetKeyValue("Ambient", c.r.." "..c.g.." "..c.b.." "..brightness)
 		v:SetKeyValue("AmbientHDR", c.r.." "..c.g.." "..c.b.." "..brightness)
@@ -228,7 +235,7 @@ if SERVER then
 			return file.Read(path, "DATA")
 		end
 	end
-	
+
 	--- Writes a file to server. SuperAdmin only.
 	-- @server
 	-- @param string path Filepath relative to data/.
@@ -238,7 +245,7 @@ if SERVER then
 			file.Write(filename, data)
 		end
 	end
-	
+
 	--- Appends a string to the end of a server file. SuperAdmin only.
 	-- @server
 	-- @param string path Filepath relative to data/.
@@ -247,7 +254,7 @@ if SERVER then
 		if !instance.player:IsSuperAdmin() then return end
 		file.Append(filename, data)
 	end
-	
+
 	--- Reads a file asynchronously on server. Superadmin only.
 	-- @server
 	-- @param string path Filepath relative to data/.
@@ -260,7 +267,7 @@ if SERVER then
 			instance:runFunction(callback, path, status, data)
 		end)
 	end
-	
+
 	--- Checks if a file exists
 	-- @param string path Filepath relative to data/sf_filedata/.
 	-- @return boolean? True if exists, false if not, nil if error
@@ -268,7 +275,7 @@ if SERVER then
 		checkluatype (path, TYPE_STRING)
 		return file.Exists(path, "DATA")
 	end
-	
+
 	--- Enumerates a directory
 	-- @param string path The folder to enumerate, relative to data/sf_filedata/.
 	-- @param string? sorting Optional sorting argument. Either nameasc, namedesc, dateasc, datedesc
@@ -277,7 +284,7 @@ if SERVER then
 	function fileServer_library.find(path, sorting)
 		return file.Find(path, "DATA", sorting)
 	end
-	
+
 	--- Creates a directory
 	-- @param string path Filepath relative to data/sf_filedata/.
 	function fileServer_library.createDir(path)
@@ -342,7 +349,7 @@ else
 	function render_library.drawBloom(darken, multiply, sizex, sizey, passes, colormultiply, red, green, blue)
 		DrawBloom(darken, multiply, sizex, sizey, passes, colormultiply, red, green, blue)
 	end
-	
+
 	--- Draws a material overlay on the screen. Must be in drawscreenspace hook.
 	-- @client
 	-- @param string matpath This will be the material that is drawn onto the screen.
@@ -350,7 +357,7 @@ else
 	function render_library.drawMaterialOverlay(mat, refract)
 		DrawMaterialOverlay(mat, refract)
 	end
-	
+
 	--- Creates a motion blur effect by drawing your screen multiple times. Must be in drawscreenspace hook.
 	-- @client
 	-- @param number addalpha How much alpha to change per frame.
@@ -359,7 +366,7 @@ else
 	function render_library.drawMotionBlur(addalpha, drawalpha, delay)
 		DrawMotionBlur(addalpha, drawalpha, delay)
 	end
-	
+
 	--- Draws the sharpen shader, which creates more contrast. Must be in drawscreenspace hook.
 	-- @client
 	-- @param number contrast How much contrast to create.
@@ -367,14 +374,14 @@ else
 	function render_library.drawSharpen(contrast, dist)
 		DrawSharpen(contrast, dist)
 	end
-	
+
 	--- Draws the sobel shader, which detects edges and draws a black border. Must be in drawscreenspace hook.
 	-- @client
 	-- @param number threshold Determines the threshold of edges. A value of 0 will make your screen completely black.
 	function render_library.drawSobel(thres)
 		DrawSobel(thres)
 	end
-	
+
 	--- Draws the toy town shader, which blurs the top and bottom of your screen. This can make very large objects look like toys, hence the name. Must be in drawscreenspace hook.
 	-- @client
 	-- @param number passes An integer determining how many times to draw the effect. A higher number creates more blur.
@@ -382,7 +389,7 @@ else
 	function render_library.drawToyTown(pass, height)
 		DrawToyTown(pass, height)
 	end
-	
+
 	--- Draws a blur rectangle to the UI
 	-- @client
 	-- @param number x X pos
@@ -408,14 +415,14 @@ else
 			DisableClipping(wasEnabled)
 		end
 	end
-	
+
 	--- Sets the lighting origin.
 	-- @param Vector pos The position from which the light should be "emitted".
 	function render_library.setLightingOrigin(pos)
 		if !instance.player:IsSuperAdmin() then return end
 		render.SetLightingOrigin(vunwrap(pos))
 	end
-	
+
 	--- Sets up the local lighting for any upcoming render operation. Up to 4 local lights can be defined, with one of three different types (point, directional, spot).
 	--- Disables all local lights if called with no arguments.
 	-- @param table lights A table containing up to 4 tables for each light source that should be set up. Each of these tables should contain the properties of its associated light source, see https://wiki.facepunch.com/gmod/Structures/LocalLight.
@@ -423,7 +430,7 @@ else
 		if !instance.player:IsSuperAdmin() then return end
 		render.SetLocalModelLights(instance.Sanitize(tbl))
 	end
-	
+
 	--- Overrides the write behaviour of all next rendering operations towards the alpha channel of the current render target.
 	-- @param boolean enable Enable or disable the override.
 	-- @param boolean shouldwrite If the previous argument is true, sets whether the next rendering operations should write to the alpha channel or not. Has no effect if the previous argument is false.
@@ -431,14 +438,21 @@ else
 		if !instance.player:IsSuperAdmin() then return end
 		render.OverrideAlphaWriteEnable( enable, shouldwrite )
 	end
-	
+
+	--- Sets the render material override for all next calls of Entity:draw.
+	-- @param Material mat The material to use as override, use nil to disable.
+	function render_library.setMaterialOverride(imat)
+		if not instance.player:IsSuperAdmin() then return end
+		render.MaterialOverride(imat and lmatunwrap(imat) or nil)
+	end
+
 	--- Play a sound file directly on the client (such as UI sounds, etc).
 	-- @client
 	-- @param string path The path to the sound file, which must be relative to the sound/ folder.
 	function builtins_library.playSoundUI(snd)
 		surface.PlaySound(snd)
 	end
-		
+
 	local pixelVisList = {}
 	function DrawVolLight( ent, mul, dark, size, distance, mindist )
 		local pos = ent:GetPos()
@@ -489,7 +503,7 @@ else
 		if VolLightTestLOS( LocalPlayer(), eunwrap(ent) ) then return end
 		DrawVolLight(eunwrap(ent), mul, dark, size, distance, mindist)
 	end
-	
+
 	--- Locks game controls for typing purposes. SuperAdmin only.
 	-- @client
 	-- @param boolean enabled Whether to lock or unlock the controls
@@ -509,42 +523,42 @@ else
 			unlockControls(instance)
 		end
 	end
-	
+
 	--- Loads a GMod save from the workshop. SP only.
 	-- @client
 	-- @param number saveid The save's workshop ID.
 	function builtins_library.loadWorkshopSave(id)
 		if !game.SinglePlayer then return end
-		
+
 		steamworks.DownloadUGC( id, function( name )
 			RunConsoleCommand("gm_load", name)
 		end )
 	end
-	
+
 	--- Downloads a file from the supplied addon and saves it as a .cache file in garrysmod/cache folder.
 	-- @client
 	-- @param number previewid The Preview ID of workshop item.
 	-- @param function callback The function to process retrieved data. The first and only argument is a string, containing path to the saved file.
 	function steamworks_library.download(previd, callback)
 		if !isSP then return end
-		
+
 		steamworks.Download(previd, true, function(name)
 			instance:runFunction(callback, name)
 		end)
 	end
-	
+
 	--- Retrieves info about supplied Steam Workshop addon.
 	-- @client
 	-- @param number workshopid The ID of Steam Workshop item.
 	-- @param function callback The function to process retrieved data, with one argument which is the data about the item. See https://wiki.facepunch.com/gmod/Structures/UGCFileInfo.
 	function steamworks_library.fileInfo(wsid, callback)
 		if !isSP then return end
-		
+
 		steamworks.FileInfo(wsid, function(tbl)
 			instance:runFunction(callback, tbl)
 		end)
 	end
-	
+
 	--- Retrieves a customized list of Steam Workshop addons.
 	-- @client
 	-- @param string? type The type of items to retrieve. Check https://wiki.facepunch.com/gmod/steamworks.GetList
@@ -560,12 +574,12 @@ else
 		retr = retr or 5
 		days = days or 7
 		userid = userid or 0
-		
+
 		steamworks.GetList(tp, tags, offset, retr, days, userid, function(data)
 			instance:runFunction(callback, data)
 		end)
 	end
-	
+
 	--- Loads the specified image from the /cache folder, used in combination steamworks.download. Most addons will provide a 512x512 png image.
 	-- @client
 	-- @param string name The name of the file.
@@ -575,13 +589,13 @@ else
 
 		return instance.Types.Material.Wrap(AddonMaterial(name))
 	end
-	
+
 	--- Opens specified URL in the steam overlay browser.
 	-- @client
 	-- @param string url URL to open, it has to start with either http:// or https://.
 	function steamworks_library.openURL(url)
 		if !isSP then return end
-		
+
 		gui.OpenURL(url)
 	end
 end

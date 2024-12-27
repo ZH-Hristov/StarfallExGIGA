@@ -167,12 +167,22 @@ function GunBase:equip()
         ClearVMHolos()
 
         if self.vmholos then
-            for k, v in pairs(self.vmholos) do
+            if not self.basePosOffset then
+                self.basePosOffset = self.vmholos[1][1]
+                self.baseAngOffset = self.vmholos[1][2]
+            end
+
+            for _, v in pairs(self.vmholos) do
                 local hl = holograms.create(v[1], v[2], v[3], v[4])
                 hl:setColor(Color(0, 0, 0, 0))
 
                 if v.mat then
                     hl:setMaterial(v.mat)
+                end
+
+                if not v[5] then
+                    hl.basePosOffset = v[1]
+                    hl.baseAngOffset = v[2]
                 end
 
                 table.insert(CurMdlHolos, hl)
@@ -227,16 +237,9 @@ function GunBase:fireServer(...)
     net.send()
 end
 
-local smoothlight = Vector()
 function GunBase:drawViewModel()
     render.pushViewMatrix(VMMatrix)
     render.depthRange(0, 0)
-    render.suppressEngineLighting(true)
-
-    local light = render.computeLighting(eyePos(), Vector(0, 0, 1))
-    smoothlight = math.lerpVector(timer.frametime() * 10, smoothlight, light)
-    render.resetModelLighting(smoothlight.x, smoothlight.y, smoothlight.z)
-
 
     if self.hands then
         render.setColorModulation(1, 1, 1)
@@ -246,11 +249,16 @@ function GunBase:drawViewModel()
     if CurMdlHolos then
         render.setColorModulation(1, 1, 1)
         for _, v in pairs(CurMdlHolos) do
+            if not isValid(v:getParent()) then
+                local ltwp, ltwa = localToWorld(v.basePosOffset, v.baseAngOffset, Cam.origin, Cam.angles)
+
+                v:setPos(ltwp)
+                v:setAngles(ltwa)
+            end
             v:draw()
         end
     end
 
-    render.suppressEngineLighting(false)
     render.depthRange(0, 1)
     render.popViewMatrix()
 end
@@ -285,9 +293,6 @@ function AddSimpleRecoil(pospower, angpower, dur, ease)
     dur, function() VMBobAng[curtang] = nil end, ease or math.easeRecoilSpike)
 end
 
-local jumphullmin = Vector(-12, -12, 0)
-local jumphullmax = Vector(12, 12, 12)
-
 local keyswitch = {
     [IN_KEY.ATTACK] = function() player().equippedWeapon:firePrimary() end,
     [IN_KEY.ATTACK2] = function() player().equippedWeapon:fireSecondary() end,
@@ -321,8 +326,10 @@ end)
 
 hook.add("PreDrawViewModels", "DrawCLWViewModels", function()
     if player().equippedWeapon and player():isAlive() then
-        VMMatrix.origin = zeroVec + table.sumVector(VMBobPos)
-        VMMatrix.angles = zeroAng + table.sumAngle(VMBobAng)
+        local ltwp, ltwa = localToWorld( table.sumVector(VMBobPos), table.sumAngle(VMBobAng), Cam.origin, Cam.angles)
+        VMMatrix.origin = ltwp
+        VMMatrix.angles = ltwa
+        VMMatrix.fov = Cam.fov
         VMBobAng.SwayAng = math.lerpAngle(0.1, VMBobAng.SwayAng, Angle())
         if VMBobEnabled then
             player().equippedWeapon:bobViewmodel(player():getLocalVelocity())
