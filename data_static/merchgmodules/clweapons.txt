@@ -253,7 +253,8 @@ function GunBase:drawViewModel()
         render.setColorModulation(1, 1, 1)
         for _, v in pairs(CurMdlHolos) do
             if not isValid(v:getParent()) then
-                local ltwp, ltwa = localToWorld(v.basePosOffset, v.baseAngOffset, Cam.origin, Cam.angles)
+                --local ltwp, ltwa = localToWorld( table.sumVector(VMBobPos), table.sumAngle(VMBobAng), Cam.origin, Cam.angles)
+                local ltwp, ltwa = localToWorld(v.basePosOffset - table.sumVector(VMBobPos), v.baseAngOffset - table.sumAngle(VMBobAng), Cam.origin, Cam.angles)
 
                 v:setPos(ltwp)
                 v:setAngles(ltwa)
@@ -333,9 +334,8 @@ end)
 
 hook.add("PreDrawViewModels", "DrawCLWViewModels", function()
     if player().equippedWeapon and player():isAlive() then
-        local ltwp, ltwa = localToWorld( table.sumVector(VMBobPos), table.sumAngle(VMBobAng), Cam.origin, Cam.angles)
-        VMMatrix.origin = ltwp
-        VMMatrix.angles = ltwa
+        VMMatrix.origin = Cam.origin
+        VMMatrix.angles = Cam.angles
         VMMatrix.fov = Cam.fov
         VMBobAng.SwayAng = math.lerpAngle(0.1, VMBobAng.SwayAng, Angle())
         if VMBobEnabled then
