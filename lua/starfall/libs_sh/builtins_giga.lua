@@ -70,7 +70,7 @@ return function(instance)
 local checkpermission = instance.player ~= SF.Superuser and SF.Permissions.check or function() end
 
 local owrap, ounwrap = instance.WrapObject, instance.UnwrapObject
-local ent_meta, ewrap, eunwrap = instance.Types.Entity, instance.Types.Entity.Wrap, instance.Types.Entity.Unwrap
+local ent_meta, ewrap, eunwrap, ents_methods = instance.Types.Entity, instance.Types.Entity.Wrap, instance.Types.Entity.Unwrap, instance.Types.Entity.Methods
 local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
 local ang_meta, awrap, aunwrap = instance.Types.Angle, instance.Types.Angle.Wrap, instance.Types.Angle.Unwrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
@@ -504,6 +504,15 @@ else
 		DrawVolLight(eunwrap(ent), mul, dark, size, distance, mindist)
 	end
 
+	
+	function render_library.pushFlashlightMode(en)
+		render.PushFlashlightMode(en)
+	end
+
+	function render_library.popFlashlightMode()
+		render.PopFlashlightMode()
+	end
+	
 	--- Locks game controls for typing purposes. SuperAdmin only.
 	-- @client
 	-- @param boolean enabled Whether to lock or unlock the controls

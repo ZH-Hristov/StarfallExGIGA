@@ -174,7 +174,7 @@ function GunBase:equip()
 
             for _, v in pairs(self.vmholos) do
                 local hl = holograms.create(v[1], v[2], v[3], v[4])
-                hl:setColor(Color(0, 0, 0, 0))
+                hl:setNoDraw(true)
 
                 if v.mat then
                     hl:setMaterial(v.mat)
@@ -244,6 +244,9 @@ function GunBase:drawViewModel()
     if self.hands then
         render.setColorModulation(1, 1, 1)
         self.hands:draw()
+        render.pushFlashlightMode(true)
+        self.hands:draw()
+        render.popFlashlightMode()
     end
 
     if CurMdlHolos then
@@ -256,6 +259,10 @@ function GunBase:drawViewModel()
                 v:setAngles(ltwa)
             end
             v:draw()
+
+            render.pushFlashlightMode(true)
+            v:draw()
+            render.popFlashlightMode()
         end
     end
 
