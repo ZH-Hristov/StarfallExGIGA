@@ -226,7 +226,7 @@ end
 
 function GunBase:fireServer(...)
     net.start("fireCLWeapon")
-    net.writeInt(player().equippedWeapon.id, 16)
+    net.writeInt(self.id, 16)
     if ... then
         local args = { ... }
         net.writeUInt(#args, 16)
