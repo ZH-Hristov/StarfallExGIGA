@@ -29,6 +29,7 @@ end)
 
 else
 
+local render = render
 enableHud(player(), true)
 
 _G.RegisteredGuns = {}
@@ -64,6 +65,8 @@ function table.sumAngle(tbl)
     end
     return sum
 end
+
+local table = table
 
 function AddAmmo(typestr, amt)
     if Ammotypes[typestr] then

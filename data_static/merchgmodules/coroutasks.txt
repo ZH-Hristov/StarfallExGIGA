@@ -1,13 +1,22 @@
 _G.Coroutines = {}
 _G.CoSignals = {}
+_G.CoroutineTimes = {}
+_G.ProfCoroutinesOnNextTick = false
 
 AddCoTask = function(id, func, classInstance)
     if table.isEmpty(Coroutines) then
         hook.add("think", "HandleCoroutines", function()
             if quotaAverage() < quotaMax() * 0.75 then
                 for taskid, task in pairs(Coroutines) do
+                    local syst = 0
+                    if ProfCoroutinesOnNextTick then print("profiling") syst = timer.systime() end
                     if task[1](task[2]) then
                         RemoveCoTask(taskid)
+                    end
+                    if ProfCoroutinesOnNextTick then
+                        print("Profiling someone")
+                        local endTime = timer.systime()
+                        CoroutineTimes[taskid] = endTime - syst
                     end
                 end
             end
@@ -100,6 +109,16 @@ AwaitSignal = function(id, timeout, whilefunc)
         CoSignals[id] = nil
         return cache
     end
+end
+
+function ProfileCoroutines()
+    table.empty(CoroutineTimes)
+    ProfCoroutinesOnNextTick = true
+end
+
+function PrintCoroutineProfile()
+    ProfCoroutinesOnNextTick = false
+    printTable(CoroutineTimes)
 end
 
 function coroutine.waitPrecise(waittime)
