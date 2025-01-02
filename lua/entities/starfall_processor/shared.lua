@@ -20,7 +20,8 @@ local IsValid = FindMetaTable("Entity").IsValid
 
 function ENT:Compile(sfdata)
 	self:Destroy()
-	if sfdata then
+	local newdata = sfdata~=nil
+	if newdata then
 		self.sfdata = sfdata
 		self.owner = sfdata.owner
 		sfdata.proc = self
@@ -34,19 +35,22 @@ function ENT:Compile(sfdata)
 	local ok, instance = SF.Instance.Compile(sfdata.files, sfdata.mainfile, self.owner, self)
 	if not ok then self:Error(instance) return end
 
-	if instance.ppdata.scriptnames and instance.mainfile and instance.ppdata.scriptnames[instance.mainfile] then
-		self.name = string.sub(tostring(instance.ppdata.scriptnames[instance.mainfile]), 1, 64)
-	else
-		self.name = "Generic ( No-Name )"
-	end
+	if newdata then
+		local mainpp = instance.ppdata.files[instance.mainfile]
+		self.name = mainpp.scriptname or "Generic ( No-Name )"
+		self.author = mainpp.scriptauthor or "No-Author"
+		if SERVER then
+			if mainpp.model then
+				pcall(function() self:SetCustomModel(SF.CheckModel(mainpp.model, self.owner, true)) end)
+			end
 
-	if instance.ppdata.scriptauthors and instance.mainfile and instance.ppdata.scriptauthors[instance.mainfile] then
-		self.author = string.sub(tostring(instance.ppdata.scriptauthors[instance.mainfile]), 1, 64)
-	else
-		self.author = nil
+			self.sfsenddata, self.sfownerdata = instance.ppdata:GetSendData(sfdata)
+			self:SendCode()
+		end
 	end
 
 	self.instance = instance
+
 	instance.runOnError = function(err)
 		-- Have to make sure it's valid because the chip can be deleted before deinitialization and trigger errors
 		if IsValid(self) then
@@ -59,8 +63,7 @@ function ENT:Compile(sfdata)
 
 	if SERVER then
 		self.ErroredPlayers = {}
-		local clr = self:GetColor()
-		self:SetColor(Color(255, 255, 255, clr.a))
+		self:SetColor4Part(255, 255, 255, select(4, self:GetColor4Part()))
 		self:SetNWInt("State", self.States.Normal)
 
 		if self.Inputs then
@@ -91,24 +94,6 @@ function ENT:Destroy()
 	end
 end
 
-function ENT:SetupFiles(sfdata)
-	self:Compile(sfdata)
-
-	if SERVER and self.instance then
-		self.sfsenddata = self:GetSendData()
-		self.sfownerdata = self.instance and self.instance.ppdata and self.instance.ppdata.owneronly and self:GetSendData(true) or nil
-
-		if self.instance and self.instance.ppdata.models and self.instance.mainfile then
-			local model = self.instance.ppdata.models[self.instance.mainfile]
-			if model then
-				pcall(function() self:SetCustomModel(SF.CheckModel(model, self.owner, true)) end)
-			end
-		end
-
-		self:SendCode()
-	end
-end
-
 ---Does this chip depend on the script with name `filename`
 ---@param filename string This is a name like `script1.txt`
 ---@return boolean depends Does it depend on `filename`
@@ -132,10 +117,10 @@ function ENT:Error(err)
 
 	if SERVER then
 		self:SetNWInt("State", self.States.Error)
-		self:SetColor(Color(255, 0, 0, 255))
+		self:SetColor4Part(255, 0, 0, 255)
 	end
 
-	hook.Run("StarfallError", self, self.owner, CLIENT and LocalPlayer() or false, self.sfdata and self.sfdata.mainfile or "", msg, traceback)
+	hook.Run("StarfallError", self, self.owner, CLIENT and LocalPlayer() or Entity(0), self.sfdata and self.sfdata.mainfile or "", msg, traceback)
 	SF.SendError(self, msg, traceback)
 end
 
@@ -342,14 +327,11 @@ function SF.LinkEnt(self, ent, transmit)
 	end
 	if SERVER and (changed or transmit) then
 		net.Start("starfall_processor_link")
-		net.WriteUInt(self:EntIndex(), 16)
-		net.WriteUInt(self:GetCreationID(), 32)
+		net.WriteReliableEntity(self)
 		if IsValid(ent) then
-			net.WriteUInt(ent:EntIndex(), 16)
-			net.WriteUInt(ent:GetCreationID(), 32)
+			net.WriteReliableEntity(ent)
 		else
-			net.WriteUInt(0, 16)
-			net.WriteUInt(0, 32)
+			net.WriteReliableEntity(Entity(0))
 		end
 		if transmit then net.Send(transmit) else net.Broadcast() end
 	end

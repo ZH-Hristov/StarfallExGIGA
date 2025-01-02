@@ -10,85 +10,85 @@ haspermission = SF.Permissions.hasAccess
 -- @libtbl pnl_meta
 SF.RegisterType("UIPanelBase", false, true, debug.getregistry().Panel)
 
---- DPanel type
--- @name DPanel
+--- UIPanel type
+-- @name UIPanel
 -- @class type
 -- @libtbl dpnl_methods
 -- @libtbl dpnl_meta
 SF.RegisterType("UIPanel", false, true, debug.getregistry().DPanel, "UIPanelBase")
 
 --- DFileBrowser type
--- @name DFileBrowser
+-- @name UIFileBrowser
 -- @class type
 -- @libtbl dfb_methods
 -- @libtbl dfb_meta
 SF.RegisterType("UIFileBrowser", false, true, debug.getregistry().DFileBrowser, "UIPanel")
 
---- DNumSlider type
--- @name DNumSlider
+--- UINumSlider type
+-- @name UINumSlider
 -- @class type
 -- @libtbl dnms_methods
 -- @libtbl dnms_meta
 SF.RegisterType("UINumSlider", false, true, debug.getregistry().DNumSlider, "UIPanelBase")
 
---- DFrame type
--- @name DFrame
+--- UIFrame type
+-- @name UIFrame
 -- @class type
 -- @libtbl dfrm_methods
 -- @libtbl dfrm_meta
 SF.RegisterType("UIFrame", false, true, debug.getregistry().DFrame, "UIPanelBase")
 
---- DScrollPanel type
--- @name DScrollPanel
+--- UIScrollPanel type
+-- @name UIScrollPanel
 -- @class type
 -- @libtbl dscrl_methods
 -- @libtbl dscrl_meta
 SF.RegisterType("UIScrollPanel", false, true, debug.getregistry().DScrollPanel, "UIPanel")
 
---- DMenu type
--- @name DMenu
+--- UIMenu type
+-- @name UIMenu
 -- @class type
 -- @libtbl dmen_methods
 -- @libtbl dmen_meta
 SF.RegisterType("UIMenu", false, true, debug.getregistry().DMenu, "UIScrollPanel")
 
---- DMenuOption type
--- @name DMenuOption
+--- UIMenuOption type
+-- @name UIMenuOption
 -- @class type
 -- @libtbl dmeno_methods
 -- @libtbl dmeno_meta
 SF.RegisterType("UIMenuOption", false, true, debug.getregistry().DMenuOption, "UIButton")
 
---- DColorMixer type
--- @name DColorMixer
+--- UIColorMixer type
+-- @name UIColorMixer
 -- @class type
 -- @libtbl dclm_methods
 -- @libtbl dclm_meta
 SF.RegisterType("UIColorMixer", false, true, debug.getregistry().DColorMixer, "UIPanel")
 
---- DLabel type
--- @name DLabel
+--- UILabel type
+-- @name UILabel
 -- @class type
 -- @libtbl dlab_methods
 -- @libtbl dlab_meta
 SF.RegisterType("UILabel", false, true, debug.getregistry().DLabel, "UIPanelBase")
 
---- DButton type
--- @name DButton
+--- UIButton type
+-- @name UIButton
 -- @class type
 -- @libtbl dbut_methods
 -- @libtbl dbut_meta
 SF.RegisterType("UIButton", false, true, debug.getregistry().DButton, "UILabel")
 
---- DComboBox type
--- @name DComboBox
+--- UIComboBox type
+-- @name UIComboBox
 -- @class type
 -- @libtbl dcom_methods
 -- @libtbl dcom_meta
 SF.RegisterType("UIComboBox", false, true, debug.getregistry().DComboBox, "UIButton")
 
---- DCheckBox type
--- @name DCheckBox
+--- UICheckBox type
+-- @name UICheckBox
 -- @class type
 -- @libtbl dchk_methods
 -- @libtbl dchk_meta
@@ -101,29 +101,29 @@ SF.RegisterType("UICheckBox", false, true, debug.getregistry().DCheckBox, "UIBut
 -- @libtbl aimg_meta
 SF.RegisterType("UIAvatarImage", false, true, debug.getregistry().AvatarImage, "UIPanelBase")
 
---- DProgress type
--- @name DProgress
+--- UIProgress type
+-- @name UIProgress
 -- @class type
 -- @libtbl dprg_methods
 -- @libtbl dprg_meta
 SF.RegisterType("UIProgress", false, true, debug.getregistry().DProgress, "UIPanelBase")
 
---- DTextEntry type
--- @name DTextEntry
+--- UITextEntry type
+-- @name UITextEntry
 -- @class type
 -- @libtbl dtxe_methods
 -- @libtbl dtxe_meta
 SF.RegisterType("UITextEntry", false, true, debug.getregistry().DTextEntry, "UIPanelBase")
 
---- DImage type
--- @name DImage
+--- UIImage type
+-- @name UIImage
 -- @class type
 -- @libtbl dimg_methods
 -- @libtbl dimg_meta
 SF.RegisterType("UIImage", false, true, debug.getregistry().DImage, "UIPanel")
 
---- DImageButton type
--- @name DImageButton
+--- UIImageButton type
+-- @name UIImageButton
 -- @class type
 -- @libtbl dimgb_methods
 -- @libtbl dimgb_meta

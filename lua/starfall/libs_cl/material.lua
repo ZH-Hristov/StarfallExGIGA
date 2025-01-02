@@ -392,6 +392,10 @@ local ang_meta, awrap, aunwrap = instance.Types.Angle, instance.Types.Angle.Wrap
 local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local matrix_meta, mwrap, munwrap = instance.Types.VMatrix, instance.Types.VMatrix.Wrap, instance.Types.VMatrix.Unwrap
 
+local vunwrap1
+instance:AddHook("initialize", function()
+	vunwrap1 = vec_meta.QuickUnwrap1
+end)
 local usermaterials = {}
 instance:AddHook("deinitialize", function()
 	for k in pairs(usermaterials) do
@@ -555,7 +559,7 @@ function material_library.create(shader)
 	return wrap(m)
 end
 
-local image_params = {["nocull"] = true,["alphatest"] = true,["mips"] = true,["noclamp"] = true,["smooth"] = true,["ignorez"] = true}
+local image_params = {["nocull"] = true,["alphatest"] = true,["mips"] = true,["noclamp"] = true,["smooth"] = true,["ignorez"] = true,["vertexlitgeneric"] = true}
 --- Creates a .jpg or .png material from file
 --- Can't be modified
 -- @param string path The path to the image file, must be a jpg or png image
@@ -586,9 +590,7 @@ end
 
 --- Frees a user created material allowing you to create others
 function material_methods:destroy()
-
 	local m = unwrap(self)
-	if not m then SF.Throw("The material is already destroyed?", 2) end
 
 	local name = m:GetName()
 	local rt = instance.data.render.rendertargets[name]
@@ -596,11 +598,8 @@ function material_methods:destroy()
 		instance.env.render.destroyRenderTarget(name)
 	end
 
-	local sensitive2sf, sf2sensitive = material_meta.sensitive2sf, material_meta.sf2sensitive
-	sensitive2sf[m] = nil
-	sf2sensitive[self] = nil
-	dsetmeta(self, nil)
-
+	material_meta.sf2sensitive[self] = nil
+	material_meta.sensitive2sf[m] = nil
 	usermaterials[m] = nil
 	material_bank:free(instance.player, m, m:GetShader())
 end
@@ -849,7 +848,7 @@ end
 -- @param Vector v The value to set it to
 function material_methods:setVector(key, v)
 	checkkey(key)
-	unwrap(self):SetVector(key, vunwrap(v))
+	unwrap(self):SetVector(key, vunwrap1(v))
 end
 
 end

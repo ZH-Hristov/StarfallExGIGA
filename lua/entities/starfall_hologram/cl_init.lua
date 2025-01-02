@@ -1,5 +1,4 @@
 include("shared.lua")
-ENT.RenderGroup = RENDERGROUP_OPAQUE
 
 ENT.DefaultMaterial = Material( "hunter/myplastic" )
 ENT.Material = ENT.DefaultMaterial
@@ -81,13 +80,14 @@ end
 
 function ENT:SetClip(index, enabled, normal, origin, entity)
 	local clips = self.clips
-	local empty = next(clips)==nil
+	local prevempty = table.IsEmpty(clips)
 	if enabled then
-		if empty then self.renderstack:makeDirty() end
 		clips[index] = {normal = normal, origin = origin, entity = entity}
 	else
 		clips[index] = nil
-		if not empty and next(clips)==nil then self.renderstack:makeDirty() end
+	end
+	if prevempty~=table.IsEmpty(clips) then
+		self.renderstack:makeDirty()
 	end
 end
 
@@ -129,14 +129,15 @@ function ENT:OnCullModeChanged()
 	self.renderstack:makeDirty()
 end
 
-function ENT:Draw(flags)
-	local selfTbl = self:GetTable()
-	if self:GetColor().a ~= 255 then
-		selfTbl.RenderGroup = RENDERGROUP_BOTH
-	else
-		selfTbl.RenderGroup = RENDERGROUP_OPAQUE
+function ENT:OnRenderGroupChanged(name, old, group)
+	if group == -1 then
+		self.RenderGroup = nil
+	elseif SF.allowedRenderGroups[group] then
+		self.RenderGroup = group
 	end
+end
 
+function ENT:Draw(flags)
 	self.renderstack:run(flags)
 end
 
@@ -172,6 +173,9 @@ net.Receive("starfall_hologram_clips", function()
 				end
 				clips[index] = clip
 			end
+			if table.IsEmpty(self.clips) ~= table.IsEmpty(clips) then
+				self.renderstack:makeDirty()
+			end
 			self.clips = clips
 		end
 	end
@@ -181,10 +185,21 @@ end)
 
 -- For when the hologram matrix gets cleared
 hook.Add("NetworkEntityCreated", "starfall_hologram_rescale", function(holo)
-	if holo.IsSFHologram and holo.HoloMatrix then
-		holo:EnableMatrix("RenderMultiply", holo.HoloMatrix)
-	end
 	local sf_userrenderbounds = holo.sf_userrenderbounds
+	if holo.IsSFHologram then
+		if holo.HoloMatrix then
+			holo:EnableMatrix("RenderMultiply", holo.HoloMatrix)
+		end
+
+		if not sf_userrenderbounds then        
+			local mins, maxs = holo:GetModelBounds()
+			if mins then
+				local scale = holo:GetScale()
+				holo:SetRenderBounds(mins * scale, maxs * scale)
+			end
+		end
+	end
+
 	if sf_userrenderbounds then
 		holo:SetRenderBounds(sf_userrenderbounds[1], sf_userrenderbounds[2])
 	end

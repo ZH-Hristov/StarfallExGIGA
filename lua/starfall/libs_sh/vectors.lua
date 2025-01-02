@@ -1,7 +1,8 @@
 -- Global to all starfalls
 local checkluatype = SF.CheckLuaType
 local dgetmeta = debug.getmetatable
-
+local Unpack = FindMetaTable("Vector").Unpack
+local SetUnpacked = FindMetaTable("Vector").SetUnpacked
 
 --- Vector type
 -- @name Vector
@@ -13,7 +14,7 @@ local dgetmeta = debug.getmetatable
 -- @libtbl vec_meta
 SF.RegisterType("Vector", nil, nil, FindMetaTable("Vector"), nil, function(checktype, vec_meta)
 	return function(vec)
-		return setmetatable({ vec:Unpack() }, vec_meta)
+		return setmetatable({ Unpack(vec) }, vec_meta)
 	end,
 	function(obj)
 		checktype(obj, vec_meta, 2)
@@ -38,6 +39,15 @@ local quatMul
 instance:AddHook("initialize", function()
 	quatMul = instance.Types.Quaternion.QuaternionMultiply
 end)
+
+local function QuickUnwrapper()
+	local Vec = Vector()
+	return function(v) SetUnpacked(Vec, v[1], v[2], v[3]) return Vec end
+end
+vec_meta.QuickUnwrap1 = QuickUnwrapper()
+vec_meta.QuickUnwrap2 = QuickUnwrapper()
+vec_meta.QuickUnwrap3 = QuickUnwrapper()
+vec_meta.QuickUnwrap4 = QuickUnwrapper()
 
 
 --- Creates a Vector struct.

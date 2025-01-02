@@ -6,6 +6,7 @@
 
 local dsethook, dgethook = debug.sethook, debug.gethook
 local dgetmeta = debug.getmetatable
+local SysTime = SysTime
 
 if SERVER then
 	SF.cpuQuota = CreateConVar("sf_timebuffer", 0.005, FCVAR_ARCHIVE, "The max average the CPU time can reach.")
@@ -22,6 +23,8 @@ else
 	SF.RamCap = CreateConVar("sf_ram_max_cl", 1500000, FCVAR_ARCHIVE, "If ram exceeds this limit (in kB), starfalls will be terminated")
 	SF.AllowSuperUser = CreateConVar("sf_superuserallowed", 0, {FCVAR_ARCHIVE, FCVAR_REPLICATED}, "Whether the starfall superuser feature is allowed")
 end
+local ramlimit = SF.RamCap:GetInt()
+cvars.AddChangeCallback(SF.RamCap:GetName(), function() ramlimit = SF.RamCap:GetInt() end)
 
 SF.Instance = {}
 SF.Instance.__index = SF.Instance
@@ -29,15 +32,24 @@ SF.Instance.__index = SF.Instance
 --- A set of all instances that have been created. It has weak keys and values.
 -- Instances are put here after initialization.
 SF.allInstances = {}
-SF.playerInstances = setmetatable({}, {__index = function() return {} end})
+if SERVER then
+	SF.playerInstances = SF.EntityTable("playerInstances", function(ply, instances)
+		for instance in pairs(instances) do
+			instance:Error({message = "Player disconnected!", traceback = ""})
+			if IsValid(instance.entity) then
+				net.Start("starfall_processor_kill")
+				net.WriteEntity(instance.entity)
+				net.Broadcast()
+			end
+		end
+	end)
+	getmetatable(SF.playerInstances).__index = function() return {} end
+else
+	SF.playerInstances = setmetatable({},{__index = function() return {} end})
+end
 
---- Preprocesses and Compiles code and returns an Instance
--- @param code Either a string of code, or a {path=source} table
--- @param mainfile If code is a table, this specifies the first file to parse.
--- @param Player The "owner" of the instance
--- @param data The table to set instance.data to. Default is a new table.
--- @return True if no errors, false if errors occured.
--- @return The compiled instance, or the error message.
+local plyPrecacheTimeBurst = SF.BurstObject("model_precache_time", "Model precache time", 5, 0.2, "The rate allowed model precache time regenerates.", "Amount of allowed model precache time.")
+
 function SF.Instance.Compile(code, mainfile, player, entity)
 	if isstring(code) then
 		mainfile = mainfile or "generic"
@@ -49,6 +61,7 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 	local instance = setmetatable({}, SF.Instance)
 	instance.entity = entity
 	instance.data = {}
+	instance.cpustatestack = {}
 	instance.stackn = 0
 	instance.sfhooks = {}
 	instance.hooks = {}
@@ -58,17 +71,13 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 	instance.requires = {}
 	instance.permissionOverrides = {}
 
-	instance.ppdata = {}
-	for filename, source in pairs(code) do
-		local ok, err = pcall(SF.Preprocessor.ParseDirectives, filename, source, instance.ppdata)
-		if not ok then
-			return false, { message = err, traceback = "" }
-		end
-	end
+	local ok, ppdata = pcall(SF.Preprocessor, code)
+	if not ok then return false, { message = ppdata, traceback = "" } end
+	instance.ppdata = ppdata
 
 	if player:IsWorld() then
 		player = SF.Superuser
-	elseif instance.ppdata.superuser and instance.ppdata.superuser[mainfile] then
+	elseif ppdata.files[mainfile].superuser then
 		if not SF.AllowSuperUser:GetBool() then return false, { message = "Can't use --@superuser unless sf_superuserallowed is enabled!", traceback = "" } end
 		local ok, message = hook.Run("StarfallCanSuperUser", player)
 		if ok == false or (ok == nil and not player:IsSuperAdmin()) then return false, { message = message or "Can't use --@superuser unless you are superadmin!", traceback = "" } end
@@ -76,42 +85,17 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 	end
 	instance.player = player
 
-	local quotaRun
 	if player == SF.Superuser then
-		quotaRun = SF.Instance.runWithoutOps
+		instance:setCheckCpu(false)
 	else
 		if SERVER then
-			if SF.softLockProtection:GetBool() then
-				quotaRun = SF.Instance.runWithOps
-			else
-				quotaRun = SF.Instance.runWithoutOps
-			end
+			instance:setCheckCpu(SF.softLockProtection:GetBool())
 		else
 			if SF.BlockedUsers:isBlocked(player:SteamID()) then
 				return false, { message = "User has blocked this player's starfalls", traceback = "" }
 			end
-
-			if SF.softLockProtection:GetBool() then
-				quotaRun = SF.Instance.runWithOps
-			elseif SF.softLockProtectionOwner:GetBool() and LocalPlayer() ~= player then
-				quotaRun = SF.Instance.runWithOps
-			else
-				quotaRun = SF.Instance.runWithoutOps
-			end
+			instance:setCheckCpu(SF.softLockProtection:GetBool() or (SF.softLockProtectionOwner:GetBool() and LocalPlayer() ~= player))
 		end
-	end
-	instance.run = quotaRun
-	
-	if quotaRun == SF.Instance.runWithOps then
-		instance.cpuQuota = (SERVER or LocalPlayer() ~= player) and SF.cpuQuota:GetFloat() or SF.cpuOwnerQuota:GetFloat()
-		instance.cpuQuotaRatio = 1 / SF.cpuBufferN:GetInt()
-
-		if CLIENT and instance.cpuQuota <= 0 then
-			return false, { message = "Cannot execute with 0 sf_timebuffer", traceback = "" }
-		end
-	else
-		instance.cpuQuota = math.huge
-		instance.cpuQuotaRatio = 0
 	end
 
 	local ok, err = xpcall(instance.BuildEnvironment, debug.traceback, instance)
@@ -119,41 +103,47 @@ function SF.Instance.Compile(code, mainfile, player, entity)
 		return false, { message = "", traceback = err }
 	end
 
-	local doNotRun = {}
-	local includesdata = instance.ppdata.includesdata
-	if includesdata then
-		for filename, t in pairs(includesdata) do
-			for _, datapath in ipairs(t) do
-				local codepath = SF.ChoosePath(datapath, string.GetPathFromFilename(filename), function(testpath)
-					return instance.source[testpath]
-				end)
-				if codepath then doNotRun[codepath] = true end
+	for filename, fdata in pairs(ppdata.files) do
+		--includedata directive
+		if fdata.datafile then continue end
+
+		--precachemodel directive
+		if #fdata.precachemodels>0 then
+			local startTime = SysTime()
+			for _, model in pairs(fdata.precachemodels) do
+				local ok, err = pcall(plyPrecacheTimeBurst.use, plyPrecacheTimeBurst, instance.player, 0) -- Should just check if the burst is negative
+				if not ok then return false, err end
+				ok, model = pcall(SF.CheckModel, model, instance.player)
+				if not ok then return false, model end
+				util.PrecacheModel(model)
+				local newTime = SysTime()
+				local timeUsed = newTime - startTime
+				startTime = newTime
+				-- Subtract the burst amount left by the time used
+				local obj = plyPrecacheTimeBurst:get(instance.player)
+				obj.val = obj.val - timeUsed
 			end
 		end
-	end
 
-	local serverorclientpp, owneronlypp = instance.ppdata.serverorclient or {}, instance.ppdata.owneronly or {}
-	for filename, source in pairs(code) do
-		if doNotRun[filename] then continue end -- Don't compile data files
-		if CLIENT and owneronlypp[filename] and LocalPlayer() ~= player then continue end -- Don't compile owner-only files if not owner
-		local serverorclient = serverorclientpp[filename]
+		--owneronly directive
+		if CLIENT and fdata.owneronly and LocalPlayer() ~= player then continue end -- Don't compile owner-only files if not owner
+		
+		--realm directives
+		local serverorclient = fdata.serverorclient
 		if (serverorclient == "server" and CLIENT) or (serverorclient == "client" and SERVER) then continue end -- Don't compile files for other realm
-		local func = SF.CompileString(source, "SF:"..filename, false)
+
+		local func = SF.CompileString(fdata.code, "SF:"..filename, false)
 		if isstring(func) then
 			return false, { message = func, traceback = "" }
 		end
 		debug.setfenv(func, instance.env)
+
 		instance.scripts[filename] = func
 	end
-
-	instance.startram = collectgarbage("count")
 
 	return true, instance
 end
 
---- Adds a hook to the instance
--- @param name The hook name
--- @param func The hook function
 function SF.Instance:AddHook(name, func)
 	local hook = self.sfhooks[name]
 	if hook then
@@ -163,9 +153,6 @@ function SF.Instance:AddHook(name, func)
 	end
 end
 
---- Runs a library hook.
--- @param name Hook to run.
--- @param ... Additional arguments.
 function SF.Instance:RunHook(name, ...)
 	local hook = self.sfhooks[name]
 	if hook then
@@ -175,24 +162,10 @@ function SF.Instance:RunHook(name, ...)
 	end
 end
 
---- Creates and registers a library.
--- @param name The library name
--- @return methods The library's methods
 function SF.RegisterLibrary(name)
 	SF.Libraries[name] = true
 end
 
---- Registers a type.
--- @param name The library name
--- @param weakwrapper Make the wrapper weak inside the internal lookup table. Default: True
--- @param weaksensitive Make the sensitive data weak inside the internal lookup table. Default: True
--- @param target_metatable (optional) The metatable of the object that will get
--- 		wrapped by these wrapper functions.  This is required if you want to
--- 		have the object be auto-recognized by the generic self.WrapObject
---		function.
--- @param super Optional type name that this will inherit from
--- @return methods The type's methods
--- @return metamethods The type's metamethods
 function SF.RegisterType(name, weakwrapper, weaksensitive, target_metatable, supertype, customwrappers)
 	SF.Types[name] = {
 		weakwrapper = weakwrapper,
@@ -203,11 +176,6 @@ function SF.RegisterType(name, weakwrapper, weaksensitive, target_metatable, sup
 	}
 end
 
---- Creates wrap/unwrap functions for sensitive values, by using a lookup table
--- (which is set to have weak keys and values)
--- @param metatable The metatable to assign the wrapped value.
--- @return The function to wrap sensitive values to a SF-safe table
--- @return The function to unwrap the SF-safe table to the sensitive table
 function SF.Instance:CreateWrapper(metatable, typedata)
 	
 	local wrap, unwrap
@@ -267,8 +235,6 @@ function SF.Instance:CreateWrapper(metatable, typedata)
 	return true
 end
 
---- Builds an environment table
--- @return The environment
 function SF.Instance:BuildEnvironment()
 	self.Libraries = {}
 	self.Types = {}
@@ -279,15 +245,9 @@ function SF.Instance:BuildEnvironment()
 	self.object_wrappers = object_wrappers
 	self.object_unwrappers = object_unwrappers
 
-	--- Checks the starfall type of val. Errors if the types don't match
-	-- @param val The value to be checked.
-	-- @param typ A metatable.
-	-- @param level Level at which to error at. 2 is added to this value. Default is 1.
 	function self.CheckType(val, typ, level)
 		local meta = dgetmeta(val)
-		if meta == typ or (meta and meta.supertype == typ and object_unwrappers[meta]) then
-			return val
-		else
+		if meta ~= typ and (meta == nil or meta.supertype ~= typ or object_unwrappers[meta] == nil) then
 			assert(istable(typ) and typ.__metatable and isstring(typ.__metatable))
 			level = (level or 1) + 2
 			SF.ThrowTypeError(typ.__metatable, SF.GetType(val), level)
@@ -307,12 +267,6 @@ function SF.Instance:BuildEnvironment()
 		[TYPE_NIL] = true,
 	}
 
-	--- Wraps the given object so that it is safe to pass into starfall
-	-- It will wrap it as long as we have the metatable of the object that is
-	-- getting wrapped.
-	-- @param object the object needing to get wrapped as it's passed into starfall
-	-- @return returns nil if the object doesn't have a known wrapper,
-	-- or returns the wrapped object if it does have a wrapper.
 	local function WrapObject(object)
 		local metatable = dgetmeta(object)
 		if metatable then
@@ -337,10 +291,6 @@ function SF.Instance:BuildEnvironment()
 	end
 	self.WrapObject = WrapObject
 
-	--- Takes a wrapped starfall object and returns the unwrapped version
-	-- @param object the wrapped starfall object, should work on any starfall
-	-- wrapped object.
-	-- @return the unwrapped starfall object
 	local function UnwrapObject(object)
 		local metatable = dgetmeta(object)
 		if metatable then
@@ -355,13 +305,6 @@ function SF.Instance:BuildEnvironment()
 	end
 	self.UnwrapObject = UnwrapObject
 
-	--- Sanitizes and returns its argument list.
-	-- Basic types are returned unchanged. Non-object tables will be
-	-- recursed into and their keys and values will be sanitized. Object
-	-- types will be wrapped if a wrapper is available. When a wrapper is
-	-- not available objects will be replaced with nil, so as to prevent
-	-- any possiblitiy of leakage. Functions will always be replaced with
-	-- nil as there is no way to verify that they are safe.
 	function self.Sanitize(original)
 		local completed_tables = {}
 
@@ -385,8 +328,6 @@ function SF.Instance:BuildEnvironment()
 		return RecursiveSanitize(original)
 	end
 
-	--- Takes output from starfall and does it's best to make the output
-	-- fully usable outside of starfall environment
 	function self.Unsanitize(original)
 		local completed_tables = {}
 
@@ -491,10 +432,9 @@ end
 SF.runningOps = false
 
 local function safeThrow(self, msg, nocatch, force)
-	local source = debug.getinfo(3, "S").short_src
-	if string.find(source, "SF:", 1, true) or force then
+	if force or string.find(debug.getinfo(3, "S").short_src, "SF:", 1, true) then
 		if SERVER and nocatch then
-			local consolemsg = "[Starfall] CPU Quota exceeded"
+			local consolemsg = "[Starfall] CPU usage exceeded!"
 			if self.player:IsValid() then
 				consolemsg = consolemsg .. " by " .. self.player:Nick() .. " (" .. self.player:SteamID() .. ")"
 			end
@@ -505,15 +445,93 @@ local function safeThrow(self, msg, nocatch, force)
 	end
 end
 
-function SF.Instance:checkCpu()
-	if self.run ~= self.runWithOps then return end
-	self.cpu_total = SysTime() - self.start_time
-	local usedRatio = self:movingCPUAverage() / self.cpuQuota
-	if usedRatio>1 then
-		safeThrow(self, "CPU Quota exceeded.", true, true)
-	elseif usedRatio > self.cpu_softquota then
-		safeThrow(self, "CPU Quota warning.")
+local function cpuRatio(instance)
+	local t = SysTime()
+	instance.cpu_total = instance.cpu_total + t - instance.start_time
+	instance.start_time = t
+	return instance:movingCPUAverage() / instance.cpuQuota
+end
+
+SF.Instance.Ram = 0
+SF.Instance.RamAvg = 0
+local function ramRatio()
+	local ram = collectgarbage("count")
+	SF.Instance.Ram = ram
+	SF.Instance.RamAvg = SF.Instance.RamAvg + (ram - SF.Instance.RamAvg)*0.001
+	return ram / ramlimit
+end
+
+function SF.Instance:setCheckCpu(runWithOps)
+	if runWithOps then
+		self.run = SF.Instance.runWithOps
+
+		function self:checkCpu()
+			local ratio = cpuRatio(self)
+			if ratio > self.cpu_softquota then
+				if ratio>1 then
+					safeThrow(self, "CPU usage exceeded!", true, true)
+				else
+					safeThrow(self, "CPU usage warning!")
+				end
+			end
+			if ramRatio() > 1 then
+				safeThrow(self, "RAM usage exceeded!", true, true)
+			end
+		end
+
+		function self.checkCpuHook() --debug.sethook doesn't pass self, so need it as upvalue
+			local ratio = cpuRatio(self)
+			if ratio > self.cpu_softquota then
+				if ratio>1 then
+					safeThrow(self, "CPU usage exceeded!", true, ratio>1.5)
+				else
+					safeThrow(self, "CPU usage warning!")
+				end
+			end
+			local rratio = ramRatio()
+			if rratio > 1 then
+				safeThrow(self, "RAM usage exceeded!", true, rratio > 1.05)
+			end
+		end
+
+		function self:pushCpuCheck(callback)
+			self.cpustatestack[#self.cpustatestack + 1] = (dgethook() or false)
+			local enabled = callback~=nil
+			if SF.runningOps ~= enabled then
+				SF.runningOps = enabled
+				SF.OnRunningOps(enabled)
+			end
+			dsethook(callback, "", 2000)
+		end
+		
+		function self:popCpuCheck()
+			local callback = (table.remove(self.cpustatestack) or nil)
+			dsethook(callback, "", 2000)
+			local enabled = callback~=nil
+			if SF.runningOps ~= enabled then
+				SF.runningOps = enabled
+				SF.OnRunningOps(enabled)
+			end
+		end
+
+		self.cpuQuota = (SERVER or LocalPlayer() ~= self.player) and SF.cpuQuota:GetFloat() or SF.cpuOwnerQuota:GetFloat()
+		self.cpuQuotaRatio = 1 / SF.cpuBufferN:GetInt()
+	else
+		self.run = SF.Instance.runWithoutOps
+		function self.checkCpu() end
+		function self.checkCpuHook() end
+		function self.pushCpuCheck() end
+		function self.popCpuCheck() end
+		self.cpuQuota = math.huge
+		self.cpuQuotaRatio = 0
 	end
+end
+
+function SF.Instance:runExternal(func, ...)
+	self:pushCpuCheck()
+	local ok, err = xpcall(func, debug.traceback, ...)
+	self:popCpuCheck()
+	if ok then return err else ErrorNoHalt(err) end
 end
 
 local function xpcall_callback(err)
@@ -523,86 +541,39 @@ local function xpcall_callback(err)
 	return err
 end
 
---- Internal function - do not call.
--- Runs a function while incrementing the instance ops coutner.
--- This does no setup work and shouldn't be called by client code
--- @param func The function to run
--- @param ... Arguments to func
--- @return True if ok
--- @return A table of values that the hook returned
 function SF.Instance:runWithOps(func, ...)
 	if self.stackn == 0 then
-		self.start_time = SysTime() - self.cpu_total
+		self.start_time = SysTime()
 	elseif self.stackn == 128 then
 		return {false, SF.MakeError("sf stack overflow", 1, true, true)}
 	end
 
-	local function checkCpu()
-		self.cpu_total = SysTime() - self.start_time
-		local usedRatio = self:movingCPUAverage() / self.cpuQuota
-		if usedRatio>1 then
-			if usedRatio>1.5 then
-				safeThrow(self, "CPU Quota exceeded.", true, true)
-			else
-				safeThrow(self, "CPU Quota exceeded.", true)
-			end
-		elseif usedRatio > self.cpu_softquota then
-			safeThrow(self, "CPU Quota warning.")
-		end
-	end
-
-	local prevHook, mask, count = dgethook()
-	local prev = SF.runningOps
-	SF.runningOps = true
-	SF.OnRunningOps(true)
-	dsethook(checkCpu, "", 2000)
 	self.stackn = self.stackn + 1
+	self:pushCpuCheck(self.checkCpuHook)
 	local tbl = { xpcall(func, xpcall_callback, ...) }
+	self:popCpuCheck()
 	self.stackn = self.stackn - 1
-	dsethook(prevHook, mask, count)
-	SF.runningOps = prev
-	SF.OnRunningOps(prev)
 
 	if tbl[1] then
-		--Do another cpu check in case the debug hook wasn't called
-		self.cpu_total = SysTime() - self.start_time
-		local usedRatio = self:movingCPUAverage() / self.cpuQuota
-		if usedRatio>1 then
-			return {false, SF.MakeError("CPU Quota exceeded.", 1, true, true)}
-		end
+		if cpuRatio(self)>1 then return {false, SF.MakeError("CPU usage exceeded!", 1, true, true)} end
+		if ramRatio()>1 then return {false, SF.MakeError("RAM usage exceeded!", 1, true, true)} end
 	end
 
 	return tbl
 end
 
---- Internal function - do not call.
--- Runs a function without incrementing the instance ops coutner.
--- This does no setup work and shouldn't be called by client code
--- @param func The function to run
--- @param ... Arguments to func
--- @return True if ok
--- @return A table of values that the hook returned
 function SF.Instance:runWithoutOps(func, ...)
 	return { xpcall(func, xpcall_callback, ...) }
 end
 
---- Runs the scripts inside of the instance. This should be called once after
--- compiling/unpacking so that scripts can register hooks and such. It should
--- not be called more than once.
--- @return True if no script errors occured
--- @return The error message, if applicable
--- @return The error traceback, if applicable
 function SF.Instance:initialize()
 	self.cpu_total = 0
 	self.cpu_average = 0
 	self.cpu_softquota = 1
 
 	SF.allInstances[self] = true
-	if rawget(SF.playerInstances, self.player) then
-		SF.playerInstances[self.player][self] = true
-	else
-		SF.playerInstances[self.player] = {[self] = true}
-	end
+	if rawget(SF.playerInstances, self.player)==nil then SF.playerInstances[self.player]={} end
+	SF.playerInstances[self.player][self] = true
 
 	self:RunHook("initialize")
 
@@ -618,11 +589,6 @@ function SF.Instance:initialize()
 	return true
 end
 
---- Runs a script hook. This calls script code.
--- @param hook The hook to call.
--- @param ... Arguments to pass to the hook's registered function.
--- @return True if it executed ok, false if not or if there was no hook
--- @return If the first return value is false then the error message or nil if no hook was registered
 function SF.Instance:runScriptHook(hook, ...)
 	local hooks = self.hooks[hook]
 	if not hooks then return {} end
@@ -638,12 +604,6 @@ function SF.Instance:runScriptHook(hook, ...)
 	return tbl
 end
 
---- Runs a script hook until one of them returns a true value. Returns those values.
--- @param hook The hook to call.
--- @param ... Arguments to pass to the hook's registered function.
--- @return True if it executed ok, false if not or if there was no hook
--- @return If the first return value is false then the error message or nil if no hook was registered. Else any values that the hook returned.
--- @return The traceback if the instance errored
 function SF.Instance:runScriptHookForResult(hook, ...)
 	local hooks = self.hooks[hook]
 	if not hooks then return {} end
@@ -663,11 +623,6 @@ function SF.Instance:runScriptHookForResult(hook, ...)
 	return tbl
 end
 
---- Runs an arbitrary function under the SF instance. This can be used
--- to run your own hooks when using the integrated hook system doesn't
--- make sense (ex timers).
--- @param func Function to run
--- @param ... Arguments to pass to func
 function SF.Instance:runFunction(func, ...)
 	local tbl = self:run(func, ...)
 	if not tbl[1] then
@@ -694,14 +649,11 @@ function SF.Instance:require(path)
 	end
 end
 
---- Deinitializes the instance. After this, the instance should be discarded.
 function SF.Instance:deinitialize()
 	self:RunHook("deinitialize")
 	SF.allInstances[self] = nil
 	SF.playerInstances[self.player][self] = nil
-	if next(SF.playerInstances[self.player])==nil then
-		SF.playerInstances[self.player] = nil
-	end
+	if table.IsEmpty(SF.playerInstances[self.player]) then SF.playerInstances[self.player] = nil end
 
 	self.error = true
 	local noop = function() return {} end
@@ -714,23 +666,6 @@ end
 
 hook.Add("Think", "SF_Think", function()
 
-	local ram = collectgarbage("count")
-	if SF.Instance.Ram then
-		if ram > SF.RamCap:GetInt() then
-			local doClean = false
-			for instance, _ in pairs(SF.allInstances) do
-				doClean = true
-				instance:Error(SF.MakeError("Global RAM usage limit exceeded!!", 1))
-			end
-			if doClean then collectgarbage() end
-		end
-		SF.Instance.Ram = ram
-		SF.Instance.RamAvg = SF.Instance.RamAvg*0.999 + ram*0.001
-	else
-		SF.Instance.Ram = ram
-		SF.Instance.RamAvg = ram
-	end
-
 	-- Check and attempt recovery from potential failures
 	if SF.runningOps then
 		SF.runningOps = false
@@ -739,14 +674,14 @@ hook.Add("Think", "SF_Think", function()
 	end
 
 	for pl, insts in pairs(SF.playerInstances) do
-		local plquota
+		local plquota = math.huge
 		local cputotal = 0
-		for instance, _ in pairs(insts) do
+		for instance in pairs(insts) do
 			instance.cpu_average = instance:movingCPUAverage()
 			instance.cpu_total = 0
 			instance:runScriptHook("think")
 			cputotal = cputotal + instance.cpu_average
-			plquota = instance.cpuQuota
+			plquota = math.min(plquota, instance.cpuQuota)
 		end
 
 		if cputotal>plquota then
@@ -765,7 +700,6 @@ hook.Add("Think", "SF_Think", function()
 	end
 end)
 
---- Errors the instance. Should only be called from the tips of the call tree (aka from places such as the hook library, timer library, the entity's think function, etc)
 function SF.Instance:Error(err)
 	if self.runOnError then -- We have a custom error function, use that instead
 		self.runOnError(err)

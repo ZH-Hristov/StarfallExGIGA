@@ -1,6 +1,8 @@
 -- Global to all starfalls
 local checkluatype = SF.CheckLuaType
 local dgetmeta = debug.getmetatable
+local Unpack = FindMetaTable("Angle").Unpack
+local SetUnpacked = FindMetaTable("Angle").SetUnpacked
 
 --- Angle Type
 -- @name Angle
@@ -12,7 +14,7 @@ local dgetmeta = debug.getmetatable
 -- @libtbl ang_meta
 SF.RegisterType("Angle", nil, nil, FindMetaTable("Angle"), nil, function(checktype, ang_meta)
 	return function(ang)
-		return setmetatable({ ang:Unpack() }, ang_meta)
+		return setmetatable({ Unpack(ang) }, ang_meta)
 	end,
 	function(obj)
 		checktype(obj, ang_meta, 2)
@@ -29,6 +31,21 @@ local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wr
 local function wrap(tbl)
 	return setmetatable(tbl, ang_meta)
 end
+
+local vunwrap1
+instance:AddHook("initialize", function()
+	vunwrap1 = vec_meta.QuickUnwrap1
+end)
+
+local function QuickUnwrapper()
+	local Ang = Angle()
+	return function(v) SetUnpacked(Ang, v[1], v[2], v[3]) return Ang end
+end
+ang_meta.QuickUnwrap1 = QuickUnwrapper()
+ang_meta.QuickUnwrap2 = QuickUnwrapper()
+ang_meta.QuickUnwrap3 = QuickUnwrapper()
+
+local unwrap1 = ang_meta.QuickUnwrap1
 
 --- Creates an Angle struct.
 -- @name builtins_library.Angle
@@ -157,19 +174,19 @@ end
 --- Return the Forward Vector ( direction the angle points ).
 -- @return Vector Forward direction.
 function ang_methods:getForward()
-	return vwrap(unwrap(self):Forward())
+	return vwrap(unwrap1(self):Forward())
 end
 
 --- Return the Right Vector relative to the angle dir.
 -- @return Vector Right direction.
 function ang_methods:getRight()
-	return vwrap(unwrap(self):Right())
+	return vwrap(unwrap1(self):Right())
 end
 
 --- Return the Up Vector relative to the angle dir.
 -- @return Vector Up direction.
 function ang_methods:getUp()
-	return vwrap(unwrap(self):Up())
+	return vwrap(unwrap1(self):Up())
 end
 
 --- Return Rotated angle around the specified axis.
@@ -186,11 +203,8 @@ function ang_methods:rotateAroundAxis(v, deg, rad)
 		checkluatype (deg, TYPE_NUMBER)
 	end
 
-	local ret = Angle()
-
-	ret:Set(unwrap(self))
-	ret:RotateAroundAxis(vunwrap(v), deg)
-
+	local ret = unwrap1(self)
+	ret:RotateAroundAxis(vunwrap1(v), deg)
 	return awrap(ret)
 end
 

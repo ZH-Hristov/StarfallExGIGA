@@ -136,23 +136,29 @@ SF.RegisterType("Bass", true, false)
 return function(instance)
 local checkpermission = instance.player ~= SF.Superuser and SF.Permissions.check or function() end
 
+local bass_library = instance.Libraries.bass
+local bass_methods, bass_meta, wrap, unwrap = instance.Types.Bass.Methods, instance.Types.Bass, instance.Types.Bass.Wrap, instance.Types.Bass.Unwrap
+local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
+
 local instanceSounds = {} -- A lookup table of sounds created by this instance.
 
+local vunwrap1
+instance:AddHook("initialize", function()
+	vunwrap1 = vec_meta.QuickUnwrap1
+end)
 instance:AddHook("deinitialize", function()
 	for snd in pairs(instanceSounds) do
 		deleteSound(instance.player, snd)
 	end
 end)
 
-
-local bass_library = instance.Libraries.bass
-local bass_methods, bass_meta, wrap, unwrap = instance.Types.Bass.Methods, instance.Types.Bass, instance.Types.Bass.Wrap, instance.Types.Bass.Unwrap
-local vec_meta, vwrap, vunwrap = instance.Types.Vector, instance.Types.Vector.Wrap, instance.Types.Vector.Unwrap
-
 local function getsnd(self)
 	local snd = unwrap(self)
-	local isValid = snd.IsValid
-	return isValid and isValid(snd) and snd or SF.Throw("Sound is not valid.", 3)
+	if snd:IsValid() then
+		return snd
+	else
+		SF.Throw("Sound is not valid.", 3)
+	end
 end
 
 local function not3D(flags)
@@ -242,11 +248,6 @@ function bass_methods:stop()
 	local snd = getsnd(self)
 	deleteSound(instance.player, snd)
 	instanceSounds[snd] = nil
-
-	-- This makes the sound no longer unwrap
-	local sensitive2sf, sf2sensitive = bass_meta.sensitive2sf, bass_meta.sf2sensitive
-	sensitive2sf[snd] = nil
-	sf2sensitive[self] = nil
 end
 
 --- Pauses the sound.
@@ -299,7 +300,7 @@ end
 --- Sets the position of the sound in 3D space. Must have `3d` flag for this to have any effect.
 -- @param Vector pos Where to position the sound.
 function bass_methods:setPos(pos)
-	getsnd(self):SetPos(vunwrap(pos))
+	getsnd(self):SetPos(vunwrap1(pos))
 end
 
 --- Gets the position of the sound in 3D space.
@@ -386,9 +387,7 @@ end
 --- Gets whether the bass is valid.
 -- @return boolean Boolean of whether the bass is valid.
 function bass_methods:isValid()
-	local uw = unwrap(self)
-	local isValid = uw.IsValid
-	return isValid and isValid(uw) or false
+	return unwrap(self):IsValid()
 end
 
 --- Gets the left and right audio channel levels.

@@ -41,11 +41,13 @@ local col_meta, cwrap, cunwrap = instance.Types.Color, instance.Types.Color.Wrap
 
 local builtins_library = instance.env
 
-local getent
-local getply
+local getent, getply
+local vunwrap1, vunwrap2
+local aunwrap1, aunwrap2
 instance:AddHook("initialize", function()
-	getent = instance.Types.Entity.GetEntity
-	getply = instance.Types.Player.GetPlayer
+	getent, getply = instance.Types.Entity.GetEntity, instance.Types.Player.GetPlayer
+	vunwrap1, vunwrap2 = vec_meta.QuickUnwrap1, vec_meta.QuickUnwrap2
+	aunwrap1, aunwrap2 = ang_meta.QuickUnwrap1, ang_meta.QuickUnwrap2
 end)
 
 --- Built in values. These don't need to be loaded; they are in the default builtins_library.
@@ -305,7 +307,7 @@ end
 -- @param number quota The threshold where the soft error will be thrown. Ratio of current cpu to the max cpu usage. 0.5 is 50%
 function builtins_library.setSoftQuota(quota)
 	checkluatype(quota, TYPE_NUMBER)
-	instance.cpu_softquota = quota
+	instance.cpu_softquota = math.Clamp(quota, 0, 1)
 end
 
 --- Checks if the chip is capable of performing an action.
@@ -720,9 +722,7 @@ end
 function builtins_library.getScript(path)
 	checkluatype(path, TYPE_STRING)
 	local curdir = SF.GetExecutingPath() or ""
-	path = SF.ChoosePath(path, curdir, function(testpath)
-		return instance.scripts[testpath]
-	end) or path
+	path = instance.ppdata:ResolvePath(path, curdir) or path
 	return instance.source[path], instance.scripts[path]
 end
 
@@ -764,10 +764,7 @@ function builtins_library.require(path)
 	checkluatype(path, TYPE_STRING)
 
 	local curdir = SF.GetExecutingPath() or ""
-
-	path = SF.ChoosePath(path, curdir, function(testpath)
-		return instance.scripts[testpath]
-	end) or path
+	path = instance.ppdata:ResolvePath(path, curdir) or path
 
 	return instance:require(path)
 end
@@ -781,12 +778,10 @@ function builtins_library.requiredir(path, loadpriority)
 	checkluatype(path, TYPE_STRING)
 	if loadpriority~=nil then checkluatype(loadpriority, TYPE_TABLE) end
 
-	local curdir = SF.GetExecutingPath() or ""
-
-	path = SF.ChoosePath(path, curdir, function(testpath)
-		testpath = string.PatternSafe(testpath)
+	path = SF.ChoosePath(path, string.GetPathFromFilename(SF.GetExecutingPath() or ""), function(testpath)
+		testpath = testpath .. "/"
 		for file in pairs(instance.scripts) do
-			if string.match(file, "^"..testpath.."/[^/]+%.txt$") or string.match(file, "^"..testpath.."/[^/]+%.lua$") then
+			if testpath == string.GetPathFromFilename(file) then
 				return true
 			end
 		end
@@ -824,10 +819,8 @@ function builtins_library.dofile(path)
 	checkluatype(path, TYPE_STRING)
 
 	local curdir = SF.GetExecutingPath() or ""
+	path = instance.ppdata:ResolvePath(path, curdir) or path
 
-	path = SF.ChoosePath(path, curdir, function(testpath)
-		return instance.scripts[testpath]
-	end) or path
 	return (instance.scripts[path] or SF.Throw("Can't find file '" .. path .. "' (did you forget to --@include it?)", 2))()
 end
 
@@ -839,12 +832,10 @@ function builtins_library.dodir(path, loadpriority)
 	checkluatype(path, TYPE_STRING)
 	if loadpriority ~= nil then checkluatype(loadpriority, TYPE_TABLE) end
 
-	local curdir = SF.GetExecutingPath() or ""
-
-	path = SF.ChoosePath(path, curdir, function(testpath)
-		testpath = string.PatternSafe(testpath)
+	path = SF.ChoosePath(path, string.GetPathFromFilename(SF.GetExecutingPath() or ""), function(testpath)
+		testpath = testpath .. "/"
 		for file in pairs(instance.scripts) do
-			if string.match(file, "^"..testpath.."/[^/]+%.txt$") or string.match(file, "^"..testpath.."/[^/]+%.lua$") then
+			if testpath == string.GetPathFromFilename(file) then
 				return true
 			end
 		end
@@ -1157,10 +1148,10 @@ end
 function builtins_library.worldToLocal(pos, ang, newSystemOrigin, newSystemAngles)
 
 	local localPos, localAngles = WorldToLocal(
-		vunwrap(pos),
-		aunwrap(ang),
-		vunwrap(newSystemOrigin),
-		aunwrap(newSystemAngles)
+		vunwrap1(pos),
+		aunwrap1(ang),
+		vunwrap2(newSystemOrigin),
+		aunwrap2(newSystemAngles)
 	)
 
 	return vwrap(localPos), awrap(localAngles)
@@ -1176,10 +1167,10 @@ end
 function builtins_library.localToWorld(localPos, localAng, originPos, originAngle)
 
 	local worldPos, worldAngles = LocalToWorld(
-		vunwrap(localPos),
-		aunwrap(localAng),
-		vunwrap(originPos),
-		aunwrap(originAngle)
+		vunwrap1(localPos),
+		aunwrap1(localAng),
+		vunwrap2(originPos),
+		aunwrap2(originAngle)
 	)
 
 	return vwrap(worldPos), awrap(worldAngles)
@@ -1274,6 +1265,11 @@ end
 -- @name model
 -- @class directive
 -- @param model String of the model
+
+--- Precaches models that may take a while to load (max 16). --@precachemodel models/props_junk/watermelon01.mdl
+-- @name precachemodel
+-- @class directive
+-- @param model String of the model to precache
 
 --- Set the current file to only run on the server. Shared is default. --@server
 -- @name server

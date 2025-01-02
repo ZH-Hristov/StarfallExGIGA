@@ -1688,36 +1688,37 @@ function Editor:LoadFile(Line, forcenewtab)
 
 	local f = file.Open(Line, "rb", "DATA")
 	if not f then
-		ErrorNoHalt("Erroring opening file: " .. Line)
-	else
-		local str = f:Read(f:Size()) or ""
-		f:Close()
-		self:SaveTabs()
-		if not forcenewtab then
-			for i = 1, self:GetNumTabs() do
-				if self:GetTabContent(i).chosenfile == Line then
-					self:SetActiveTab(i)
-					if forcenewtab ~= nil then
-						self:SetCode(str)
-						self:GetCurrentTabContent().savedCode = SF.Editor.normalizeCode(str)
-					end
-					return
+		SF.AddNotify(LocalPlayer(), "Erroring opening file: " .. Line, "ERROR", 7, "ERROR1")
+		return
+	end
+
+	local str = f:Read(f:Size()) or ""
+	f:Close()
+	self:SaveTabs()
+	if not forcenewtab then
+		for i = 1, self:GetNumTabs() do
+			if self:GetTabContent(i).chosenfile == Line then
+				self:SetActiveTab(i)
+				if forcenewtab ~= nil then
+					self:SetCode(str)
+					self:GetCurrentTabContent().savedCode = SF.Editor.normalizeCode(str)
 				end
+				return
 			end
 		end
-		local title, tabtext = getPreferredTitles(Line, str)
-		local tab
-		if self.NewTabOnOpenVar:GetBool() or forcenewtab then
-			tab = self:CreateTab(tabtext).Tab
-		else
-			tab = self:GetActiveTab()
-		end
-		self:SetActiveTab(tab)
-		self:SetCode(str)
-		self:ChosenFile(Line, self:GetCode())
-		self:UpdateTabText(tab)
-		self.C.TabHolder:InvalidateLayout()
 	end
+	local title, tabtext = getPreferredTitles(Line, str)
+	local tab
+	if self.NewTabOnOpenVar:GetBool() or forcenewtab then
+		tab = self:CreateTab(tabtext).Tab
+	else
+		tab = self:GetActiveTab()
+	end
+	self:SetActiveTab(tab)
+	self:SetCode(str)
+	self:ChosenFile(Line, self:GetCode())
+	self:UpdateTabText(tab)
+	self.C.TabHolder:InvalidateLayout()
 end
 
 ---Returns the value of the settings `ReloadBeforeUpload` of the editor.
@@ -1755,7 +1756,7 @@ function Editor:ReloadTab(tabIndex, interactive)
 	local executeReload = function()
 		local fileContent = file.Read(filepath)
 		if fileContent == nil then
-			ErrorNoHalt("Error while reloading, failed to read file: ", filepath)
+			SF.AddNotify(LocalPlayer(), "Error while reloading, failed to read file: "..filepath, 7, "ERROR1")
 			return
 		end
 
@@ -1846,13 +1847,9 @@ function Editor:Close()
 	local activeWep = LocalPlayer():GetActiveWeapon()
 	if activeWep:IsValid() and activeWep:GetClass() == "gmod_tool" and activeWep.Mode == "starfall_processor" then
 		local model = nil
-		local ppdata = {}
-		pcall(SF.Preprocessor.ParseDirectives, "file", self:GetCode(), ppdata)
-		if ppdata.models and ppdata.models.file ~= "" then
-			model = ppdata.models.file
-		end
-
-		RunConsoleCommand("starfall_processor_ScriptModel", model or "")
+		local ppdata = SF.PreprocessData("", self:GetCode())
+		pcall(ppdata.Preprocess, ppdata)
+		RunConsoleCommand("starfall_processor_ScriptModel", ppdata.model or "")
 	end
 	hook.Run("StarfallEditorClose")
 end
@@ -2097,7 +2094,7 @@ end
 function PANEL:CheckPlayersChanged()
 	local players = {}
 	for k, v in pairs(player.GetAll()) do
-		if rawget(SF.playerInstances, v) or SF.BlockedUsers:isBlocked(v:SteamID()) then
+		if not table.IsEmpty(SF.playerInstances[v]) or SF.BlockedUsers:isBlocked(v:SteamID()) then
 			players[v] = true
 		end
 	end

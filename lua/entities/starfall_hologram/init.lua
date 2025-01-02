@@ -15,10 +15,10 @@ function ENT:Initialize()
 	self.clips = {}
 	self.clipdata = ""
 
-	self:SetScale(Vector(1,1,1))
 	self:SetPlayerColorInternal(VECTOR_PLAYER_COLOR_DISABLED)
 	self:SetSuppressEngineLighting(false)
 	self:SetCullMode(false)
+	self:SetRenderGroupInternal(-1)
 
 	self.updateClip = false
 	self.AutomaticFrameAdvance = false
