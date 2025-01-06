@@ -137,4 +137,4 @@ end
 module.clear_cached_paths = clear_cached_paths
 module.path = path
 
-return module
+astar = module

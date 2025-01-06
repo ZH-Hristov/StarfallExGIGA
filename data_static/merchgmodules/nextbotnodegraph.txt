@@ -1,0 +1,168 @@
+Nodegraph = {Nodes = {}, NamedLUT = {}}
+
+local nb = getMethods("NextBot")
+
+function LoadNodegraph(data)
+    for k, v in pairs(data.Nodes) do
+        Nodegraph.Nodes[k] = Vector(v.x, v.y, v.z)
+        Nodegraph.Nodes[k].c = table.copy(v.c)
+        Nodegraph.Nodes[k].n = v.n
+        Nodegraph.Nodes[k].id = k
+    end
+end
+
+function nb:navigateToNamedNode(name)
+    local closestDist = math.huge
+    local closest
+
+    for k, v in pairs(Nodegraph.Nodes) do
+        local dist = v:getDistanceSqr(self:getPos())
+        if dist < closestDist then
+            closestDist = dist
+            closest = k
+        end
+    end
+
+    local pathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[Nodegraph.NamedLUT[name]], Nodegraph.Nodes, true)
+
+    local i = 1
+    while self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
+        self:setApproachPos(pathy[i])
+
+        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do coroutine.yield() end
+        i = math.min(i + 1, #pathy)
+        coroutine.yield()
+    end
+    self:removeApproachPos()
+    return true
+end
+
+function nb:navigateToRandomNode()
+    local closestDist = math.huge
+    local closest
+
+    for k, v in pairs(Nodegraph.Nodes) do
+        local dist = v:getDistanceSqr(self:getPos())
+        if dist < closestDist then
+            closestDist = dist
+            closest = k
+        end
+    end
+
+    local pathy = astar.path(Nodegraph.Nodes[closest], table.random(Nodegraph.Nodes), Nodegraph.Nodes, true)
+
+    local i = 1
+    while self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
+        self:setApproachPos(pathy[i])
+
+        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do coroutine.yield() end
+        i = math.min(i + 1, #pathy)
+        coroutine.yield()
+    end
+    self:removeApproachPos()
+    return true
+end
+
+function nb:navigateToClosest(pos)
+    local closestDist, closestDist2 = math.huge, math.huge
+    local closest, closest2
+
+    for k, v in pairs(Nodegraph.Nodes) do
+        local dist = v:getDistanceSqr(self:getPos())
+        if dist < closestDist then
+            closestDist = dist
+            closest = k
+        end
+    end
+
+    for k, v in pairs(Nodegraph.Nodes) do
+        local dist = v:getDistanceSqr(pos)
+        if dist < closestDist2 then
+            closestDist2 = dist
+            closest2 = k
+        end
+    end
+
+    local pathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[closest2], Nodegraph.Nodes, true)
+    if not pathy then return false end
+
+    local i = 1
+    while self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
+        self:setApproachPos(pathy[i])
+
+        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do coroutine.yield() end
+        i = math.min(i + 1, #pathy)
+        coroutine.yield()
+    end
+    self:removeApproachPos()
+    return true
+end
+
+function nb:chaseEntity(ent)
+    local closestDist, closestDist2 = math.huge, math.huge
+    local closest, closest2
+
+    for k, v in pairs(Nodegraph.Nodes) do
+        local dist = v:getDistanceSqr(self:getPos())
+        if dist < closestDist then
+            closestDist = dist
+            closest = k
+        end
+    end
+
+    for k, v in pairs(Nodegraph.Nodes) do
+        local dist = v:getDistanceSqr(ent:getPos())
+        if dist < closestDist2 then
+            closestDist2 = dist
+            closest2 = k
+        end
+    end
+
+    local pathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[closest2], Nodegraph.Nodes, true)
+    if not pathy then return false end
+
+    local i = 1
+    local recomputeTick = 0
+
+    while isValid(ent) and self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
+        self:setApproachPos(pathy[i])
+
+        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do
+            recomputeTick = recomputeTick + timer.frametime()
+            coroutine.yield()
+        end
+
+        i = math.min(i + 1, #pathy)
+
+
+        if recomputeTick > 1 then
+            recomputeTick = 0
+
+            closestDist = math.huge
+            closestDist2 = math.huge
+
+            for k, v in pairs(Nodegraph.Nodes) do
+                local dist = v:getDistanceSqr(self:getPos())
+                if dist < closestDist then
+                    closestDist = dist
+                    closest = k
+                end
+            end
+
+            for k, v in pairs(Nodegraph.Nodes) do
+                local dist = v:getDistanceSqr(ent:getPos())
+                if dist < closestDist2 then
+                    closestDist2 = dist
+                    closest2 = k
+                end
+            end
+
+            local newPathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[closest2], Nodegraph.Nodes, true)
+            if newPathy then pathy = newPathy i = 1 end
+        end
+
+        coroutine.yield()
+    end
+    self:removeApproachPos()
+    return true
+end
