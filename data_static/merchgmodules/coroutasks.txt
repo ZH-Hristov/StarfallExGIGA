@@ -65,7 +65,7 @@ net.receive("CoSignal", function()
     local expire = net.readFloat()
     CoSignals[id] = value or true
 
-    if not timeout then return end
+    if not expire then return end
     AddCoTask("CoSignalExpire_"..id..expire, function()
         coroutine.waitPrecise(expire)
         CoSignals[id] = nil

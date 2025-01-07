@@ -9,9 +9,15 @@ function LoadNodegraph(data)
         Nodegraph.Nodes[k].n = v.n
         Nodegraph.Nodes[k].id = k
     end
+
+    Nodegraph.NamedLUT = table.copy(data.NamedLUT)
 end
 
-function nb:navigateToNamedNode(name)
+function GetNodeByName(nm)
+    return Nodegraph.Nodes[Nodegraph.NamedLUT[nm]]
+end
+
+function nb:navigateToNamedNode(name, face)
     local closestDist = math.huge
     local closest
 
@@ -29,7 +35,7 @@ function nb:navigateToNamedNode(name)
     while self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
         self:setApproachPos(pathy[i])
 
-        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do coroutine.yield() end
+        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do if face then self:faceTowards(pathy[i]) end coroutine.yield() end
         i = math.min(i + 1, #pathy)
         coroutine.yield()
     end
