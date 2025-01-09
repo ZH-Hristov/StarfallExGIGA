@@ -113,7 +113,7 @@ end)
 -- @param Vector dmgpos Damage pos.
 -- @param Vector dmgforce Damage force.
 -- @return number? Return to scale the damage by the scaler variable.
-SF.hookAdd("ScalePlayerDamage", nil, function(instance, ply, hitgr, dmg) 
+SF.hookAdd("ScalePlayerDamage", nil, function(instance, ply, hitgr, dmg)
 	return true, {
 		instance.WrapObject(ply),
 		hitgr,
@@ -248,7 +248,7 @@ if SERVER then
 	-- @param number speed The fall speed
 	-- @return number New fall damage
 	SF.hookAdd("GetFallDamage", nil, nil, adminOnlyReturnHook)
-	
+
 	--- Returns true if the player should take damage from the given attacker. SuperAdmin only.
 	-- @name PlayerShouldTakeDamage
 	-- @class hook
@@ -257,7 +257,7 @@ if SERVER then
 	-- @param entity attacker The attacker
 	-- @return boolean Allow damage
 	SF.hookAdd("PlayerShouldTakeDamage", nil, nil, adminOnlyReturnHook)
-	
+
 	--- Called when an NPC takes damage.
 	-- @name ScaleNPCDamage
 	-- @class hook
@@ -271,7 +271,7 @@ if SERVER then
 	-- @param Vector dmgpos Damage pos.
 	-- @param Vector dmgforce Damage force.
 	-- @return number? Return to scale the damage by the scaler variable.
-	SF.hookAdd("ScaleNPCDamage", nil, function(instance, ply, hitgr, dmg) 
+	SF.hookAdd("ScaleNPCDamage", nil, function(instance, ply, hitgr, dmg)
 		return true, {
 			instance.WrapObject(ply),
 			hitgr,
@@ -285,7 +285,7 @@ if SERVER then
 		end, function(instance, args, ply, hitgr, dmginfo)
 		if args[2] and superOrAdmin(instance) then dmginfo:ScaleDamage(args[2]) end
 	end)
-	
+
 	--- Called when a Starfall trigger is activated.
 	-- @name OnStarFallTrigger
 	-- @class hook
@@ -295,7 +295,7 @@ if SERVER then
 	-- @param entity trigger The trigger entity that was activated.
 	-- @param number state The touch state. Returns 1 if the touch was just started, -1 if the touch just ended, 0 for every tick the entity is being touched.
 	SF.hookAdd("OnStarfallTrigger")
-	
+
 	--- Called when an entity is damaged
 	-- @name EntityTakeDamageAdmin
 	-- @class hook
@@ -319,7 +319,7 @@ if SERVER then
 			instance.Types.Vector.Wrap(dmg:GetDamageForce())
 		}
 	end, adminOnlyReturnHook)
-	
+
 	--- Returns whether or not a player is allowed to pick an item up. Return false to disallow pickup. (Admin only)
 	--- Admins can return to set whether the pickup is allowed.
 	-- @name PlayerCanPickupItem
@@ -333,7 +333,7 @@ if SERVER then
 			instance.WrapObject(item)
 		}
 	end, adminOnlyReturnHook)
-	
+
 	--- Called when an entity receives a damage event, after passing damage filters, etc.
 	-- @name PostEntityTakeDamage
 	-- @class hook
@@ -358,7 +358,7 @@ if SERVER then
 			instance.Types.Vector.Wrap(dmg:GetDamageForce())
 		}
 	end, nil)
-	
+
 	--- Called to give players the default set of weapons. Return true to prevent default loadout. (Admin only)
 	-- @name PlayerLoadout
 	-- @class hook
@@ -369,7 +369,7 @@ if SERVER then
 			instance.WrapObject(ply)
 		}
 	end, adminOnlyReturnHook)
-	
+
 	--- Called when a player switches their weapon. Allows overriding if admin.
 	-- @name PlayerSwitchWeaponEX
 	-- @class hook
@@ -379,7 +379,7 @@ if SERVER then
 	-- @param Weapon newweapon New weapon
 	-- @return boolean Return true to disallow weapon switch.
 	SF.hookAdd("PlayerSwitchWeapon", "playerswitchweaponex", nil, adminOnlyReturnHook)
-	
+
 	--- Called when a serverside ragdoll of an entity has been created.
 	-- @name CreateEntityRagdoll
 	-- @class hook
@@ -392,7 +392,7 @@ if SERVER then
 			instance.WrapObject(rag)
 		}
 	end)
-	
+
 else
 
 	--- Allows you to modify the supplied User Command with mouse input. This could be used to make moving the mouse do funky things to view angles.
@@ -405,7 +405,7 @@ else
 	-- @param Angle ang The current view angle.
 	-- @return boolean? Return true if we modified something.
 	SF.hookAdd("InputMouseApply", nil, nil, adminOnlyReturnHook)
-	
+
 	--- Called whenever an entity becomes a clientside ragdoll.
 	-- @name CreateClientsideRagdoll
 	-- @class hook
@@ -418,6 +418,11 @@ else
 			instance.Types.Entity.Wrap(rag)
 		}
 	end)
+
+	--- Called when the pause menu is attempting to be opened. Allows you to prevent the main menu from being opened that time.
+	--- The user can hold SHIFT to not call this hook. If the main menu is blocked multiple times in short succession, a warning will be displayed to the end user on how to bypass the hook.
+	-- @return boolean? Return false to allow pause menu from opening.
+	SF.hookAdd("OnPauseMenuShow", nil, nil, adminOnlyReturnHook)
 end
 
 return function(instance)
@@ -473,7 +478,7 @@ instance:AddHook("deinitialize", function()
 			v:Freeze(false)
 		end
 	end
-	
+
 	if #triggers > 0 then
 		for _, v in pairs(triggers) do
 			SafeRemoveEntity(v)
@@ -483,7 +488,7 @@ instance:AddHook("deinitialize", function()
 	for ent, _ in pairs(animatableprops) do
 		SafeRemoveEntity(ent)
 	end
-	
+
 	if !table.IsEmpty(nwents) then
 		for ent, _ in ipairs(nwents) do
 			local curent = Entity(ent)
@@ -918,7 +923,7 @@ end
 -- @param Angle punchangle The angle in which to push the player's screen
 function player_methods:viewPunch(ang)
 	local ang = aunwrap(ang)
-	
+
 	checkpermission(instance, getply(self), "entities.setRenderProperty")
 	getply(self):ViewPunch(ang)
 end
@@ -1319,7 +1324,7 @@ function ents_methods:setAnimation(animation, frame, rate)
 	elseif not isnumber(animation) then
 		SF.ThrowTypeError("number or string", SF.GetType(animation), 2)
 	end
-	
+
 	if animation~=nil then
 		ent:ResetSequence(animation)
 	end
@@ -1344,7 +1349,7 @@ if SERVER then
 			wep:SetClip1(val)
 		end
 	end
-	
+
 	--- Lets you change the number of bullets in the given weapons secondary clip.
 	--@server
 	--@param number ammo The amount of bullets the clip should contain.
@@ -1354,7 +1359,7 @@ if SERVER then
 			wep:SetClip2(val)
 		end
 	end
-	
+
 	--- Fires bullets from an entity.
 	--@server
 	--@param table bulletData Bullet data table, check https://wiki.facepunch.com/gmod/Structures/Bullet
@@ -1383,7 +1388,7 @@ if SERVER then
 			ent:Activate()
 		end
 	end
-	
+
 	--- Plays a scripted sequence on an NPC. Allows for root motion.
 	-- @server
 	-- @param string entryanim? If set, specifies the sequence or activity which plays before the Action Animation.
@@ -1408,23 +1413,23 @@ if SERVER then
 		ss:Spawn()
 		ss:Fire("BeginSequence", "", 0)
 	end
-	
+
 	--- Returns the weapon the NPC is carrying.
 	--@server
 	--@return Entity The NPC's current weapon.
 	function npc_methods:getActiveWeapon()
 		local npc = npcunwrap(self)
-		
+
 		return ewrap(npc:GetActiveWeapon())
 	end
-	
+
 	--- Makes a physics prop into an animatable prop entity.
 	-- @server
 	--@return Entity animatableProp The prop as an animatable prop.
 	function ents_methods:makeAnimatable()
 		local ent = eunwrap(self)
 		if !superOrAdmin(instance) or ent:GetClass() != "prop_physics" then return end
-		
+
 		local prop_animatable = ents.Create( "starfall_animatableprop" )
 		prop_animatable:SetModel( ent:GetModel() )
 		prop_animatable:SetPos( ent:GetPos() )
@@ -1432,17 +1437,17 @@ if SERVER then
 		prop_animatable:SetSequence( ent:GetSequence() )
 		prop_animatable:SetCycle( ent:GetCycle() )
 		prop_animatable:SetSkin( ent:GetSkin() or 0 )
-		
+
 		prop_animatable:Spawn()
 		prop_animatable:Activate()
-		
+
 		prop_animatable.EntityMods = ent.EntityMods
-		
+
 		ent:Remove()
 		animatableprops[prop_animatable] = true
 		return ewrap(prop_animatable)
 	end
-	
+
 	--- Sets the mapping name of the entity. Same as the ent_setname console command.
 	-- @server
 	-- @param string name The name to set for the entity.
@@ -1471,7 +1476,7 @@ if SERVER then
 			return eunwrap(self):AddLayeredSequence(seq, priority)
 		end
 	end
-	
+
 	--- Sets a networked integer (whole number) value on the entity. The value can then be accessed with Entity:getNWInt both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param number value The value to set.
@@ -1483,7 +1488,7 @@ if SERVER then
 			ent:SetNW2Int(instancekey..key, val)
 		end
 	end
-	
+
 	--- Sets a networked string value on the entity. The value can then be accessed with Entity:getNWString both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param string value The value to set, up to 199 characters.
@@ -1495,7 +1500,7 @@ if SERVER then
 			ent:SetNW2String(instancekey..key, val)
 		end
 	end
-	
+
 	--- Sets a networked vector value on the entity. The value can then be accessed with Entity:getNWVector both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param Vector value The value to set.
@@ -1507,7 +1512,7 @@ if SERVER then
 			ent:SetNW2Vector(instancekey..key, vunwrap(val))
 		end
 	end
-	
+
 	--- Sets a networked float (number) value on the entity. The value can then be accessed with Entity:getNWFloat both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param number value The value to set.
@@ -1519,7 +1524,7 @@ if SERVER then
 			ent:SetNW2Float(instancekey..key, val)
 		end
 	end
-	
+
 	--- Sets a networked angle value on the entity. The value can then be accessed with Entity:getNWAngle both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param Angle value The value to set.
@@ -1531,7 +1536,7 @@ if SERVER then
 			ent:SetNW2Angle(instancekey..key, aunwrap(val))
 		end
 	end
-	
+
 	--- Sets a networked boolean value on the entity. The value can then be accessed with Entity:getNWBool both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param boolean value The value to set.
@@ -1543,7 +1548,7 @@ if SERVER then
 			ent:SetNW2Bool(instancekey..key, val)
 		end
 	end
-	
+
 	--- Sets a networked entity value on the entity. The value can then be accessed with Entity:getNWEntity both from client and server.
 	-- @param string key The key to associate the value with.
 	-- @param Entity value The value to set.
@@ -1555,7 +1560,7 @@ if SERVER then
 			ent:SetNW2Entity(instancekey..key, eunwrap(val))
 		end
 	end
-	
+
 	--- Freeze the player. Frozen players cannot move, look around, or attack. Key bindings are still called.
 	-- @server
 	-- @param boolean frozen Whether the player should be frozen.
@@ -1565,7 +1570,7 @@ if SERVER then
 			if frozen then table.insert(FrozenPlayers, getply(self)) end
 		end
 	end
-	
+
 	--- Sets the entity's move type.
 	-- @server
 	-- @param number movetype The new movetype, see https://wiki.facepunch.com/gmod/Enums/MOVETYPE
@@ -1574,7 +1579,7 @@ if SERVER then
 			eunwrap(self):SetMoveType(movetype)
 		end
 	end
-	
+
 	--- Sets the entity's collision group. No restrictions, admin only.
 	-- @param number group The COLLISION_GROUP value to set it to
 	function ents_methods:setCollisionGroupEX(group)
@@ -1585,7 +1590,7 @@ if SERVER then
 
 		ent:SetCollisionGroup(group)
 	end
-	
+
 	--- Applies damage to an entity
 	-- @param number amt Damage amount
 	-- @param Entity attacker Damage attacker
@@ -1596,7 +1601,7 @@ if SERVER then
 	function ents_methods:applyDamageEX(amt, attacker, inflictor, pos, force, dmgtype)
 		ent = ounwrap(self)
 		checkpermission(instance, ent, "entities.applyDamage")
-		
+
 		local d = DamageInfo()
 		d:SetDamage(amt)
 		d:SetAttacker(ounwrap(attacker))
@@ -1604,17 +1609,17 @@ if SERVER then
 		d:SetDamagePosition(vunwrap(pos) or vector_origin)
 		d:SetDamageForce(vunwrap(force) or vector_origin)
 		d:SetDamageType(dmgtype or 0)
-		
+
 		ent:TakeDamageInfo(d)
 	end
-	
+
 	--- Gets the Entity's mapping name. This is also the name set be the ent_setname command.
 	-- @server
 	-- @return string The entity's mapping name if it has one.
 	function ents_methods:getName()
 		return eunwrap(self):GetName()
 	end
-	
+
 	--- Creates a trigger
 	-- @server
 	-- @param string name The name ID of the trigger.
@@ -1641,7 +1646,7 @@ if SERVER then
 		colly:DrawShadow(false)
 		return ewrap(colly)
 	end
-	
+
 	--- Creates a trigger box with a custom size.
 	-- @server
 	-- @param Vector origin The position the middle of the trigger will be in.
@@ -1663,26 +1668,26 @@ if SERVER then
 		colly:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 		colly:SetTrigger(true)
 		colly.filter = {}
-		
+
 		if filter then
 			if type(filter) == "string" then
 				filter = {filter}
 			end
-			
+
 			for _, cls in pairs(filter) do
 				colly.filter[cls] = true
 			end
 		else
 			colly.filter = {player = true}
 		end
-		
+
 		function colly:StartTouch(ent)
 			local cls = ent:GetClass()
 			if self.filter[cls] then
 				instance:runFunction(onEnter, ewrap(ent), ewrap(self))
 			end
 		end
-		
+
 		if onExit then
 			function colly:EndTouch(ent)
 				local cls = ent:GetClass()
@@ -1691,7 +1696,7 @@ if SERVER then
 				end
 			end
 		end
-		
+
 		colly:SetSolidFlags(12)
 		colly:DrawShadow(false)
 		return ewrap(colly)
@@ -1717,26 +1722,26 @@ if SERVER then
 		colly:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 		colly:SetTrigger(true)
 		colly.filter = {}
-		
+
 		if filter then
 			if type(filter) == "string" then
 				filter = {filter}
 			end
-			
+
 			for _, cls in pairs(filter) do
 				colly.filter[cls] = true
 			end
 		else
 			colly.filter = {player = true}
 		end
-		
+
 		function colly:StartTouch(ent)
 			local cls = ent:GetClass()
 			if self.filter[cls] then
 				instance:runFunction(onEnter, ewrap(ent))
 			end
 		end
-		
+
 		if onExit then
 			function colly:EndTouch(ent)
 				local cls = ent:GetClass()
@@ -1745,12 +1750,12 @@ if SERVER then
 				end
 			end
 		end
-		
+
 		colly:SetSolidFlags(12)
 		colly:DrawShadow(false)
 		return ewrap(colly)
 	end
-	
+
 	--- Sets an entity's local velocity
 	-- @server
 	-- @param Vector velocity Velocity to apply to entity.
@@ -1759,7 +1764,7 @@ if SERVER then
 			eunwrap(self):SetLocalVelocity(vunwrap(velocity))
 		end
 	end
-	
+
 	--- Makes the entity play a .vcd scene.
 	-- @server
 	-- @param string scene Filepath to scene.
@@ -1769,7 +1774,7 @@ if SERVER then
 			eunwrap(self):PlayScene(scene, delay)
 		end
 	end
-	
+
 	--- Returns whether the target/given entity is visible from the this entity. This is meant to be used only with NPCs.
 	-- @server
 	-- @param Entity target Entity to check for visibility to.
@@ -1777,7 +1782,7 @@ if SERVER then
 	function ents_methods:visible(target)
 		return eunwrap(self):Visible(eunwrap(target))
 	end
-	
+
 	--- Returns true if supplied vector is visible from the entity's line of sight.
 	-- @server
 	-- @param Vector vectocheck The position to check for visibility.
@@ -1785,7 +1790,7 @@ if SERVER then
 	function ents_methods:visibleVec(target)
 		return eunwrap(self):VisibleVec(vunwrap(target))
 	end
-	
+
 	--- Forces the player to pickup an existing weapon entity. The player will not pick up the weapon if they already own a weapon of given type, or if the player could not normally have this weapon in their inventory.
 	-- @server
 	-- @param Weapon newwep The weapon to try to pick up.
@@ -1795,7 +1800,7 @@ if SERVER then
 			getply(self):PickupWeapon(eunwrap(wep), ammoonly)
 		end
 	end
-	
+
 	--- Sets a player's armor.
 	--@server
 	--@param number amount The amount that the player armor is going to be set to.
@@ -1804,7 +1809,7 @@ if SERVER then
 			getply(self):SetArmor(val)
 		end
 	end
-	
+
 	--- Sets the maximum amount of armor the player should have. This affects default built-in armor pickups, but not Player:setArmor.
 	--@server
 	--@param number max The new max armor value.
@@ -1813,7 +1818,7 @@ if SERVER then
 			getply(self):SetMaxArmor(val)
 		end
 	end
-	
+
 	--- Forces an entity to spawn. Initializes the entity and starts its networking. If called on a player, it will respawn them.
 	-- @server
 	function ents_methods:spawn()
@@ -1821,7 +1826,7 @@ if SERVER then
 			eunwrap(self):Spawn()
 		end
 	end
-	
+
 	--- Initializes a static physics object of the entity using its current model. If successful, the previous physics object is removed.
 	--- This is what used by entities such as func_breakable, prop_dynamic, item_suitcharger, prop_thumper and npc_rollermine while it is in its "buried" state in the Half-Life 2 Campaign.
 	--- If the entity's current model has no physics mesh associated to it, no physics object will be created.
@@ -1838,11 +1843,11 @@ if SERVER then
 else
 
 	local ptextures
-	
+
 	instance:AddHook("initialize", function()
 		ptextures = {}
 	end)
-	
+
 	instance:AddHook("deinitialize", function()
 		if #ptextures > 0 then
 			for _, v in ipairs(ptextures) do
@@ -1859,42 +1864,42 @@ else
 		table.insert(ptextures, pt)
 		return instance.WrapObject(pt)
 	end
-	
+
 	--- Move the Projected Texture to the specified position.
 	-- @client
 	-- @param Vector newpos Position to move PT to.
 	function pt_methods:setPos(pos)
 		ounwrap(self):SetPos(vunwrap(pos))
 	end
-	
+
 	--- Sets the angles (direction) of the projected texture.
 	-- @client
 	-- @param Angle newang Angle.
 	function pt_methods:setAngles(ang)
 		ounwrap(self):SetAngles(aunwrap(ang))
 	end
-	
+
 	--- Sets the distance at which the projected texture ends.
 	-- @client
 	-- @param number newfarz New distance.
 	function pt_methods:setFarZ(new)
 		ounwrap(self):SetFarZ(new)
 	end
-	
+
 	--- Sets the distance at which the projected texture starts.
 	-- @client
 	-- @param number newfarz New distance. Setting this to 0 will disable the projected texture completely! This may be useful if you want to disable a projected texture without actually removing it.
 	function pt_methods:setNearZ(new)
 		ounwrap(self):SetNearZ(new)
 	end
-	
+
 	--- Sets the FOV of the PT.
 	-- @client
 	-- @param number newfov Must be higher than 0 and lower than 180.
 	function pt_methods:setFOV(new)
 		ounwrap(self):SetFOV(new)
 	end
-	
+
 	--- Enable or disable shadows cast from the projected texture.
 	-- @client
 	-- @param boolean newstate New state.
@@ -1908,34 +1913,34 @@ else
 	function pt_methods:setBrightness(new)
 		ounwrap(self):SetBrightness(new)
 	end
-	
+
 	--- Sets the color of the projected texture.
 	-- @client
 	-- @param Color newcolor New color.
 	function pt_methods:setColor(new)
 		ounwrap(self):SetColor(cunwrap(new))
 	end
-	
+
 	--- Sets the shadow "filter size" of the projected texture. 0 is fully pixelated, higher values will blur the shadow more. The initial value is the value of r_projectedtexture_filter ConVar.
 	-- @client
 	-- @param number newfilter New filter size.
 	function pt_methods:setShadowFilter(new)
 		ounwrap(self):SetShadowFilter(new)
 	end
-	
+
 	--- Updates the Projected Texture and applies all previously set parameters. Required after most PT methods are used.
 	-- @client
 	function pt_methods:update()
 		ounwrap(self):Update()
 	end
-	
+
 	--- Sets the texture to be projected.
 	-- @client
 	-- @param string newtexture The name of the texture.
 	function pt_methods:setTexture(new)
 		ounwrap(self):SetTexture(new)
 	end
-	
+
 	--- Changes the current projected texture between orthographic and perspective projection.
 	-- @client
 	-- @param boolean enable When false, all other arguments are ignored and the texture is reset to perspective projection.
@@ -1946,34 +1951,34 @@ else
 	function pt_methods:setOrthographic(enable, left, top, right, bottom)
 		ounwrap(self):SetOrthographic(enable, left, top, right, bottom)
 	end
-	
+
 	--- Sets the target entity for this projected texture, meaning it will only be lighting the given entity and the world.
 	-- @client
 	-- @param Entity newtarget Sets the target entity for this projected texture, meaning it will only be lighting the given entity and the world.
 	function pt_methods:setTargetEntity(new)
 		ounwrap(self):SetTargetEntity(eunwrap(new))
 	end
-	
+
 	--- For animated textures, this will choose which frame in the animation will be projected.
 	-- @client
 	-- @param number newframe The frame index to use.
 	function pt_methods:setTextureFrame(new)
 		ounwrap(self):SetTextureFrame(new)
 	end
-	
+
 	--- Removes the projected texture. After calling this, ProjectedTexture:isValid will return false, and any hooks with the projected texture as the identifier will be automatically deleted.
 	-- @client
 	function pt_methods:remove()
 		ounwrap(self):Remove()
 	end
-	
+
 	--- Returns true if the projected texture is valid (i.e. has not been removed), false otherwise. Instead of calling this directly it's a good idea to call isValid in case the variable is nil.
 	-- @client
 	-- @return boolean Is the PT valid?
 	function pt_methods:isValid()
 		return ounwrap(self):IsValid()
 	end
-	
+
 	--- Forces the entity to reconfigure its bones. You might need to call this after changing your model's scales or when manually drawing the entity multiple times at different positions.
 	-- @client
 	function ents_methods:setupBones()
@@ -1981,7 +1986,7 @@ else
 			eunwrap(self):SetupBones()
 		end
 	end
-	
+
 	--- Removes a clientside entity.
 	-- @client
 	function ents_methods:removeClient()
@@ -2014,7 +2019,7 @@ else
 			return suppress
 		end
 	end
-	
+
 end
 
 end
