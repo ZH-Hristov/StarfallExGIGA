@@ -49,14 +49,6 @@ SF.RegisterType("CMoveData", false, true, debug.getregistry().CMoveData)
 -- @libtbl cuc_meta
 SF.RegisterType("CUserCmd", false, true, debug.getregistry().CUserCmd)
 
---- ProjectedTexture type
--- @name ProjectedTexture
--- @class type
--- @client
--- @libtbl pt_methods
--- @libtbl pt_meta
-SF.RegisterType("ProjectedTexture", false, true, debug.getregistry().ProjectedTexture)
-
 --- Animation updates (pose params etc) should be done here.
 -- @name UpdateAnimation
 -- @class hook
@@ -230,13 +222,6 @@ SF.hookAdd("ShouldCollide", nil, function(instance, ent1, ent2) return true, {in
 -- @class library
 -- @libtbl trigger_library
 SF.RegisterLibrary("trigger")
-
---- Library for creating Projected Textures.
--- @name projectedtexture
--- @class library
--- @client
--- @libtbl projectedtexture_library
-SF.RegisterLibrary("projectedtexture")
 
 if SERVER then
 
@@ -438,8 +423,7 @@ local veh_meta, vhwrap, vhunwrap = instance.Types.Vehicle, instance.Types.Vehicl
 local cwrap, cunwrap = instance.Types.Color.Wrap, instance.Types.Color.Unwrap
 local cmv_meta, cuc_meta, cmv_methods, cuc_methods = instance.Types.CMoveData, instance.Types.CUserCmd, instance.Types.CMoveData.Methods, instance.Types.CUserCmd.Methods
 local npc_methods, npc_meta, npcwrap, npcunwrap = instance.Types.Npc.Methods, instance.Types.Npc, instance.Types.Npc.Wrap, instance.Types.Npc.Unwrap
-local pt_meta, pt_methods = instance.Types.ProjectedTexture, instance.Types.ProjectedTexture.Methods
-local trigger_library, projectedtexture_library = instance.Libraries.trigger, instance.Libraries.projectedtexture
+local trigger_library = instance.Libraries.trigger
 local math_library = instance.Libraries.math
 local instancekey = "SF_"..instance.entity:EntIndex().."_"
 
@@ -1841,144 +1825,6 @@ if SERVER then
 	end
 
 else
-
-	local ptextures
-
-	instance:AddHook("initialize", function()
-		ptextures = {}
-	end)
-
-	instance:AddHook("deinitialize", function()
-		if #ptextures > 0 then
-			for _, v in ipairs(ptextures) do
-				v:Remove()
-			end
-		end
-	end)
-
-	--- Creates a ProjectedTexture
-	-- @client
-	-- @return ProjectedTexture The PT.
-	function projectedtexture_library.create()
-		local pt = ProjectedTexture()
-		table.insert(ptextures, pt)
-		return instance.WrapObject(pt)
-	end
-
-	--- Move the Projected Texture to the specified position.
-	-- @client
-	-- @param Vector newpos Position to move PT to.
-	function pt_methods:setPos(pos)
-		ounwrap(self):SetPos(vunwrap(pos))
-	end
-
-	--- Sets the angles (direction) of the projected texture.
-	-- @client
-	-- @param Angle newang Angle.
-	function pt_methods:setAngles(ang)
-		ounwrap(self):SetAngles(aunwrap(ang))
-	end
-
-	--- Sets the distance at which the projected texture ends.
-	-- @client
-	-- @param number newfarz New distance.
-	function pt_methods:setFarZ(new)
-		ounwrap(self):SetFarZ(new)
-	end
-
-	--- Sets the distance at which the projected texture starts.
-	-- @client
-	-- @param number newfarz New distance. Setting this to 0 will disable the projected texture completely! This may be useful if you want to disable a projected texture without actually removing it.
-	function pt_methods:setNearZ(new)
-		ounwrap(self):SetNearZ(new)
-	end
-
-	--- Sets the FOV of the PT.
-	-- @client
-	-- @param number newfov Must be higher than 0 and lower than 180.
-	function pt_methods:setFOV(new)
-		ounwrap(self):SetFOV(new)
-	end
-
-	--- Enable or disable shadows cast from the projected texture.
-	-- @client
-	-- @param boolean newstate New state.
-	function pt_methods:setEnableShadows(new)
-		ounwrap(self):SetEnableShadows(new)
-	end
-
-	--- Sets the brightness of the PT.
-	-- @client
-	-- @param number newbrightness The brightness to give the projected texture.
-	function pt_methods:setBrightness(new)
-		ounwrap(self):SetBrightness(new)
-	end
-
-	--- Sets the color of the projected texture.
-	-- @client
-	-- @param Color newcolor New color.
-	function pt_methods:setColor(new)
-		ounwrap(self):SetColor(cunwrap(new))
-	end
-
-	--- Sets the shadow "filter size" of the projected texture. 0 is fully pixelated, higher values will blur the shadow more. The initial value is the value of r_projectedtexture_filter ConVar.
-	-- @client
-	-- @param number newfilter New filter size.
-	function pt_methods:setShadowFilter(new)
-		ounwrap(self):SetShadowFilter(new)
-	end
-
-	--- Updates the Projected Texture and applies all previously set parameters. Required after most PT methods are used.
-	-- @client
-	function pt_methods:update()
-		ounwrap(self):Update()
-	end
-
-	--- Sets the texture to be projected.
-	-- @client
-	-- @param string newtexture The name of the texture.
-	function pt_methods:setTexture(new)
-		ounwrap(self):SetTexture(new)
-	end
-
-	--- Changes the current projected texture between orthographic and perspective projection.
-	-- @client
-	-- @param boolean enable When false, all other arguments are ignored and the texture is reset to perspective projection.
-	-- @param number left The amount of units left from the projected texture's origin to project.
-	-- @param number top The amount of units upwards from the projected texture's origin to project.
-	-- @param number right The amount of units right from the projected texture's origin to project.
-	-- @param number bottom The amount of units downwards from the projected texture's origin to project.
-	function pt_methods:setOrthographic(enable, left, top, right, bottom)
-		ounwrap(self):SetOrthographic(enable, left, top, right, bottom)
-	end
-
-	--- Sets the target entity for this projected texture, meaning it will only be lighting the given entity and the world.
-	-- @client
-	-- @param Entity newtarget Sets the target entity for this projected texture, meaning it will only be lighting the given entity and the world.
-	function pt_methods:setTargetEntity(new)
-		ounwrap(self):SetTargetEntity(eunwrap(new))
-	end
-
-	--- For animated textures, this will choose which frame in the animation will be projected.
-	-- @client
-	-- @param number newframe The frame index to use.
-	function pt_methods:setTextureFrame(new)
-		ounwrap(self):SetTextureFrame(new)
-	end
-
-	--- Removes the projected texture. After calling this, ProjectedTexture:isValid will return false, and any hooks with the projected texture as the identifier will be automatically deleted.
-	-- @client
-	function pt_methods:remove()
-		ounwrap(self):Remove()
-	end
-
-	--- Returns true if the projected texture is valid (i.e. has not been removed), false otherwise. Instead of calling this directly it's a good idea to call isValid in case the variable is nil.
-	-- @client
-	-- @return boolean Is the PT valid?
-	function pt_methods:isValid()
-		return ounwrap(self):IsValid()
-	end
-
 	--- Forces the entity to reconfigure its bones. You might need to call this after changing your model's scales or when manually drawing the entity multiple times at different positions.
 	-- @client
 	function ents_methods:setupBones()
