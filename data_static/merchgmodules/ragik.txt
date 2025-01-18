@@ -106,8 +106,16 @@ if SERVER then
         return entity(1):getEyePos() - Vector(0, 0, 30) + entity(1):getRight() * -10 + entity(1):getForward() * -10
     end
 
-    function RagIK.registerFingerPose(str)
+    function RagIK.setRightFingerPose(str)
+        net.start("RIKRightFingerPoseSV")
+        net.writeString(str)
+        net.send(find.allPlayers())
+    end
 
+    function RagIK.setLeftFingerPose(str)
+        net.start("RIKLeftFingerPoseSV")
+        net.writeString(str)
+        net.send(find.allPlayers())
     end
 
     function RagIK.clearPose()
@@ -147,8 +155,21 @@ else
         end
     end
 
-    net.receive("RagIKSetPose", function()
+    function RagIK.setLeftFingerPose(id)
+        if not RagIKHands then return end
+        if not RagIKFingerPoses[id] then return end
+
+        for boneID, ang in pairs(RagIKFingerPoses[id]) do
+            RagIKHands:manipulateBoneAngles( RagIKHands:lookupBone("valvebiped.bip01_l_finger"..boneID), ang )
+        end
+    end
+
+    net.receive("RIKRightFingerPoseSV", function()
         RagIK.setRightFingerPose(net.readString())
+    end)
+
+    net.receive("RIKLeftFingerPoseSV", function()
+        RagIK.setLeftFingerPose(net.readString())
     end)
 
     net.receive("RagIKCreateFakeHands", function()
