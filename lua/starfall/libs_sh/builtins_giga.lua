@@ -322,6 +322,14 @@ else
 		DrawColorModify(modparams)
 	end
 
+	--- Draws the texturize shader, which replaces each pixel on your screen with a different part of the texture depending on its brightness.
+	-- @client
+	-- @param number scale Scale of the texture. A smaller number creates a larger texture.
+	-- @param Material mat This will be the texture to use in the effect.
+	function render_library.drawTexturize(scale, mat)
+		DrawTexturize(scale, lmatunwrap(mat))
+	end
+
 	--- Performs a trace and paints a decal to the surface hit.
 	-- @client
 	-- @param Material mat The material of the decal to paint.
