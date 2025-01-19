@@ -82,6 +82,11 @@ if CLIENT then
 	lmaterial_methods, lmaterial_meta, lmatwrap, lmatunwrap = instance.Types.LockedMaterial.Methods, instance.Types.LockedMaterial, instance.Types.LockedMaterial.Wrap, instance.Types.LockedMaterial.Unwrap
 end
 
+local pp = {
+	blur_y = Material("sfexgigashadermats/blur_y"),
+	bokeh = Material("sfexgigashadermats/bokeh")
+}
+
 local builtins_library = instance.env
 local fileServer_library, fileStatic_library = instance.Libraries.fileServer, instance.Libraries.fileStatic
 local render_library = instance.Libraries.render
@@ -184,6 +189,14 @@ end
 -- @param string fromList Which list to retrieve. See getAllLists()
 function builtins_library.getList(fromList)
 	return list.Get(fromList)
+end
+
+--- Tries to get hand model from a playermodel. Returns citzen hands if not found.
+-- @param string path The path to the playermodel
+-- @return table A table containing the hand model path, the skin, if any, and the bodygroups in a string.
+function builtins_library.getModelHands(name)
+	name = player_manager.TranslateToPlayerModelName( name )
+	return instance.Sanitize(player_manager.TranslatePlayerHands(name))
 end
 
 --- Returns the content of a file from the static data folder.
@@ -301,6 +314,8 @@ if SERVER then
 		util.PrecacheModel(mdl)
 	end
 else
+	local surface_SetMaterial = surface.SetMaterial
+	local render_SetMaterial = render.SetMaterial
 
 	--- Forcefully runs a concmd as long as the owner of the chip is a superadmin.
 	-- @param string cmd The console command to run.
@@ -422,6 +437,33 @@ else
 			end
 			DisableClipping(wasEnabled)
 		end
+	end
+
+	--- Sets a vertically blurred material to draw with.
+	-- @param Material mat The material to blur
+	-- @param number size Blur size
+	function render_library.setMaterialEffectBlurY(mat, size)
+		local tex = lmatunwrap(mat):GetTexture("$basetexture")
+
+		pp.blur_y:SetTexture("$basetexture", tex)
+		pp.blur_y:SetFloat("$size", size)
+
+		render_SetMaterial(pp.blur_y)
+		surface_SetMaterial(pp.blur_y)
+	end
+
+	--- Sets a blurred material to draw with.
+	-- @param Material mat The material to blur
+	-- @param number size Blur size
+	function render_library.setMaterialEffectBokeh(mat, size)
+		local tex = lmatunwrap(mat):GetTexture("$basetexture")
+
+		pp.bokeh:SetTexture("$basetexture", tex)
+		pp.bokeh:SetTexture("$depthtext", tex)
+		pp.bokeh:SetFloat("$size", size)
+
+		render_SetMaterial(pp.bokeh)
+		surface_SetMaterial(pp.bokeh)
 	end
 
 	--- Sets the lighting origin.

@@ -37,7 +37,6 @@ if SERVER then
 
         net.start("RagIKCreateFakeHands")
         net.writeEntity(rag)
-        net.writeString(handMdl or owner():getHands():getModel())
         net.send(entity(1))
 
         hook.add("think", "RagIKThink", function()
@@ -180,7 +179,7 @@ else
 
             RagIK.setRightFingerPose("GrabRound")
 
-            local hands = hologram.create(Vector(), Angle(), net.readString())
+            local hands = hologram.create(Vector(), Angle(), getModelHands(player():getModel()).model)
             hands:setParentEx(ent, nil, 2)
             hands:addEffects(EF.BONEMERGE)
 
