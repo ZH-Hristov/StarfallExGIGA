@@ -2,7 +2,7 @@
 {
     "$depthtext" "_rt_FullFrameFB"
     "$ignorez" "1"
-    "$focus" "1"
-    "$focusradius" "1"
+    "$focus" "0"
+    "$focusradius" "0"
     "$size" "1"
 }

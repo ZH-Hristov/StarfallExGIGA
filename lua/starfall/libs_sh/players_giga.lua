@@ -2,11 +2,6 @@
 local checkluatype = SF.CheckLuaType
 local registerprivilege = SF.Permissions.registerPrivilege
 
---Can only return if you are the first argument
-local function returnOnlyOnYourself(instance, args, ply)
-	if args[1] and instance.player == ply or superOrAdmin(instance) then return args[2] end
-end
-
 local function adminOnlyReturnHook(instance, args, ply)
 	if instance.player == SF.Superuser or instance.player:IsAdmin() then return args[2] end
 end
@@ -406,8 +401,16 @@ else
 
 	--- Called when the pause menu is attempting to be opened. Allows you to prevent the main menu from being opened that time.
 	--- The user can hold SHIFT to not call this hook. If the main menu is blocked multiple times in short succession, a warning will be displayed to the end user on how to bypass the hook.
+	-- @class hook
+	-- @client
 	-- @return boolean? Return false to allow pause menu from opening.
 	SF.hookAdd("OnPauseMenuShow", nil, nil, adminOnlyReturnHook)
+
+	--- Called when player presses the scoreboard button (tab by default).
+	-- @class hook
+	-- @client
+	-- @return boolean? Return true to prevent default scoreboard from showing. Admin only.
+	SF.hookAdd("ScoreboardShow", nil, nil, adminOnlyReturnHook)
 end
 
 return function(instance)

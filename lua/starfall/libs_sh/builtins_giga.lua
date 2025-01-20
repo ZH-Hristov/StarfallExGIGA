@@ -461,6 +461,7 @@ else
 		pp.bokeh:SetTexture("$basetexture", tex)
 		pp.bokeh:SetTexture("$depthtext", tex)
 		pp.bokeh:SetFloat("$size", size)
+		pp.bokeh:Recompute()
 
 		render_SetMaterial(pp.bokeh)
 		surface_SetMaterial(pp.bokeh)
