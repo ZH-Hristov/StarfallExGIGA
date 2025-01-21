@@ -401,12 +401,14 @@ else
 
 	--- Called when the pause menu is attempting to be opened. Allows you to prevent the main menu from being opened that time.
 	--- The user can hold SHIFT to not call this hook. If the main menu is blocked multiple times in short succession, a warning will be displayed to the end user on how to bypass the hook.
+	-- @name onpausemenushow
 	-- @class hook
 	-- @client
 	-- @return boolean? Return false to allow pause menu from opening.
 	SF.hookAdd("OnPauseMenuShow", nil, nil, adminOnlyReturnHook)
 
 	--- Called when player presses the scoreboard button (tab by default).
+	-- @name scoreboardshow
 	-- @class hook
 	-- @client
 	-- @return boolean? Return true to prevent default scoreboard from showing. Admin only.
