@@ -177,8 +177,6 @@ else
             RagIKHands = ent
             RagIKHands:setupBones()
 
-            RagIK.setRightFingerPose("GrabRound")
-
             local hands = hologram.create(Vector(), Angle(), getModelHands(player():getModel()).model)
             hands:setParentEx(ent, nil, 2)
             hands:addEffects(EF.BONEMERGE)
