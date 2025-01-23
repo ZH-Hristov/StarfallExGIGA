@@ -314,6 +314,20 @@ if SERVER then
 		}
 	end, adminOnlyReturnHook)
 
+	--- Called when a player tries to pick up something using the "use" key, return to override. Admin only.
+	-- @class hook
+	-- @name AllowPlayerPickup
+	-- @server
+	-- @param Player ply The player trying to pick up the entity.
+	-- @param Entity ent The Entity the player attempted to pick up.
+	-- @return Allow the player to pick up the entity or not.
+	SF.hookAdd("AllowPlayerPickup", nil, function(instance, ply, ent)
+		return true, {
+			instance.WrapObject(ply),
+			instance.WrapObject(ent)
+		}
+	end, adminOnlyReturnHook)
+
 	--- Called when an entity receives a damage event, after passing damage filters, etc.
 	-- @name PostEntityTakeDamage
 	-- @class hook
