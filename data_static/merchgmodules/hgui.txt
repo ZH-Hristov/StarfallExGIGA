@@ -255,7 +255,7 @@ local function MaskZPass(domask, dodraw)
     -- Always draw everything
     render.setStencilCompareFunction( STENCIL.ALWAYS )
     -- If something would draw to the screen but is behind something, set the pixels it draws to 1
-    render.setStencilZFailOperation( STENCIL.REPLACE )
+    render.setStencilPassOperation(STENCIL.REPLACE)
 
     -- Draw our entities. They will draw as normal
 domask()
