@@ -32,11 +32,11 @@ _G.CamTypes = {
         if !trans then
             Cam.origin = pos
             Cam.angles = ang
-            
+
             if !tempty(Cam.PosOffsets) then
                 Cam.origin = ply:getEyePos() + table.sumVector(Cam.PosOffsets)
             end
-            
+
             if !tempty(Cam.AngOffsets) then
                 Cam.angles = ply:getEyeAngles() + table.sumAngle(Cam.AngOffsets)
             end
@@ -44,18 +44,18 @@ _G.CamTypes = {
             return ply:getEyePos(), ply:getEyeAngles()
         end
     end,
-    
+
     TPS = function(trans, pos, ang, fov, znear, zfar)
         local tr = trace.line(ply:getEyePos(), ply:getEyePos() - ply:getAimVector() * 60 + ply:getRight() * 16, ply)
-        
+
         if !trans then
             Cam.origin = tr.HitPos
             Cam.angles = ang
-            
+
             if !tempty(Cam.PosOffsets) then
                 Cam.origin = tr.HitPos + table.sumVector(Cam.PosOffsets)
             end
-            
+
             if !tempty(Cam.AngOffsets) then
                 Cam.angles = ang + table.sumAngle(Cam.AngOffsets)
             end
@@ -63,7 +63,7 @@ _G.CamTypes = {
             return tr.HitPos, eyeAngles()
         end
     end,
-    
+
     Uncoupled = function(trans, pos, ang, fov, znear, zfar)
         if !trans then
             Cam.origin = Cam.UncoupPos + table.sumVector(Cam.PosOffsets)
@@ -97,7 +97,7 @@ end
 
 function CamTweenFOV(num, dur, ease)
     if !AddTween then print("Tween module is needed for CamTweenFOV!") return end
-    
+
     RemoveTween("CamTweenFOV")
     AddTween("CamTweenFOV", Cam, {fov = num}, dur, nil, ease)
 end
@@ -111,7 +111,7 @@ function CamTween(pos, ang, dur, ease)
     Cam.UncoupPos = Cam.origin
     Cam.UncoupAng = Cam.angles
     CamUncouple()
-    
+
     RemoveTween("CamTween") -- Remove old one just to be sure
     AddTween("CamTween", Cam, {UncoupPos = pos, UncoupAng = ang}, dur, nil, ease)
 end
@@ -135,28 +135,28 @@ end
 function CamSetType(id)
     if !CamTypes[id] then print("No such cam type!") return end
     RemoveTween("CamTweenType")
-    
+
     Cam.Type = CamTypes[id]
-    
+
     if CamViewerTypes[id] then CamDrawViewer(CamViewerTypes[id]) end
 end
 
 function CamSetTypeSmooth(id, dur, ease, easeang)
     if !CamTypes[id] then print("No such cam type!") return end
     if !AddTween then print("Tween module is needed for CamSetTypeSmooth!") return end
-     
+
     dur = dur or 1
     ease = ease or math.easeInOutSine
     local lastType = Cam.Type
     Cam.Type = nil
-    
+
     local function endfunc()
         Cam.Type = CamTypes[id]
         if CamViewerTypes[id] then
             CamDrawViewer(CamViewerTypes[id])
         end
     end
-    
+
     AddTween("CamTweenType", {cyc = 0}, {cyc = 1}, dur, endfunc, nil, function(data)
         local startPos, startAng = lastType(true)
         local desiredPos, desiredAng = CamTypes[id](true)
@@ -182,9 +182,9 @@ end
 
 function CamShake(freq, intensity, dur, ease, roll)
     local id = "CamShake_"..timer.curtime()..freq..intensity..dur
-    
+
     Cam.AngOffsets[id] = Angle()
-    
+
     AddTween(id, Cam.AngOffsets, {[id] = Angle(0, 0, 1)}, dur, function() Cam.AngOffsets[id] = nil end, ease or math.easeLinearSpike, function(dat)
         local nResult = getShakeFloat(1, freq)
         local nResult2 = getShakeFloat(10, freq)
@@ -199,7 +199,7 @@ function CamSetViewBob(bobfunc)
 
     hook.add("think", "CamHandleViewBob", function()
         local pos, ang = bobfunc()
-         
+
         Cam.PosOffsets.viewbob = math.lerpVector(0.1, Cam.PosOffsets.viewbob, pos)
         Cam.AngOffsets.viewbob = math.lerpAngle(0.1, Cam.AngOffsets.viewbob, ang)
     end)
@@ -214,11 +214,11 @@ end
 function AddCamShakeContinuous(id, freq, intensity)
     RemoveTween("CamShakeContinuousSmoothEnd_"..id)
     local id = "CamShakeContinuous_"..id
-    
+
     Cam.AngOffsets[id] = Angle()
-    
+
     Cam.ContinuousShakes = Cam.ContinuousShakes or {}
-    
+
     if tempty(Cam.ContinuousShakes) then
         hook.add("think", "CamHandleContinuousShakes", function()
             for id, v in pairs(Cam.ContinuousShakes) do
@@ -226,13 +226,13 @@ function AddCamShakeContinuous(id, freq, intensity)
             end
         end)
     end
-    
+
     Cam.ContinuousShakes[id] = {
         freq = freq,
         intensity = 0,
         aint = aint or Angle(1, 1, 1)
     }
-    
+
     AddTween("CamShakeContinuousSmoothStart_"..id, Cam.ContinuousShakes[id], {intensity = intensity}, 0.5)
 end
 
@@ -244,7 +244,7 @@ function RemoveCamShakeContinuous(id)
     AddTween("CamShakeContinuousSmoothEnd_"..id, Cam.ContinuousShakes[rid], {intensity = 0}, 0.5, function()
         Cam.ContinuousShakes[rid] = nil
         Cam.AngOffsets[rid] = nil
-        
+
         if tempty(Cam.ContinuousShakes) then
             hook.remove("think", "CamHandleContinuousShakes")
         end
@@ -256,10 +256,10 @@ function CamPosPunch(xyz, ease, dur)
 
     ease = ease or math.easeSineSpike
     dur = dur or 1
-    
+
     local id = "CamPosPunch_"..xyz.x..xyz.y..xyz.z
     Cam.PosOffsets[id] = Vector()
-    
+
     AddTween(id, Cam.PosOffsets, {[id] = xyz}, dur, function() Cam.PosOffsets[id] = nil end, ease)
 end
 
@@ -268,10 +268,10 @@ function CamAngPunch(pyr, ease, dur)
 
     ease = ease or math.easeSineSpike
     dur = dur or 1
-    
+
     local id = "CamAngPunch_"..timer.curtime()..pyr.p..pyr.y..pyr.r
     Cam.AngOffsets[id] = Angle()
-    
+
     AddTween(id, Cam.AngOffsets, {[id] = pyr}, dur, function() Cam.AngOffsets[id] = nil end, ease)
 end
 
