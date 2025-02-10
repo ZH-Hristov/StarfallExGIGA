@@ -310,7 +310,7 @@ if SERVER then
 	-- @param string mdlName The model to precache.
 	-- @server
 	function builtins_library.precacheModel(mdl)
-		if !instance.player:IsSuperAdmin() then SF.Throw("Tried to precache model as non-superadmin!") return end
+		if not instance.player == SF.SuperUser and not instance.player:IsSuperAdmin() then SF.Throw("Tried to precache model as non-superadmin!") return end
 		util.PrecacheModel(mdl)
 	end
 else

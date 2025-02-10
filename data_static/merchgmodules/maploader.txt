@@ -171,12 +171,12 @@ function MapLoader.loadMap(path, cback)
                     
                     if obj.tag then
                         if MapLoader.tagHandlers[obj.tag] then
-                            MapLoader.tagHandlers[obj.tag](entIfSpawned, insertFunc)
+                            MapLoader.tagHandlers[obj.tag](entIfSpawned, insertFunc, spawnedEnts)
                         end
                     end
                     
                     if MapLoader.mdlHandlers[obj.mdl] then
-                        MapLoader.mdlHandlers[obj.mdl](entIfSpawned, insertFunc)
+                        MapLoader.mdlHandlers[obj.mdl](entIfSpawned, insertFunc, spawnedEnts)
                     end
                     
                     table.insert(spawnedEnts, entIfSpawned)
