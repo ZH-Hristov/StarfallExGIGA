@@ -244,14 +244,6 @@ function GunBase:drawViewModel()
     render.pushViewMatrix(VMMatrix)
     render.depthRange(0, 0)
 
-    if self.hands then
-        render.setColorModulation(1, 1, 1)
-        self.hands:draw()
-        render.pushFlashlightMode(true)
-        self.hands:draw()
-        render.popFlashlightMode()
-    end
-
     if CurMdlHolos then
         render.setColorModulation(1, 1, 1)
         for _, v in pairs(CurMdlHolos) do
@@ -263,6 +255,13 @@ function GunBase:drawViewModel()
                 v:setAngles(ltwa)
             end
             v:draw()
+
+            if self.hands then
+                self.hands:draw()
+                render.pushFlashlightMode(true)
+                self.hands:draw()
+                render.popFlashlightMode()
+            end
 
             render.pushFlashlightMode(true)
             v:draw()
