@@ -19,7 +19,7 @@ local function dist_between(nodeA,nodeB)
 end
 
 local function is_valid_node ( node, neighbor )
-    return node.c[neighbor.id]
+    return node.c[neighbor.id] and not neighbor.disabled
 end
 
 local function lowest_f_score ( set, f_score )
