@@ -3,6 +3,9 @@ Nodegraph = {Nodes = {}, NamedLUT = {}}
 local nb = getMethods("NextBot")
 
 function LoadNodegraph(data)
+    table.empty(Nodegraph.Nodes)
+    table.empty(Nodegraph.NamedLUT)
+
     for k, v in pairs(data.Nodes) do
         Nodegraph.Nodes[k] = Vector(v.x, v.y, v.z)
         Nodegraph.Nodes[k].c = table.copy(v.c)
@@ -130,16 +133,20 @@ function nb:chaseEntity(ent)
     local i = 1
     local recomputeTick = 0
 
-    while isValid(ent) and self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
+    while isValid(ent) and self:getPos():getDistanceSqr(ent:getPos()) > 1000 and self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
         self:setApproachPos(pathy[i])
 
-        while self:getPos():getDistanceSqr(pathy[i]) > 1000 do
+        if self:getPos():getDistanceSqr(pathy[i]) > 1000 then
             recomputeTick = recomputeTick + timer.frametime()
             coroutine.yield()
+        else
+            i = math.min(i + 1, #pathy)
+            if self.nodeChangeCallbacks and not table.isEmpty(self.nodeChangeCallbacks) then
+                for _, v in pairs(self.nodeChangeCallbacks) do
+                    v(self, pathy[i], pathy[i + 1])
+                end
+            end
         end
-
-        i = math.min(i + 1, #pathy)
-
 
         if recomputeTick > 1 then
             recomputeTick = 0
