@@ -102,9 +102,11 @@ function nextbot_library.create(pos, mdl)
 	nb:SetModel(mdl)
 	nb.instance = instance
 	nb:Spawn()
+
 	if ply ~= SF.Superuser then
 		nb:SetCreator(ply)
 	end
+
 	entList:register(instance, nb)
 
 	if CPPI then nb:CPPISetOwner(ply == SF.Superuser and NULL or ply) end
