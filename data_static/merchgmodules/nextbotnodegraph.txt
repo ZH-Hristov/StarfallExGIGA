@@ -11,6 +11,7 @@ function LoadNodegraph(data)
         Nodegraph.Nodes[k].c = table.copy(v.c)
         Nodegraph.Nodes[k].n = v.n
         Nodegraph.Nodes[k].id = k
+        Nodegraph.Nodes[k].t = v.t and table.copy(v.t) or nil
     end
 
     Nodegraph.NamedLUT = table.copy(data.NamedLUT)
@@ -128,22 +129,21 @@ function nb:chaseEntity(ent)
     end
 
     local pathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[closest2], Nodegraph.Nodes, true)
-    if not pathy then return false end
+    if not pathy then coroutine.yield() return false end
 
     local i = 1
     local recomputeTick = 0
 
-    while isValid(ent) and self:getPos():getDistanceSqr(ent:getPos()) > 1000 and self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
+    while isValid(ent) and self:getPos():getDistanceSqr(ent:getPos()) > 3000 and self:getPos():getDistanceSqr(pathy[#pathy]) > 1000 do
         self:setApproachPos(pathy[i])
 
-        if self:getPos():getDistanceSqr(pathy[i]) > 1000 then
-            recomputeTick = recomputeTick + timer.frametime()
-            coroutine.yield()
-        else
+        recomputeTick = recomputeTick + timer.frametime()
+
+        if self:getPos():getDistanceSqr(pathy[i]) <= 1000 then
             i = math.min(i + 1, #pathy)
             if self.nodeChangeCallbacks and not table.isEmpty(self.nodeChangeCallbacks) then
                 for _, v in pairs(self.nodeChangeCallbacks) do
-                    v(self, pathy[i], pathy[i + 1])
+                    v(self, pathy[i - 1], pathy[i], pathy[i + 1])
                 end
             end
         end
@@ -170,8 +170,13 @@ function nb:chaseEntity(ent)
                 end
             end
 
-            local newPathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[closest2], Nodegraph.Nodes, true)
-            if newPathy then pathy = newPathy i = 1 end
+            local lookToPly = (ent:getPos() - self:getPos()):getNormalized()
+            local lookToSelfNode = (Nodegraph.Nodes[closest] - self:getPos()):getNormalized()
+            local dotty = lookToPly:dot(lookToSelfNode)
+            -- Reject nodes that are behind the nextbot
+
+            local newPathy = astar.path(Nodegraph.Nodes[closest], Nodegraph.Nodes[closest2], Nodegraph.Nodes, false)
+            if dotty > 0.1 and newPathy then pathy = newPathy i = 1 end
         end
 
         coroutine.yield()
